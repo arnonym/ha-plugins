@@ -1,0 +1,39 @@
+{
+    "name": "ha-sip",
+    "version": "1",
+    "slug": "ha-sip",
+    "description": "Home-Assistant SIP Gateway",
+    "arch": [
+        "aarch64",
+        "amd64",
+        "armhf",
+        "armv7",
+        "i386"
+    ],
+    "startup": "application",
+    "boot": "auto",
+    "options": {
+        "registrar_uri": "sip:fritz.box",
+        "port": 5060,
+        "id_uri": "sip:homeassistant@fritz.box",
+        "realm": "*",
+        "user_name": "homeassistant",
+        "password": "secure"
+    },
+    "schema": {
+        "registrar_uri": "str",
+        "port": "int",
+        "id_uri": "str",
+        "realm": "str",
+        "user_name": "str",
+        "password": "str"
+    },
+    "host_network": true,
+    "homeassistant_api": true,
+    "hassio_api": false,
+    "hassio_role": "default",
+    "stdin": true,
+    "privileged": [
+        "SYS_RAWIO"
+    ]
+}
