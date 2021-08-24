@@ -29,11 +29,7 @@
         "password": "str"
     },
     "host_network": true,
-    "homeassistant_api": true,
+    "homeassistant_api": false,
     "hassio_api": false,
-    "hassio_role": "default",
-    "stdin": true,
-    "privileged": [
-        "SYS_RAWIO"
-    ]
+    "stdin": true
 }
