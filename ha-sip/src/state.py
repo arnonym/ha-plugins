@@ -1,14 +1,15 @@
 import call
+import sip_types
 
 
 class State(object):
     def __init__(self):
         self.current_call_dict: dict[str, call.Call] = {}
 
-    def callback(self, state: call.CallStateChange, caller_id: str, new_call: call.Call = None) -> None:
-        if state == call.CallStateChange.HANGUP:
+    def callback(self, state: sip_types.CallStateChange, caller_id: str, new_call: call.Call = None) -> None:
+        if state == sip_types.CallStateChange.HANGUP:
             del self.current_call_dict[caller_id]
-        elif state == call.CallStateChange.CALL:
+        elif state == sip_types.CallStateChange.CALL:
             self.current_call_dict[caller_id] = new_call
 
     def is_active(self, caller_id: str) -> bool:

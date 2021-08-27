@@ -13,16 +13,17 @@ import config
 
 def handle_command(end_point, sip_account, call_state, command) -> None:
     if not isinstance(command, collections.Mapping):
-        print("Error: Not an object:", command)
+        print('Error: Not an object:', command)
         return
-    verb = command.get('command', None)
-    number = command.get('number', None)
+    verb = command.get('command')
+    number = command.get('number')
+    menu = command.get('menu')
     if verb == 'dial':
         print('Got dial command for', number)
         if call_state.is_active(number):
             print('Warning: already in progress:', number)
             return
-        call.make_call(end_point, sip_account, number, call_state.callback)
+        call.make_call(end_point, sip_account, number, menu, call_state.callback)
     elif verb == 'hangup':
         print('Got hangup command for', number)
         if not call_state.is_active(number):
@@ -37,7 +38,7 @@ def handle_command(end_point, sip_account, call_state, command) -> None:
         end_point.libDestroy()
         sys.exit(0)
     else:
-        print("Error: Unknown command:", verb)
+        print('Error: Unknown command:', verb)
 
 
 def main():

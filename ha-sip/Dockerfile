@@ -3,7 +3,9 @@ FROM $BUILD_FROM
 ENV LANG C.UTF-8
 
 RUN apt-get update
-RUN apt-get install -y build-essential git swig python3 python3-dev
+RUN apt-get install -y build-essential git swig python3 python3-dev python3-pip ffmpeg
+
+RUN pip3 install pydub requests
 
 RUN set -xe \
     && git clone https://github.com/pjsip/pjproject.git \

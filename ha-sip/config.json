@@ -13,23 +13,33 @@
     "startup": "application",
     "boot": "auto",
     "options": {
-        "registrar_uri": "sip:fritz.box",
-        "port": 5060,
-        "id_uri": "sip:homeassistant@fritz.box",
-        "realm": "*",
-        "user_name": "homeassistant",
-        "password": "secure"
+        "sip": {
+            "registrar_uri": "sip:fritz.box",
+            "port": 5060,
+            "id_uri": "sip:homeassistant@fritz.box",
+            "realm": "*",
+            "user_name": "homeassistant",
+            "password": "secure"
+        },
+        "tts": {
+            "platform": "google_translate"
+        }
     },
     "schema": {
-        "registrar_uri": "str",
-        "port": "int",
-        "id_uri": "str",
-        "realm": "str",
-        "user_name": "str",
-        "password": "str"
+        "sip": {
+            "registrar_uri": "str",
+            "port": "int",
+            "id_uri": "str",
+            "realm": "str",
+            "user_name": "str",
+            "password": "str"
+        },
+        "tts": {
+            "platform": "str"
+        }
     },
     "host_network": true,
-    "homeassistant_api": false,
+    "homeassistant_api": true,
     "hassio_api": false,
     "stdin": true
 }
