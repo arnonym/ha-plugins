@@ -1,8 +1,9 @@
 # ha-sip
 Home Assistant SIP Gateway is a Home Assistant plug-in which allows the dialing and hanging up of phone 
-numbers through a SIP end-point and triggering of services through DTMF after the call was answered.
+numbers through a SIP end-point and triggering of services through dial tones (DTMF) after the call was answered.
 
-You can use `dial` and `hangup` with the `hassio.addon_stdin` service to control outgoing calls:
+You can use `dial` and `hangup` with the `hassio.addon_stdin` service to control outgoing calls in an action in 
+your automation:
 
 ```yaml
 service: hassio.addon_stdin
