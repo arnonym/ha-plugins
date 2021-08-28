@@ -1,5 +1,5 @@
 # ha-sip
-Home Assistant SIP Gateway is a Home Assistant plug-in which allows the dialing and hanging up of phone 
+Home Assistant SIP/VoIP Gateway is a Home Assistant plug-in which allows the dialing and hanging up of phone 
 numbers through a SIP end-point and triggering of services through dial tones (DTMF) after the call was answered.
 
 You can use `dial` and `hangup` with the `hassio.addon_stdin` service to control outgoing calls in an action in 
@@ -66,3 +66,8 @@ Personally I use them in two automations:
 
 One with the `dial` command when the doorbell was rung, and a second with `hangup` when the front door was opened, 
 so I do not need to answer the call when not necessary.
+
+### Ideas
+
+1. Handle incoming calls with PIN protection?
+2. Go back to main menu with # key or something?
