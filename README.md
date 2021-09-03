@@ -53,6 +53,19 @@ data_template:
             entity_id: light.outside
 ```
 
+To only play a message you can just specify `message` without any `choices`:
+
+```yaml
+service: hassio.addon_stdin
+data_template:
+  addon: c7744bff_ha-sip
+  input:
+    command: dial
+    number: sip:**620@fritz.box
+    menu:
+      message: There's a burglar in da house.
+```
+
 ## Installation
 
 This add-on is for the Home Assistant OS or supervised installation methods mentioned in 
@@ -60,14 +73,20 @@ https://www.home-assistant.io/installation/. With that in place you can install 
 https://www.home-assistant.io/common-tasks/os#installing-third-party-add-ons. The repository URL is 
 `https://github.com/arnonym/ha-plugins`.
 
-### Use-cases
+## Usage
+
+After installation, the add-on is activated via the `hassio.addon_stdin` service in the action part of an automation. 
+To be able to enter the full command, you must switch to YAML mode by clicking on the menu with the triple dot and 
+selecting `Edit in YAML`.
+
+# Use-cases
 
 Personally I use them in two automations:
 
 One with the `dial` command when the doorbell was rung, and a second with `hangup` when the front door was opened, 
 so I do not need to answer the call when not necessary.
 
-### Ideas
+# Ideas
 
 1. Handle incoming calls with PIN protection?
 2. Go back to main menu with # key or something?
