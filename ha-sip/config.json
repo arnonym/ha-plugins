@@ -1,6 +1,6 @@
 {
     "name": "ha-sip",
-    "version": "1.1",
+    "version": "1.2",
     "slug": "ha-sip",
     "description": "Home-Assistant SIP Gateway",
     "arch": [
