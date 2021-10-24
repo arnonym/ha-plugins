@@ -11,7 +11,7 @@ RUN set -xe \
     && git clone https://github.com/pjsip/pjproject.git \
     && cd pjproject \
     && git reset --hard 4dc183bf373535a9cb37ed6f2cc6b510bdb3901b \
-    && ./configure --enable-shared \
+    && ./configure --enable-shared --disable-libwebrtc \
     && make \
     && make dep \
     && make install \
