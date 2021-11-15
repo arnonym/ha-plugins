@@ -15,4 +15,5 @@ jobs:
           args: |
             --test \
             --all \
-            --target ha-sip
+            --target ha-sip \
+            --branch main
