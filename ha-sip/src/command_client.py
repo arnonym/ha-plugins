@@ -2,6 +2,7 @@ import json
 import os
 import fcntl
 import sys
+from typing import List
 
 
 class CommandClient(object):
@@ -10,7 +11,7 @@ class CommandClient(object):
         self.stdin_fd = fcntl.fcntl(sys.stdin, fcntl.F_GETFL)
         fcntl.fcntl(sys.stdin, fcntl.F_SETFL, self.stdin_fd | os.O_NONBLOCK)
 
-    def get_command_list(self) -> [str]:
+    def get_command_list(self) -> List[dict]:
         try:
             data = os.read(self.stdin_fd, 64)
         except BlockingIOError:
@@ -22,7 +23,7 @@ class CommandClient(object):
         return []
 
     @staticmethod
-    def list_to_json(raw_list: [str]) -> [dict]:
+    def list_to_json(raw_list: List[str]) -> List[dict]:
         result = []
         for entry in raw_list:
             if entry == "":

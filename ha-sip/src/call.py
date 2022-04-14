@@ -1,13 +1,36 @@
 import os
+from enum import Enum
+from typing import Optional, Callable, Union, TypedDict
 
 import ha
-import sip_types
 
 import pjsua2 as pj
 
 
+class CallStateChange(Enum):
+    CALL = 1
+    HANGUP = 2
+
+
+CallCallback = Callable[[CallStateChange, str, 'Call'], None]
+StateType = Union[str, int, bool, float]
+
+
+class Action(TypedDict):
+    domain: str
+    service: str
+    entity_id: str
+
+
+class Menu(TypedDict):
+    message: str
+    action: Optional[Action]
+    choices: dict[int, 'Menu']  # type: ignore
+
+
 class Call(pj.Call):
-    def __init__(self, end_point: pj.Endpoint, account: pj.Account, call_id: str, uri_to_call: str, menu: sip_types.Menu, callback: sip_types.CallCallback):
+    def __init__(self, end_point: pj.Endpoint, account: pj.Account, call_id: str, uri_to_call: str, menu: Optional[Menu],
+                 callback: CallCallback):
         pj.Call.__init__(self, account, call_id)
         self.end_point = end_point
         self.account = account
@@ -15,9 +38,9 @@ class Call(pj.Call):
         self.menu = menu
         self.callback = callback
         self.connected: bool = False
-        self.callback(sip_types.CallStateChange.CALL, self.uri_to_call, self)
-        self.player = None
-        self.audio_media = None
+        self.callback(CallStateChange.CALL, self.uri_to_call, self)
+        self.player: Optional[pj.AudioMediaPlayer] = None
+        self.audio_media: Optional[pj.AudioMedia] = None
 
     def onCallState(self, prm):
         ci = self.getInfo()
@@ -30,8 +53,10 @@ class Call(pj.Call):
             self.account.acceptCall = False
             self.account.inCall = False
             self.account.call_id = None
-            self.callback(sip_types.CallStateChange.HANGUP, self.uri_to_call, self)
+            self.callback(CallStateChange.HANGUP, self.uri_to_call, self)
             print('| Call disconnected')
+        else:
+            print('| Unknown state:', ci.state)
 
     def onCallMediaState(self, prm):
         call_info = self.getInfo()
@@ -43,15 +68,15 @@ class Call(pj.Call):
 
     def onDtmfDigit(self, prm: pj.OnDtmfDigitParam):
         print('| onDtmfDigit: digit', prm.digit)
-        digit = prm.digit
         if not self.menu:
             return
+        digit = prm.digit
         choices = self.menu.get('choices')
         if choices and digit in choices:
             self.menu = choices[digit]
         self.handle_menu_entry(self.menu)
 
-    def handle_menu_entry(self, menu_entry: sip_types.Menu) -> None:
+    def handle_menu_entry(self, menu_entry: Optional[Menu]) -> None:
         if not menu_entry:
             return
         message = menu_entry.get('message', 'No message provided')
@@ -67,7 +92,10 @@ class Call(pj.Call):
             print('| Error: one of domain, service or entity_id was not provided')
             return
         print('| Calling home assistant service on domain', domain, 'service', service, 'with entity', entity_id)
-        ha.call_service(domain, service, entity_id)
+        try:
+            ha.call_service(domain, service, entity_id)
+        except Exception as e:
+            print('| Error calling home-assistant service:', e)
 
     def play_message(self, message: str) -> None:
         print('| Playing message:', message)
@@ -84,7 +112,7 @@ class Call(pj.Call):
         pj.Call.hangup(self, call_prm)
 
 
-def make_call(ep: pj.Endpoint, account: pj.Account, uri_to_call: str, menu: sip_types.Menu, callback: sip_types.CallCallback):
+def make_call(ep: pj.Endpoint, account: pj.Account, uri_to_call: str, menu: Optional[Menu], callback: CallCallback):
     new_call = Call(ep, account, pj.PJSUA_INVALID_ID, uri_to_call, menu, callback)
     call_param = pj.CallOpParam(True)
     new_call.makeCall(uri_to_call, call_param)

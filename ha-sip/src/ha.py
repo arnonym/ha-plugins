@@ -24,7 +24,7 @@ def convert_mp3_to_wav(stream: bytes) -> str:
     return wave_file_handler.name
 
 
-def create_and_get_tts(message: str) -> [str, bool]:
+def create_and_get_tts(message: str) -> tuple[str, bool]:
     """
     Generates a .wav file for a given message
     :param message: the message passed to the TTS engine
@@ -35,14 +35,14 @@ def create_and_get_tts(message: str) -> [str, bool]:
     if create_response.status_code != 200:
         print('| Error getting tts file', create_response.status_code, create_response.content)
         error_file_name = os.path.join(constants.ROOT_PATH, 'sound/answer.wav')
-        return [error_file_name, False]
+        return error_file_name, False
     response_deserialized = create_response.json()
     mp3_url = response_deserialized['url']
     mp3_response = requests.get(mp3_url, headers=headers)
-    return [convert_mp3_to_wav(mp3_response.content), True]
+    return convert_mp3_to_wav(mp3_response.content), True
 
 
-def call_service(domain: str, service: str, entity_id: str):
+def call_service(domain: str, service: str, entity_id: str) -> None:
     headers = create_headers()
     service_response = requests.post(HA_BASE_URL + '/services/' + domain + '/' + service, json={'entity_id': entity_id}, headers=headers)
     print('| Service response', service_response.status_code, service_response.content)
