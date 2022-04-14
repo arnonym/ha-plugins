@@ -1,7 +1,6 @@
 import pjsua2 as pj
 
 import call
-import sip_types
 
 
 class MyAccountConfig(object):
@@ -22,7 +21,7 @@ class MyAccountConfig(object):
 
 
 class Account(pj.Account):
-    def __init__(self, end_point: pj.Endpoint, callback: sip_types.CallCallback):
+    def __init__(self, end_point: pj.Endpoint, callback: call.CallCallback):
         pj.Account.__init__(self)
         self.end_point = end_point
         self.callback = callback
@@ -40,17 +39,16 @@ class Account(pj.Account):
         print('| OnRegState:', prm.code, prm.reason)
 
     def onIncomingCall(self, prm):
-        c = call.Call(self.end_point, self, prm.callId, prm.callId, self.callback)  # TODO: menu for incoming calls!
-        call_prm = pj.CallOpParam()
-        call_prm.statusCode = 180
-        c.answer(call_prm)
+        c = call.Call(self.end_point, self, prm.callId, prm.callId, self.callback)
         ci = c.getInfo()
         print('| Incoming call  from  \'%s\'' % ci.remoteUri)
-        call_prm.statusCode = 200
-        c.answer(call_prm)
+        # Ignore call for now:
+        # call_prm = pj.CallOpParam()
+        # call_prm.statusCode = 200
+        # c.answer(call_prm)
 
 
-def create_account(end_point: pj.Endpoint, cfg: MyAccountConfig, callback: sip_types.CallCallback):
+def create_account(end_point: pj.Endpoint, cfg: MyAccountConfig, callback: call.CallCallback):
     account = Account(end_point, callback)
     account.create(cfg, make_default=True)
     return account

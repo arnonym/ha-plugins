@@ -19,12 +19,18 @@ def handle_command(end_point, sip_account, call_state, command) -> None:
     number = command.get('number')
     menu = command.get('menu')
     if verb == 'dial':
+        if not number:
+            print('Error: Missing number for command "dial"')
+            return
         print('Got dial command for', number)
         if call_state.is_active(number):
             print('Warning: already in progress:', number)
             return
         call.make_call(end_point, sip_account, number, menu, call_state.callback)
     elif verb == 'hangup':
+        if not number:
+            print('Error: Missing number for command "hangup"')
+            return
         print('Got hangup command for', number)
         if not call_state.is_active(number):
             print('Warning: not in progress:', number)
