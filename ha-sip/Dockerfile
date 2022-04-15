@@ -8,9 +8,8 @@ RUN apt-get install -y build-essential git swig python3 python3-dev python3-pip 
 RUN pip3 install pydub requests
 
 RUN set -xe \
-    && git clone https://github.com/pjsip/pjproject.git \
+    && git clone --depth 1 --branch 2.12 https://github.com/pjsip/pjproject.git \
     && cd pjproject \
-    && git reset --hard 4dc183bf373535a9cb37ed6f2cc6b510bdb3901b \
     && ./configure --enable-shared --disable-libwebrtc \
     && make \
     && make dep \
