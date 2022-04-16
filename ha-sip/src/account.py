@@ -1,6 +1,7 @@
 import pjsua2 as pj
 
 import call
+import ha
 
 
 class MyAccountConfig(object):
@@ -21,10 +22,11 @@ class MyAccountConfig(object):
 
 
 class Account(pj.Account):
-    def __init__(self, end_point: pj.Endpoint, callback: call.CallCallback):
+    def __init__(self, end_point: pj.Endpoint, callback: call.CallCallback, ha_config: ha.HaConfig):
         pj.Account.__init__(self)
         self.end_point = end_point
         self.callback = callback
+        self.ha_config = ha_config
 
     def create(self, cfg: MyAccountConfig, make_default=False):
         account_config = pj.AccountConfig()
@@ -39,16 +41,16 @@ class Account(pj.Account):
         print('| OnRegState:', prm.code, prm.reason)
 
     def onIncomingCall(self, prm):
-        c = call.Call(self.end_point, self, prm.callId, prm.callId, self.callback)
+        c = call.Call(self.end_point, self, prm.callId, prm.callId, None, self.callback, self.ha_config)
         ci = c.getInfo()
         print('| Incoming call  from  \'%s\'' % ci.remoteUri)
-        # Ignore call for now:
-        # call_prm = pj.CallOpParam()
-        # call_prm.statusCode = 200
-        # c.answer(call_prm)
+        call_prm = pj.CallOpParam()
+        call_prm.statusCode = 180  # Ringing
+        c.answer(call_prm)
+        ha.trigger_webhook(self.ha_config, ci.remoteUri)
 
 
-def create_account(end_point: pj.Endpoint, cfg: MyAccountConfig, callback: call.CallCallback):
-    account = Account(end_point, callback)
+def create_account(end_point: pj.Endpoint, cfg: MyAccountConfig, callback: call.CallCallback, ha_config: ha.HaConfig):
+    account = Account(end_point, callback, ha_config)
     account.create(cfg, make_default=True)
     return account

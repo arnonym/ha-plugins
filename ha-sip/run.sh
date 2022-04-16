@@ -10,6 +10,7 @@ sed -i -- 's~\$USER_NAME~'"$(bashio::config 'sip.user_name')"'~g' ha-sip/config.
 sed -i -- 's~\$PASSWORD~'"$(bashio::config 'sip.password')"'~g' ha-sip/config.py
 
 sed -i -- 's~\$TTS_PLATFORM~'"$(bashio::config 'tts.platform')"'~g' ha-sip/config.py
+sed -i -- 's~\$WEBHOOK_ID~'"$(bashio::config 'webhook.id')"'~g' ha-sip/config.py
 
 sed -i -- 's~\$TOKEN~'"${SUPERVISOR_TOKEN}"'~g' ha-sip/config.py
 

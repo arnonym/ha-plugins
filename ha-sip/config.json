@@ -25,6 +25,9 @@
         },
         "tts": {
             "platform": "google_translate"
+        },
+        "webhook": {
+            "id": "sip_call_webhook_id"
         }
     },
     "schema": {
@@ -38,6 +41,9 @@
         },
         "tts": {
             "platform": "str"
+        },
+        "webhook": {
+            "id": "str"
         }
     },
     "host_network": true,

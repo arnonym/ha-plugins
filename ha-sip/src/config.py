@@ -9,3 +9,4 @@ TTS_PLATFORM = "$TTS_PLATFORM"
 
 HA_BASE_URL = "http://supervisor/core/api"
 HA_TOKEN = "$TOKEN"
+HA_WEBHOOK_ID = "$HA_WEBHOOK_ID"
