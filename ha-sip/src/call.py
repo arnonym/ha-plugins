@@ -30,13 +30,14 @@ class Menu(TypedDict):
 
 class Call(pj.Call):
     def __init__(self, end_point: pj.Endpoint, account: pj.Account, call_id: str, uri_to_call: str, menu: Optional[Menu],
-                 callback: CallCallback):
+                 callback: CallCallback, ha_config: ha.HaConfig):
         pj.Call.__init__(self, account, call_id)
         self.end_point = end_point
         self.account = account
         self.uri_to_call = uri_to_call
         self.menu = menu
         self.callback = callback
+        self.ha_config = ha_config
         self.connected: bool = False
         self.callback(CallStateChange.CALL, self.uri_to_call, self)
         self.player: Optional[pj.AudioMediaPlayer] = None
@@ -93,14 +94,14 @@ class Call(pj.Call):
             return
         print('| Calling home assistant service on domain', domain, 'service', service, 'with entity', entity_id)
         try:
-            ha.call_service(domain, service, entity_id)
+            ha.call_service(self.ha_config, domain, service, entity_id)
         except Exception as e:
             print('| Error calling home-assistant service:', e)
 
     def play_message(self, message: str) -> None:
         print('| Playing message:', message)
         self.player = pj.AudioMediaPlayer()
-        sound_file_name, must_be_deleted = ha.create_and_get_tts(message)
+        sound_file_name, must_be_deleted = ha.create_and_get_tts(self.ha_config, message)
         self.player.createPlayer(file_name=sound_file_name, options=pj.PJMEDIA_FILE_NO_LOOP)
         self.player.startTransmit(self.audio_media)
         if must_be_deleted:
@@ -112,8 +113,8 @@ class Call(pj.Call):
         pj.Call.hangup(self, call_prm)
 
 
-def make_call(ep: pj.Endpoint, account: pj.Account, uri_to_call: str, menu: Optional[Menu], callback: CallCallback):
-    new_call = Call(ep, account, pj.PJSUA_INVALID_ID, uri_to_call, menu, callback)
+def make_call(ep: pj.Endpoint, account: pj.Account, uri_to_call: str, menu: Optional[Menu], callback: CallCallback, ha_config: ha.HaConfig):
+    new_call = Call(ep, account, pj.PJSUA_INVALID_ID, uri_to_call, menu, callback, ha_config)
     call_param = pj.CallOpParam(True)
     new_call.makeCall(uri_to_call, call_param)
     return new_call

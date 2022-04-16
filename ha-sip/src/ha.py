@@ -1,17 +1,32 @@
 import pydub
 
-from config import *
 import requests
 import os
 import constants
 import tempfile
 
 
-def create_headers():
-    return {
-        "Authorization": "Bearer " + HA_TOKEN,
-        "content-type": "application/json",
-    }
+class HaConfig(object):
+    def __init__(self, base_url: str, token: str, tts_engine: str, webhook_id: str):
+        self.base_url = base_url
+        self.token = token
+        self.tts_engine = tts_engine
+        self.webhook_id = webhook_id
+
+    def create_headers(self):
+        return {
+            "Authorization": "Bearer " + self.token,
+            "content-type": "application/json",
+        }
+
+    def get_tts_url(self) -> str:
+        return self.base_url + "/tts_get_url"
+
+    def get_service_url(self, domain: str, service: str) -> str:
+        return self.base_url + '/services/' + domain + '/' + service
+
+    def get_webhook_url(self) -> str:
+        return self.base_url + "/webhook/" + self.webhook_id
 
 
 def convert_mp3_to_wav(stream: bytes) -> str:
@@ -24,14 +39,15 @@ def convert_mp3_to_wav(stream: bytes) -> str:
     return wave_file_handler.name
 
 
-def create_and_get_tts(message: str) -> tuple[str, bool]:
+def create_and_get_tts(ha_config: HaConfig, message: str) -> tuple[str, bool]:
     """
     Generates a .wav file for a given message
+    :param ha_config: home assistant config
     :param message: the message passed to the TTS engine
     :return: the file name of the .wav-file and if it must be deleted afterwards
     """
-    headers = create_headers()
-    create_response = requests.post(HA_BASE_URL + "/tts_get_url", json={'platform': TTS_PLATFORM, 'message': message}, headers=headers)
+    headers = ha_config.create_headers()
+    create_response = requests.post(ha_config.get_tts_url(), json={'platform': ha_config.tts_engine, 'message': message}, headers=headers)
     if create_response.status_code != 200:
         print('| Error getting tts file', create_response.status_code, create_response.content)
         error_file_name = os.path.join(constants.ROOT_PATH, 'sound/answer.wav')
@@ -42,7 +58,18 @@ def create_and_get_tts(message: str) -> tuple[str, bool]:
     return convert_mp3_to_wav(mp3_response.content), True
 
 
-def call_service(domain: str, service: str, entity_id: str) -> None:
-    headers = create_headers()
-    service_response = requests.post(HA_BASE_URL + '/services/' + domain + '/' + service, json={'entity_id': entity_id}, headers=headers)
+def call_service(ha_config: HaConfig, domain: str, service: str, entity_id: str) -> None:
+    headers = ha_config.create_headers()
+    service_response = requests.post(ha_config.get_service_url(domain, service), json={'entity_id': entity_id}, headers=headers)
     print('| Service response', service_response.status_code, service_response.content)
+
+
+def trigger_webhook(ha_config: HaConfig, caller_id: str) -> None:
+    if not ha_config.webhook_id:
+        print('| Warning: No webhook defined.')
+        return
+    webhook_data = {'caller_id': caller_id}
+    print("| Calling webhook", ha_config.webhook_id, "with data", webhook_data)
+    headers = ha_config.create_headers()
+    service_response = requests.post(ha_config.get_webhook_url(), json=webhook_data, headers=headers)
+    print('| Webhook response', service_response.status_code, service_response.content)
