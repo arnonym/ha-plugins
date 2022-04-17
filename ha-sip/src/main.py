@@ -54,7 +54,7 @@ def main():
     else:
         import config
     endpoint_config = sip.MyEndpointConfig(
-        port=config.PORT
+        port=int(config.PORT)
     )
     account_config = account.MyAccountConfig(
         id_uri=config.ID_URI,
