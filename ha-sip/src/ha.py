@@ -64,11 +64,11 @@ def call_service(ha_config: HaConfig, domain: str, service: str, entity_id: str)
     print('| Service response', service_response.status_code, service_response.content)
 
 
-def trigger_webhook(ha_config: HaConfig, caller_id: str) -> None:
+def trigger_webhook(ha_config: HaConfig, caller: str) -> None:
     if not ha_config.webhook_id:
         print('| Warning: No webhook defined.')
         return
-    webhook_data = {'caller_id': caller_id}
+    webhook_data = {'caller': caller}
     print("| Calling webhook", ha_config.webhook_id, "with data", webhook_data)
     headers = ha_config.create_headers()
     service_response = requests.post(ha_config.get_webhook_url(), json=webhook_data, headers=headers)
