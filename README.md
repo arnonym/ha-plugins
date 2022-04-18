@@ -73,11 +73,35 @@ https://www.home-assistant.io/installation/. With that in place you can install 
 https://www.home-assistant.io/common-tasks/os#installing-third-party-add-ons. The repository URL is 
 `https://github.com/arnonym/ha-plugins`.
 
+After that you need to configure your SIP account, TTS parameters and webhook ID. The default configuration looks like this:
+
+```yaml
+sip:
+  registrar_uri: sip:fritz.box
+  port: 5060
+  id_uri: sip:homeassistant@fritz.box
+  realm: '*'
+  user_name: homeassistant
+  password: secure
+tts:
+  platform: google_translate
+webhook:
+  id: sip_call_webhook_id
+```
+
 ## Usage
 
-After installation, the add-on is activated via the `hassio.addon_stdin` service in the action part of an automation. 
+### Outgoing calls
+
+Outgoing calls are made via the `hassio.addon_stdin` service in the action part of an automation. 
 To be able to enter the full command, you must switch to YAML mode by clicking on the menu with the triple dot and 
-selecting `Edit in YAML`.
+selecting `Edit in YAML`. See examples above.
+
+### Incoming calls
+
+You can trigger an automation through the [Webhook trigger type](https://www.home-assistant.io/docs/automation/trigger/#webhook-trigger). 
+The webhook ID must match the ID set in the configuration. You can get the caller from `{{trigger.json.caller}}` for usage in e.g. the action
+of your automation.
 
 # Use-cases
 

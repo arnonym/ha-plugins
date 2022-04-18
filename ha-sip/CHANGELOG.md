@@ -1,8 +1,10 @@
 # Changelog
 
 ## 1.4
-- update to latest stable of pjsip
-- Use docker hub images, instead of local build
+- call webhook on incoming calls
+- update to the latest stable version of pjsip
+- Use docker hub images, instead of local build to reduce installation time and allow installation of devices with little memory
+- Add icon
 
 ## 1.3
 - fix build on aarch64 cpu architecture
