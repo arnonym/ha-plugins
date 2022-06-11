@@ -19,6 +19,7 @@ def handle_command(end_point, sip_account, call_state, command, ha_config: ha.Ha
     verb = command.get('command')
     number = command.get('number')
     menu = command.get('menu')
+    dtmf = command.get('dtmf')
     if verb == 'dial':
         if not number:
             print('Error: Missing number for command "dial"')
@@ -38,6 +39,18 @@ def handle_command(end_point, sip_account, call_state, command, ha_config: ha.Ha
             return
         current_call = call_state.get_call(number)
         current_call.hangup_call()
+    elif verb == 'dtmf':
+        if not number:
+            print('Error: Missing number for command "dtmf"')
+            return
+        if not dtmf:
+            print('Error Missing dtmf for command "dtmf"')
+            return
+        if not call_state.is_active(number):
+            print('Error No outbound call to number for command "dtmf"')
+            return
+        current_call = call.state.get_call(number)
+        current_call.dtmf(dtmf) 
     elif verb == 'state':
         call_state.output()
     elif verb == 'quit':
