@@ -11,7 +11,7 @@
         "armv7",
         "i386"
     ],
-    #"image": "agellhaus/{arch}-ha-sip",
+    "image-disabled": "agellhaus/{arch}-ha-sip",
     "startup": "application",
     "boot": "auto",
     "options": {
