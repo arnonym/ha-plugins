@@ -111,6 +111,9 @@ class Call(pj.Call):
     def hangup_call(self):
         call_prm = pj.CallOpParam(True)
         pj.Call.hangup(self, call_prm)
+    
+    def dtmf(self,dtmfToDial):
+        pj.Call.dial_dtmf(int(dtmfToDial))
 
 
 def make_call(ep: pj.Endpoint, account: pj.Account, uri_to_call: str, menu: Optional[Menu], callback: CallCallback, ha_config: ha.HaConfig):
