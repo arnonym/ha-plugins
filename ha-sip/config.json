@@ -11,7 +11,7 @@
         "armv7",
         "i386"
     ],
-    "init": False,
+    "init": false,
     "image-disabled": "agellhaus/{arch}-ha-sip",
     "startup": "application",
     "boot": "auto",
