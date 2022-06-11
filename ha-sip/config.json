@@ -2,7 +2,7 @@
     "name": "ha-sip",
     "version": "1.4",
     "slug": "ha-sip",
-    "url": "https://github.com/arnonym/ha-plugins",
+    "url": "https://github.com/netham45/ha-sip",
     "description": "Home-Assistant SIP Gateway",
     "arch": [
         "aarch64",
@@ -11,7 +11,7 @@
         "armv7",
         "i386"
     ],
-    "image": "agellhaus/{arch}-ha-sip",
+    "image": "netham45/{arch}-ha-sip",
     "startup": "application",
     "boot": "auto",
     "options": {
