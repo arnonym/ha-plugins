@@ -1,6 +1,6 @@
 {
     "name": "ha-sip",
-    "version": "1.4.1",
+    "version": "1.4.2",
     "slug": "ha-sip",
     "url": "https://github.com/netham45/ha-sip",
     "description": "Home-Assistant SIP Gateway",
@@ -11,7 +11,7 @@
         "armv7",
         "i386"
     ],
-    "image": "netham45/{arch}-ha-sip",
+    "image": "agellhaus/{arch}-ha-sip",
     "startup": "application",
     "boot": "auto",
     "options": {
