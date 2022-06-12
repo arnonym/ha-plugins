@@ -106,7 +106,7 @@ class Call(pj.Call):
         print('| Playing message:', message)
         self.player = pj.AudioMediaPlayer()
         sound_file_name, must_be_deleted = ha.create_and_get_tts(self.ha_config, message)
-        self.player.createPlayer(file_name=sound_file_name, options=pj.PJMEDIA_FILE_NO_LOOP)
+        self.player.createPlayer(file_name=sound_file_name)
         self.player.startTransmit(self.audio_media)
         if must_be_deleted:
             # looks like `createPlayer` is loading the file to memory, and it can be removed already
