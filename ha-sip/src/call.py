@@ -42,6 +42,7 @@ class Call(pj.Call):
         self.callback(CallStateChange.CALL, self.uri_to_call, self)
         self.player: Optional[pj.AudioMediaPlayer] = None
         self.audio_media: Optional[pj.AudioMedia] = None
+        self.played_message = False
 
     def onCallState(self, prm):
         ci = self.getInfo()
@@ -99,6 +100,9 @@ class Call(pj.Call):
             print('| Error calling home-assistant service:', e)
 
     def play_message(self, message: str) -> None:
+        if self.played_message:  # pjsip never returns control if createPlayer is called while another wav is still playing. stopTransmit() is useless.
+            return
+        self.played_message = True
         print('| Playing message:', message)
         self.player = pj.AudioMediaPlayer()
         sound_file_name, must_be_deleted = ha.create_and_get_tts(self.ha_config, message)
