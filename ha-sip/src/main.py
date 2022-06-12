@@ -49,8 +49,8 @@ def handle_command(end_point, sip_account, call_state, command, ha_config: ha.Ha
         if not call_state.is_active(number):
             print('Error No outbound call to number for command "dtmf"')
             return
-        current_call = call.state.get_call(number)
-        current_call.dtmf(dtmf) 
+        current_call = call_state.get_call(number)
+        current_call.dialDtmf(dtmf) 
     elif verb == 'state':
         call_state.output()
     elif verb == 'quit':
