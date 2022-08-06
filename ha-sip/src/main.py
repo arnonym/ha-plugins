@@ -63,7 +63,7 @@ def main():
         user_name=config.USER_NAME,
         password=config.PASSWORD,
     )
-    ha_config = ha.HaConfig(config.HA_BASE_URL, config.HA_TOKEN, config.TTS_PLATFORM, config.HA_WEBHOOK_ID)
+    ha_config = ha.HaConfig(config.HA_BASE_URL, config.HA_TOKEN, config.TTS_PLATFORM, config.TTS_LANGUAGE, config.HA_WEBHOOK_ID)
     call_state = state.create()
     end_point = sip.create_endpoint(endpoint_config)
     new_account = account.create_account(end_point, account_config, call_state.callback, ha_config)

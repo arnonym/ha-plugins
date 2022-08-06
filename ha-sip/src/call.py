@@ -24,6 +24,7 @@ class Action(TypedDict):
 
 class Menu(TypedDict):
     message: str
+    language: str
     action: Optional[Action]
     choices: dict[int, 'Menu']  # type: ignore
 
@@ -80,8 +81,9 @@ class Call(pj.Call):
     def handle_menu_entry(self, menu_entry: Optional[Menu]) -> None:
         if not menu_entry:
             return
+        language = menu_entry.get('language', self.ha_config.tts_language)
         message = menu_entry.get('message', 'No message provided')
-        self.play_message(message)
+        self.play_message(message, language)
         action = menu_entry.get('action')
         if not action:
             print('| No action supplied')
@@ -98,10 +100,10 @@ class Call(pj.Call):
         except Exception as e:
             print('| Error calling home-assistant service:', e)
 
-    def play_message(self, message: str) -> None:
+    def play_message(self, message: str, language: str) -> None:
         print('| Playing message:', message)
         self.player = pj.AudioMediaPlayer()
-        sound_file_name, must_be_deleted = ha.create_and_get_tts(self.ha_config, message)
+        sound_file_name, must_be_deleted = ha.create_and_get_tts(self.ha_config, message, language)
         self.player.createPlayer(file_name=sound_file_name, options=pj.PJMEDIA_FILE_NO_LOOP)
         self.player.startTransmit(self.audio_media)
         if must_be_deleted:

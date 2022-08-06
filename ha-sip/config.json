@@ -24,7 +24,8 @@
             "password": "secure"
         },
         "tts": {
-            "platform": "google_translate"
+            "platform": "google_translate",
+            "language": "en"
         },
         "webhook": {
             "id": "sip_call_webhook_id"
@@ -40,7 +41,8 @@
             "password": "str"
         },
         "tts": {
-            "platform": "str"
+            "platform": "str",
+            "language": "str"
         },
         "webhook": {
             "id": "str"

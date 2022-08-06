@@ -7,10 +7,11 @@ import tempfile
 
 
 class HaConfig(object):
-    def __init__(self, base_url: str, token: str, tts_engine: str, webhook_id: str):
+    def __init__(self, base_url: str, token: str, tts_engine: str, tts_language: str, webhook_id: str):
         self.base_url = base_url
         self.token = token
         self.tts_engine = tts_engine
+        self.tts_language = tts_language or "en"
         self.webhook_id = webhook_id
 
     def create_headers(self):
@@ -39,15 +40,16 @@ def convert_mp3_to_wav(stream: bytes) -> str:
     return wave_file_handler.name
 
 
-def create_and_get_tts(ha_config: HaConfig, message: str) -> tuple[str, bool]:
+def create_and_get_tts(ha_config: HaConfig, message: str, language: str) -> tuple[str, bool]:
     """
     Generates a .wav file for a given message
     :param ha_config: home assistant config
     :param message: the message passed to the TTS engine
+    :param language: language the message is in
     :return: the file name of the .wav-file and if it must be deleted afterwards
     """
     headers = ha_config.create_headers()
-    create_response = requests.post(ha_config.get_tts_url(), json={'platform': ha_config.tts_engine, 'message': message}, headers=headers)
+    create_response = requests.post(ha_config.get_tts_url(), json={'platform': ha_config.tts_engine, 'message': message, 'language': language}, headers=headers)
     if create_response.status_code != 200:
         print('| Error getting tts file', create_response.status_code, create_response.content)
         error_file_name = os.path.join(constants.ROOT_PATH, 'sound/answer.wav')
