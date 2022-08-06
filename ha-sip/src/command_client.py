@@ -8,15 +8,16 @@ from typing import List
 class CommandClient(object):
     def __init__(self):
         self.buffer = ""
-        self.stdin_fd = fcntl.fcntl(sys.stdin, fcntl.F_GETFL)
-        fcntl.fcntl(sys.stdin, fcntl.F_SETFL, self.stdin_fd | os.O_NONBLOCK)
+        self.stdin_fd = fcntl.fcntl(sys.stdin, fcntl.F_GETFD)
+        stdin_fl = fcntl.fcntl(sys.stdin, fcntl.F_GETFL)
+        fcntl.fcntl(sys.stdin, fcntl.F_SETFL, stdin_fl | os.O_NONBLOCK)
 
     def get_command_list(self) -> List[dict]:
         try:
             data = os.read(self.stdin_fd, 64)
         except BlockingIOError:
             data = b""
-        self.buffer += data.decode('unicode_escape')
+        self.buffer += data.decode("utf-8", "ignore")
         if "\n" in self.buffer:
             *line_list, self.buffer = self.buffer.split("\n")
             return CommandClient.list_to_json(line_list)
