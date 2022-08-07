@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.5
+- Add language option for TTS
+
 ## 1.4
 - call webhook on incoming calls
 - update to the latest stable version of pjsip
