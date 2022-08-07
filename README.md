@@ -87,6 +87,7 @@ sip:
   password: secure
 tts:
   platform: google_translate
+  language: en
 webhook:
   id: sip_call_webhook_id
 ```
