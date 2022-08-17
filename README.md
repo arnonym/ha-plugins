@@ -68,6 +68,41 @@ data_template:
       message: There's a burglar in da house.
 ```
 
+You can also enable PIN mode, so the input of numbers is not interrupted at the first wrong input:
+
+```yaml
+service: hassio.addon_stdin
+data_template:
+    addon: c7744bff_ha-sip
+    input:
+        command: dial
+        number: sip:**620@fritz.box
+        menu:
+            message: Please enter your access code
+            choices_are_pin: true
+            choices:
+                '1234':
+                    id: owner
+                    message: Welcome beautiful.
+                '5432':
+                    id: maintenance
+                    message: Your entrance has been logged.
+                'default':
+                    id: wrong_code
+                    message: Wrong code, please try again
+                    post_action: hangup
+```
+
+In this example, an `id` is also given in the menu. After entering the correct pin a message will be sent 
+to the webhook with the following content:
+
+```json
+{
+    "event": "entered_menu",
+    "menu_id": "owner"
+}
+```
+
 ## Installation
 
 This add-on is for the Home Assistant OS or supervised installation methods mentioned in 
@@ -104,7 +139,8 @@ selecting `Edit in YAML`. See examples above.
 
 You can trigger an automation through the [Webhook trigger type](https://www.home-assistant.io/docs/automation/trigger/#webhook-trigger). 
 The webhook ID must match the ID set in the configuration. You can get the caller from `{{trigger.json.caller}}` for usage in e.g. the action
-of your automation.
+of your automation. If you also use the menu ID webhook you also need to check for `{{ trigger.json.event == "incoming_call" }}` e.g. in a "Choose"
+action type.
 
 # Use-cases
 
