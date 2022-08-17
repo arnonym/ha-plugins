@@ -80,17 +80,20 @@ data_template:
         menu:
             message: Please enter your access code
             choices_are_pin: true
+            timeout: 10
             choices:
                 '1234':
                     id: owner
                     message: Welcome beautiful.
+                    post_action: hangup
                 '5432':
                     id: maintenance
                     message: Your entrance has been logged.
+                    post_action: hangup
                 'default':
                     id: wrong_code
                     message: Wrong code, please try again
-                    post_action: hangup
+                    post_action: return
 ```
 
 In this example, an `id` is also given in the menu. After entering the correct pin a message will be sent 
@@ -102,6 +105,8 @@ to the webhook with the following content:
     "menu_id": "owner"
 }
 ```
+
+Also, the `post_action` and `timeout` options are used in this example. 
 
 ## Installation
 
