@@ -13,6 +13,7 @@ def create_endpoint(config: MyEndpointConfig):
     ep_cfg = pj.EpConfig()
     ep_cfg.uaConfig.threadCnt = 0
     ep_cfg.uaConfig.mainThreadOnly = True
+    ep_cfg.logConfig.level = 5
     end_point = pj.Endpoint()
     end_point.libCreate()
     end_point.libInit(ep_cfg)

@@ -47,7 +47,7 @@ class Account(pj.Account):
         call_prm = pj.CallOpParam()
         call_prm.statusCode = 180  # Ringing
         c.answer(call_prm)
-        ha.trigger_webhook(self.ha_config, ci.remoteUri)
+        ha.trigger_webhook(self.ha_config, {'event': 'incoming_call', 'caller': ci.remoteUri})
 
 
 def create_account(end_point: pj.Endpoint, cfg: MyAccountConfig, callback: call.CallCallback, ha_config: ha.HaConfig):

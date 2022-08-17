@@ -2,18 +2,20 @@
 
 import sys
 
+import pjsua2 as pj
+
 import account
 import sip
 import call
 import command_client
 import state
-import collections
+import collections.abc
 
 import ha
 
 
-def handle_command(end_point, sip_account, call_state, command, ha_config: ha.HaConfig) -> None:
-    if not isinstance(command, collections.Mapping):
+def handle_command(end_point: pj.Endpoint, sip_account: pj.Account, call_state: state.State, command, ha_config: ha.HaConfig) -> None:
+    if not isinstance(command, collections.abc.Mapping):
         print('Error: Not an object:', command)
         return
     verb = command.get('command')
@@ -48,6 +50,12 @@ def handle_command(end_point, sip_account, call_state, command, ha_config: ha.Ha
         print('Error: Unknown command:', verb)
 
 
+def handle_command_list(command_server, end_point, new_account, call_state, ha_config):
+    command_list = command_server.get_command_list()
+    for command in command_list:
+        handle_command(end_point, new_account, call_state, command, ha_config)
+
+
 def main():
     if "local" in sys.argv:
         import config_local as config
@@ -66,13 +74,13 @@ def main():
     ha_config = ha.HaConfig(config.HA_BASE_URL, config.HA_TOKEN, config.TTS_PLATFORM, config.TTS_LANGUAGE, config.HA_WEBHOOK_ID)
     call_state = state.create()
     end_point = sip.create_endpoint(endpoint_config)
-    new_account = account.create_account(end_point, account_config, call_state.callback, ha_config)
+    sip_account = account.create_account(end_point, account_config, call_state.callback, ha_config)
     command_server = command_client.CommandClient()
     while True:
         end_point.libHandleEvents(20)
-        command_list = command_server.get_command_list()
-        for command in command_list:
-            handle_command(end_point, new_account, call_state, command, ha_config)
+        handle_command_list(command_server, end_point, sip_account, call_state, ha_config)
+        for c in list(call_state.current_call_dict.values()):
+            c.handle_events()
 
 
 if __name__ == '__main__':

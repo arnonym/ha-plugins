@@ -1,9 +1,28 @@
+from typing import TypedDict, Literal, Union
+
 import pydub
 
 import requests
 import os
 import constants
 import tempfile
+
+
+class IncomingCallEvent(TypedDict):
+    event: Literal['incoming_call']
+    caller: str
+
+
+class EnteredMenuEvent(TypedDict):
+    event: Literal['entered_menu']
+    menu_id: str
+
+
+class Timeout(TypedDict):
+    event: Literal['timeout']
+
+
+WebhookEvent = Union[IncomingCallEvent, EnteredMenuEvent, Timeout]
 
 
 class HaConfig(object):
@@ -66,12 +85,11 @@ def call_service(ha_config: HaConfig, domain: str, service: str, entity_id: str)
     print('| Service response', service_response.status_code, service_response.content)
 
 
-def trigger_webhook(ha_config: HaConfig, caller: str) -> None:
+def trigger_webhook(ha_config: HaConfig, event: WebhookEvent) -> None:
     if not ha_config.webhook_id:
         print('| Warning: No webhook defined.')
         return
-    webhook_data = {'caller': caller}
-    print("| Calling webhook", ha_config.webhook_id, "with data", webhook_data)
+    print("| Calling webhook", ha_config.webhook_id, "with data", event)
     headers = ha_config.create_headers()
-    service_response = requests.post(ha_config.get_webhook_url(), json=webhook_data, headers=headers)
+    service_response = requests.post(ha_config.get_webhook_url(), json=event, headers=headers)
     print('| Webhook response', service_response.status_code, service_response.content)
