@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.6
+- menu choices can consist of more than one digit
+- add option to handle menu digits as PIN
+- introduce `post_action` to hang up or return after menu was selected
+- add option to call webhook after menu is selected
+- add `timeout` option (default to 300 seconds) to menu entries
+- update to the latest stable version of pjsip
+
 ## 1.5
 - Add language option for TTS
 
