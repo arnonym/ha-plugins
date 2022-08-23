@@ -32,7 +32,7 @@ class Action(TypedDict):
 
 class MenuFromStdin(TypedDict):
     id: Optional[str]
-    message: str
+    message: Optional[str]
     language: Optional[str]
     action: Optional[Action]
     choices_are_pin: Optional[bool]
@@ -43,7 +43,7 @@ class MenuFromStdin(TypedDict):
 
 class Menu(TypedDict):
     id: Optional[str]
-    message: str
+    message: Optional[str]
     language: str
     action: Optional[Action]
     choices_are_pin: bool
@@ -51,6 +51,7 @@ class Menu(TypedDict):
     timeout: Optional[int]
     choices: Optional[dict[str, 'Menu']]  # type: ignore
     default_choice: Optional['Menu']  # type: ignore
+    timeout_choice: Optional['Menu']  # type: ignore
     parent_menu: Optional['Menu']  # type: ignore
 
 
@@ -75,12 +76,13 @@ class Call(pj.Call):
         self.callback(CallStateChange.CALL, self.uri_to_call, self)
 
     def handle_events(self):
-        if self.playback_is_done and self.connected and time.time() - self.last_seen > self.menu.get('timeout'):
-            print('| Timeout of', self.menu.get('timeout'), 'triggered. Hangup')
-            self.hangup_call()
-            ha.trigger_webhook(self.ha_config, {'event': 'timeout'})
+        if not self.connected:
             return
-        if self.playback_is_done and self.connected and self.scheduled_post_action:
+        if time.time() - self.last_seen > self.menu.get('timeout'):
+            print('| Timeout of', self.menu.get('timeout'), 'triggered.')
+            self.handle_menu(self.menu['timeout_choice'])
+            return
+        if self.playback_is_done and self.scheduled_post_action:
             post_action = self.scheduled_post_action
             self.scheduled_post_action = None
             print("| Scheduled post action:", post_action)
@@ -148,15 +150,16 @@ class Call(pj.Call):
         if not menu:
             return
         self.menu = menu
-        menu_id = menu.get('id')
+        menu_id = menu['id']
         if menu_id:
             ha.trigger_webhook(self.ha_config, {'event': 'entered_menu', 'menu_id': menu_id})
         self.current_input = ""
         message = menu['message']
         language = menu['language']
-        action = menu.get('action')
+        action = menu['action']
         post_action = menu['post_action']
-        self.play_message(message, language)
+        if message:
+            self.play_message(message, language)
         self.handle_action(action)
         self.scheduled_post_action = post_action
 
@@ -190,6 +193,7 @@ class Call(pj.Call):
         self.playback_is_done = True
 
     def hangup_call(self):
+        print("| Hang-up.")
         call_prm = pj.CallOpParam(True)
         pj.Call.hangup(self, call_prm)
 
@@ -198,37 +202,54 @@ class Call(pj.Call):
             return None
         normalized_menu: Menu = {
             'id': menu.get('id', None),
-            'message': menu.get('message', 'No message provided'),
+            'message': menu.get('message', None),
             'language': menu.get('language', self.ha_config.tts_language),
             'action': menu.get('action', None),
             'choices_are_pin': menu.get('choices_are_pin', False),
             'choices': None,
             'default_choice': None,
+            'timeout_choice': None,
             'timeout': utils.convert_to_int(menu.get('timeout', DEFAULT_TIMEOUT), DEFAULT_TIMEOUT),
             'post_action': menu.get('post_action', 'noop'),
             'parent_menu': parent_menu,
         }
         choices = menu.get('choices')
         normalized_choices = dict(map(lambda v: (str(v[0]), self.normalize_menu(v[1], normalized_menu)), choices.items())) if choices else dict()
-        if 'default' in normalized_choices:
-            default_choice = normalized_choices.pop('default')
-        else:
-            default_choice = Call.get_default_menu(self.ha_config.tts_language, normalized_menu)
+        default_choice = normalized_choices.pop('default') if 'default' in normalized_choices else Call.get_default_menu(normalized_menu)
+        timeout_choice = normalized_choices.pop('timeout') if 'timeout' in normalized_choices else Call.get_timeout_menu(normalized_menu)
         normalized_menu['choices'] = normalized_choices
         normalized_menu['default_choice'] = default_choice
+        normalized_menu['timeout_choice'] = timeout_choice
         return normalized_menu
 
     @staticmethod
-    def get_default_menu(language: str, parent_menu: Menu) -> Menu:
+    def get_default_menu(parent_menu: Menu) -> Menu:
         return {
             'id': None,
             'message': 'Unknown option',
-            'language': language,
+            'language': 'en',
             'action': None,
             'choices_are_pin': False,
             'choices': None,
             'default_choice': None,
+            'timeout_choice': None,
             'post_action': 'return',
+            'timeout': DEFAULT_TIMEOUT,
+            'parent_menu': parent_menu,
+        }
+
+    @staticmethod
+    def get_timeout_menu(parent_menu: Menu) -> Menu:
+        return {
+            'id': None,
+            'message': None,
+            'language': 'en',
+            'action': None,
+            'choices_are_pin': False,
+            'choices': None,
+            'default_choice': None,
+            'timeout_choice': None,
+            'post_action': 'hangup',
             'timeout': DEFAULT_TIMEOUT,
             'parent_menu': parent_menu,
         }
@@ -237,6 +258,7 @@ class Call(pj.Call):
     def pretty_print_menu(menu: Optional[Menu]) -> None:
         if not menu:
             print("| No menu defined")
+            return
         lines = yaml.dump(menu, sort_keys=False).split('\n')
         lines_with_pipe = map(lambda line: "| " + line, lines)
         print("\n".join(lines_with_pipe))

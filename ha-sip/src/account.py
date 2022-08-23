@@ -43,7 +43,7 @@ class Account(pj.Account):
     def onIncomingCall(self, prm):
         c = call.Call(self.end_point, self, prm.callId, prm.callId, None, self.callback, self.ha_config)
         ci = c.getInfo()
-        print('| Incoming call  from  \'%s\'' % ci.remoteUri)
+        print('| Incoming call  from  \'%s\' to \'%s\'' % (ci.remoteUri, ci.localUri))
         call_prm = pj.CallOpParam()
         call_prm.statusCode = 180  # Ringing
         c.answer(call_prm)
