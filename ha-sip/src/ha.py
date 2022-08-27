@@ -1,4 +1,4 @@
-from typing import TypedDict, Literal, Union
+from typing import TypedDict, Literal, Union, Optional, Dict
 
 import pydub
 
@@ -11,6 +11,7 @@ import tempfile
 class IncomingCallEvent(TypedDict):
     event: Literal['incoming_call']
     caller: str
+    parsed_caller: Optional[str]
 
 
 class EnteredMenuEvent(TypedDict):
@@ -30,23 +31,23 @@ class HaConfig(object):
         self.base_url = base_url
         self.token = token
         self.tts_engine = tts_engine
-        self.tts_language = tts_language or "en"
+        self.tts_language = tts_language or 'en'
         self.webhook_id = webhook_id
 
-    def create_headers(self):
+    def create_headers(self) -> Dict[str, str]:
         return {
-            "Authorization": "Bearer " + self.token,
-            "content-type": "application/json",
+            'Authorization': 'Bearer ' + self.token,
+            'content-type': 'application/json',
         }
 
     def get_tts_url(self) -> str:
-        return self.base_url + "/tts_get_url"
+        return self.base_url + '/tts_get_url'
 
     def get_service_url(self, domain: str, service: str) -> str:
         return self.base_url + '/services/' + domain + '/' + service
 
     def get_webhook_url(self) -> str:
-        return self.base_url + "/webhook/" + self.webhook_id
+        return self.base_url + '/webhook/' + self.webhook_id
 
 
 def convert_mp3_to_wav(stream: bytes) -> str:
@@ -54,8 +55,8 @@ def convert_mp3_to_wav(stream: bytes) -> str:
     mp3_file_handler.write(stream)
     mp3_file_handler.flush()
     sound = pydub.AudioSegment.from_mp3(mp3_file_handler.name)
-    wave_file_handler = tempfile.NamedTemporaryFile(suffix=".wav", delete=False)
-    sound.export(wave_file_handler.name, format="wav")
+    wave_file_handler = tempfile.NamedTemporaryFile(suffix='.wav', delete=False)
+    sound.export(wave_file_handler.name, format='wav')
     return wave_file_handler.name
 
 
@@ -89,7 +90,7 @@ def trigger_webhook(ha_config: HaConfig, event: WebhookEvent) -> None:
     if not ha_config.webhook_id:
         print('| Warning: No webhook defined.')
         return
-    print("| Calling webhook", ha_config.webhook_id, "with data", event)
+    print('| Calling webhook', ha_config.webhook_id, 'with data', event)
     headers = ha_config.create_headers()
     service_response = requests.post(ha_config.get_webhook_url(), json=event, headers=headers)
     print('| Webhook response', service_response.status_code, service_response.content)

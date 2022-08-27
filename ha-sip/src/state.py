@@ -14,7 +14,7 @@ class State(object):
     def is_active(self, caller_id: str) -> bool:
         return caller_id in self.current_call_dict
 
-    def output(self):
+    def output(self) -> None:
         for number in self.current_call_dict.keys():
             print(number)
 

@@ -1,6 +1,7 @@
+from __future__ import annotations
 import os
 from enum import Enum
-from typing import Optional, Callable, Union
+from typing import Optional, Callable, Union, Any
 import time
 
 import pjsua2 as pj
@@ -38,7 +39,7 @@ class MenuFromStdin(TypedDict):
     choices_are_pin: Optional[bool]
     post_action: Optional[PostAction]
     timeout: Optional[int]
-    choices: Optional[dict[str, 'MenuFromStdin']]  # type: ignore
+    choices: Optional[dict[str, MenuFromStdin]]
 
 
 class Menu(TypedDict):
@@ -48,44 +49,50 @@ class Menu(TypedDict):
     action: Optional[Action]
     choices_are_pin: bool
     post_action: PostAction
-    timeout: Optional[int]
-    choices: Optional[dict[str, 'Menu']]  # type: ignore
-    default_choice: Optional['Menu']  # type: ignore
-    timeout_choice: Optional['Menu']  # type: ignore
-    parent_menu: Optional['Menu']  # type: ignore
+    timeout: int
+    choices: Optional[dict[str, Menu]]
+    default_choice: Optional[Menu]
+    timeout_choice: Optional[Menu]
+    parent_menu: Optional[Menu]
 
 
 class Call(pj.Call):
     def __init__(self, end_point: pj.Endpoint, account: pj.Account, call_id: str, uri_to_call: str, menu: Optional[MenuFromStdin],
-                 callback: CallCallback, ha_config: ha.HaConfig):
+                 callback: CallCallback, ha_config: ha.HaConfig, ring_timeout: int):
         pj.Call.__init__(self, account, call_id)
         self.player: Optional[Player] = None
         self.audio_media: Optional[pj.AudioMedia] = None
         self.connected: bool = False
-        self.current_input = ""
+        self.current_input = ''
         self.end_point = end_point
         self.account = account
         self.uri_to_call = uri_to_call
         self.ha_config = ha_config
+        self.ring_timeout = float(ring_timeout)
         self.callback = callback
         self.scheduled_post_action: Optional[PostAction] = None
         self.playback_is_done = False
-        self.menu = self.normalize_menu(menu)
+        self.menu = self.normalize_menu(menu) if menu else self.get_standard_menu()
         self.last_seen = time.time()
         Call.pretty_print_menu(self.menu)
         self.callback(CallStateChange.CALL, self.uri_to_call, self)
 
-    def handle_events(self):
+    def handle_events(self) -> None:
+        if not self.connected and time.time() - self.last_seen > self.ring_timeout:
+            print('| Ring timeout of', self.ring_timeout, 'triggered.')
+            self.hangup_call()
+            return
         if not self.connected:
             return
-        if time.time() - self.last_seen > self.menu.get('timeout'):
-            print('| Timeout of', self.menu.get('timeout'), 'triggered.')
+        timeout = float(self.menu['timeout'])
+        if time.time() - self.last_seen > timeout:
+            print('| Timeout of', timeout, 'triggered.')
             self.handle_menu(self.menu['timeout_choice'])
             return
         if self.playback_is_done and self.scheduled_post_action:
             post_action = self.scheduled_post_action
             self.scheduled_post_action = None
-            print("| Scheduled post action:", post_action)
+            print('| Scheduled post action:', post_action)
             if post_action == 'noop':
                 pass
             elif post_action == 'return':
@@ -93,11 +100,13 @@ class Call(pj.Call):
             elif post_action == 'hangup':
                 self.hangup_call()
             else:
-                print("| Unknown post_action:", post_action)
+                print('| Unknown post_action:', post_action)
 
-    def onCallState(self, prm):
+    def onCallState(self, prm) -> None:
         ci = self.getInfo()
-        if ci.state == pj.PJSIP_INV_STATE_CONFIRMED:
+        if ci.state == pj.PJSIP_INV_STATE_CONNECTING:
+            print('| Call connecting...')
+        elif ci.state == pj.PJSIP_INV_STATE_CONFIRMED:
             print('| Call connected')
             self.connected = True
             self.last_seen = time.time()
@@ -108,28 +117,28 @@ class Call(pj.Call):
             self.account.acceptCall = False
             self.account.inCall = False
             self.account.call_id = None
-            self.current_input = ""
+            self.current_input = ''
             self.callback(CallStateChange.HANGUP, self.uri_to_call, self)
         else:
             print('| Unknown state:', ci.state)
 
-    def onCallMediaState(self, prm):
+    def onCallMediaState(self, prm) -> None:
         call_info = self.getInfo()
         print('| onCallMediaState', call_info.state)
         for media_index, media in enumerate(call_info.media):
-            if media.type == pj.PJMEDIA_TYPE_AUDIO and call_info.stateText == 'CONFIRMED':
+            if media.type == pj.PJMEDIA_TYPE_AUDIO and (call_info.stateText == 'CONFIRMED' or call_info.stateText == 'INCOMING'):
                 self.audio_media = self.getAudioMedia(media_index)
                 self.handle_menu(self.menu)
 
-    def onDtmfDigit(self, prm: pj.OnDtmfDigitParam):
+    def onDtmfDigit(self, prm: pj.OnDtmfDigitParam) -> None:
         self.last_seen = time.time()
         print('| onDtmfDigit: digit', prm.digit)
         if not self.menu:
             return
         self.current_input += prm.digit
-        print("| Current input:", self.current_input)
+        print('| Current input:', self.current_input)
         choices = self.menu.get('choices')
-        if choices:
+        if choices is not None:
             if self.current_input in choices:
                 self.handle_menu(choices[self.current_input])
                 return
@@ -137,13 +146,13 @@ class Call(pj.Call):
                 # in PIN mode the error message will play if the input has same length than the longest PIN
                 max_choice_length = max(map(lambda choice: len(choice), choices))
                 if len(self.current_input) == max_choice_length:
-                    print("| No PIN matched", self.current_input)
+                    print('| No PIN matched', self.current_input)
                     self.handle_menu(self.menu['default_choice'])
             else:
                 # in normal mode the error will play as soon as the input does not match any number
                 still_valid = any(map(lambda choice: choice.startswith(self.current_input), choices))
                 if not still_valid:
-                    print("| Invalid input", self.current_input)
+                    print('| Invalid input', self.current_input)
                     self.handle_menu(self.menu['default_choice'])
 
     def handle_menu(self, menu: Optional[Menu]) -> None:
@@ -153,7 +162,7 @@ class Call(pj.Call):
         menu_id = menu['id']
         if menu_id:
             ha.trigger_webhook(self.ha_config, {'event': 'entered_menu', 'menu_id': menu_id})
-        self.current_input = ""
+        self.current_input = ''
         message = menu['message']
         language = menu['language']
         action = menu['action']
@@ -188,18 +197,16 @@ class Call(pj.Call):
         if must_be_deleted:
             os.remove(sound_file_name)
 
-    def on_playback_done(self):
-        print("| Playback done.")
+    def on_playback_done(self) -> None:
+        print('| Playback done.')
         self.playback_is_done = True
 
-    def hangup_call(self):
-        print("| Hang-up.")
+    def hangup_call(self) -> None:
+        print('| Hang-up.')
         call_prm = pj.CallOpParam(True)
         pj.Call.hangup(self, call_prm)
 
-    def normalize_menu(self, menu: Optional[MenuFromStdin], parent_menu: Optional[Menu] = None) -> Optional[Menu]:
-        if not menu:
-            return None
+    def normalize_menu(self, menu: MenuFromStdin, parent_menu: Optional[Menu] = None, is_default_or_timeout_choice=False) -> Menu:
         normalized_menu: Menu = {
             'id': menu.get('id', None),
             'message': menu.get('message', None),
@@ -214,9 +221,24 @@ class Call(pj.Call):
             'parent_menu': parent_menu,
         }
         choices = menu.get('choices')
-        normalized_choices = dict(map(lambda v: (str(v[0]), self.normalize_menu(v[1], normalized_menu)), choices.items())) if choices else dict()
-        default_choice = normalized_choices.pop('default') if 'default' in normalized_choices else Call.get_default_menu(normalized_menu)
-        timeout_choice = normalized_choices.pop('timeout') if 'timeout' in normalized_choices else Call.get_timeout_menu(normalized_menu)
+
+        def normalize_choice(item: tuple[Any, MenuFromStdin]) -> tuple[str, Menu]:
+            choice, sub_menu = item
+            normalized_choice = str(choice).lower()
+            normalized_sub_menu = self.normalize_menu(sub_menu, normalized_menu, normalized_choice in ['default', 'timeout'])
+            return normalized_choice, normalized_sub_menu
+
+        def get_default_or_timeout_choice(choice: Union[Literal['default'], Literal['timeout']]) -> Optional[Menu]:
+            if is_default_or_timeout_choice:
+                return None
+            elif choice in normalized_choices:
+                return normalized_choices.pop(choice)
+            else:
+                return Call.get_default_menu(normalized_menu) if choice == 'default' else Call.get_timeout_menu(normalized_menu)
+
+        normalized_choices = dict(map(normalize_choice, choices.items())) if choices else dict()
+        default_choice = get_default_or_timeout_choice('default')
+        timeout_choice = get_default_or_timeout_choice('timeout')
         normalized_menu['choices'] = normalized_choices
         normalized_menu['default_choice'] = default_choice
         normalized_menu['timeout_choice'] = timeout_choice
@@ -255,17 +277,41 @@ class Call(pj.Call):
         }
 
     @staticmethod
-    def pretty_print_menu(menu: Optional[Menu]) -> None:
-        if not menu:
-            print("| No menu defined")
-            return
+    def get_standard_menu() -> Menu:
+        standard_menu: Menu = {
+            'id': None,
+            'message': None,
+            'language': 'en',
+            'action': None,
+            'choices_are_pin': False,
+            'choices': dict(),
+            'default_choice': None,
+            'timeout_choice': None,
+            'post_action': 'noop',
+            'timeout': DEFAULT_TIMEOUT,
+            'parent_menu': None,
+        }
+        standard_menu['default_choice'] = Call.get_default_menu(standard_menu)
+        standard_menu['timeout_choice'] = Call.get_timeout_menu(standard_menu)
+        return standard_menu
+
+    @staticmethod
+    def pretty_print_menu(menu: Menu) -> None:
         lines = yaml.dump(menu, sort_keys=False).split('\n')
-        lines_with_pipe = map(lambda line: "| " + line, lines)
-        print("\n".join(lines_with_pipe))
+        lines_with_pipe = map(lambda line: '| ' + line, lines)
+        print('\n'.join(lines_with_pipe))
 
 
-def make_call(ep: pj.Endpoint, account: pj.Account, uri_to_call: str, menu: Optional[MenuFromStdin], callback: CallCallback, ha_config: ha.HaConfig):
-    new_call = Call(ep, account, pj.PJSUA_INVALID_ID, uri_to_call, menu, callback, ha_config)
+def make_call(
+    ep: pj.Endpoint,
+    account: pj.Account,
+    uri_to_call: str,
+    menu: Optional[MenuFromStdin],
+    callback: CallCallback,
+    ha_config: ha.HaConfig,
+    ring_timeout: int,
+) -> Call:
+    new_call = Call(ep, account, pj.PJSUA_INVALID_ID, uri_to_call, menu, callback, ha_config, ring_timeout)
     call_param = pj.CallOpParam(True)
     new_call.makeCall(uri_to_call, call_param)
     return new_call
