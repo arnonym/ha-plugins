@@ -72,13 +72,13 @@ class Account(pj.Account):
             print('| Error: No config set when onIncomingCall was called.')
             return
         menu = self.config.incoming_call_config.get('menu') if self.config.incoming_call_config else None
-        allow_list = self.config.incoming_call_config.get('allow_list') if self.config.incoming_call_config else None
+        allowed_numbers = self.config.incoming_call_config.get('allowed_numbers') if self.config.incoming_call_config else None
         c = call.Call(self.end_point, self, prm.callId, prm.callId, menu, self.callback, self.ha_config, call.DEFAULT_TIMEOUT)
         ci = c.getInfo()
         parsed_caller = self.parse_caller(ci.remoteUri)
-        sip_return_code = self.get_sip_return_code(self.config.mode, allow_list, parsed_caller)
+        sip_return_code = self.get_sip_return_code(self.config.mode, allowed_numbers, parsed_caller)
         print('| Incoming call  from  \'%s\' to \'%s\' (parsed: \'%s\')' % (ci.remoteUri, ci.localUri, parsed_caller))
-        print('| Allowed numbers:', allow_list)
+        print('| Allowed numbers:', allowed_numbers)
         print('| SIP return status code', sip_return_code.name, sip_return_code.value)
         call_prm = pj.CallOpParam()
         call_prm.statusCode = sip_return_code.value
@@ -86,9 +86,9 @@ class Account(pj.Account):
         ha.trigger_webhook(self.ha_config, {'event': 'incoming_call', 'caller': ci.remoteUri, 'parsed_caller': parsed_caller})
 
     @staticmethod
-    def get_sip_return_code(mode: CallHandling, allow_list: Optional[list[str]], parsed_caller: Optional[str]) -> CallHandling:
-        if mode == CallHandling.ACCEPT and allow_list:
-            return CallHandling.ACCEPT if parsed_caller in allow_list else CallHandling.LISTEN
+    def get_sip_return_code(mode: CallHandling, allowed_numbers: Optional[list[str]], parsed_caller: Optional[str]) -> CallHandling:
+        if mode == CallHandling.ACCEPT and allowed_numbers:
+            return CallHandling.ACCEPT if parsed_caller in allowed_numbers else CallHandling.LISTEN
         else:
             return mode
 

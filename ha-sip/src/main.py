@@ -18,7 +18,7 @@ import utils
 
 
 class IncomingCallConfig(TypedDict):
-    allow_list: Optional[list[str]]
+    allowed_numbers: Optional[list[str]]
     menu: call.MenuFromStdin
 
 
@@ -29,7 +29,7 @@ def handle_command(end_point: pj.Endpoint, sip_accounts: dict[int, pj.Account], 
     verb = command.get('command')
     number = command.get('number')
     menu = command.get('menu')
-    ring_timeout = utils.convert_to_int(command.get('timeout'), call.DEFAULT_TIMEOUT)
+    ring_timeout = utils.convert_to_int(command.get('ring_timeout'), call.DEFAULT_TIMEOUT)
     sip_account_number = utils.convert_to_int(command.get('sip_account'), -1)
     if verb == 'dial':
         if not number:
