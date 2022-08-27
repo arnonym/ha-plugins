@@ -132,3 +132,5 @@ dmypy.json
 /pjproject/
 .idea
 /ha-sip/src/config_local.py
+/incoming.yaml
+/build.sh

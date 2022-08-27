@@ -11,10 +11,10 @@ class Player(pj.AudioMediaPlayer):
         self.playback_done_callback = playback_done_callback
         super().__init__()
 
-    def onEof2(self):
+    def onEof2(self) -> None:
         self.playback_done_callback()
         return super().onEof2()
 
-    def play_file(self, audio_media: pj.AudioMedia, sound_file_name: str):
+    def play_file(self, audio_media: pj.AudioMedia, sound_file_name: str) -> None:
         self.createPlayer(file_name=sound_file_name, options=pj.PJMEDIA_FILE_NO_LOOP)
         self.startTransmit(audio_media)
