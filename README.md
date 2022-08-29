@@ -1,10 +1,57 @@
 # ha-sip
+
 Home Assistant SIP/VoIP Gateway is a Home Assistant add-on which 
 - allows the dialing and hanging up of phone numbers through a SIP end-point and triggering of services through dial tones (DTMF)
   after the call was answered.
 - listens for incoming calls and can trigger actions (the call is not picked up)
 - accepting calls (optionally filtered by number)
 - handle PIN input before triggering actions
+
+## Installation
+
+This add-on is for the Home Assistant OS or supervised installation methods mentioned in
+https://www.home-assistant.io/installation/. With that in place you can install this third-party plug-in like described in
+https://www.home-assistant.io/common-tasks/os#installing-third-party-add-ons. The repository URL is
+`https://github.com/arnonym/ha-plugins`.
+
+After that you need to configure your SIP account(s), TTS parameters and webhook ID. The default configuration looks like this:
+
+```yaml
+sip_global:
+    port: 5060
+    log_level: 5 # log level of pjsip library
+sip:
+    enabled: true
+    registrar_uri: sip:fritz.box
+    id_uri: sip:homeassistant@fritz.box
+    realm: '*'
+    user_name: homeassistant
+    password: secure
+    answer_mode: listen  # "listen" or "accept", see below
+    incoming_call_file: "" # config and menu definition file for incoming calls, see below
+sip_2:
+    enabled: false
+    registrar_uri: sip:fritz.box
+    id_uri: sip:anotheruser@fritz.box
+    realm: '*'
+    user_name: anotheruser
+    password: secret
+    answer_mode: listen
+    incoming_call_file: ""
+tts:
+    platform: google_translate
+    language: en
+webhook:
+    id: sip_call_webhook_id
+```
+
+## Usage
+
+### Outgoing calls
+
+Outgoing calls are made via the `hassio.addon_stdin` service in the action part of an automation.
+To be able to enter the full command, you must switch to YAML mode by clicking on the menu with the triple dot and
+selecting `Edit in YAML`.
 
 You can use `dial` and `hangup` with the `hassio.addon_stdin` service to control outgoing calls in an action in 
 your automation:
@@ -16,10 +63,14 @@ data_template:
     input:
         command: dial
         number: sip:**620@fritz.box
-        sip_account: 1
+        ring_timeout: 15 # time to ring in seconds (optional, defaults to 300)
+        sip_account: 1 # number of configured sip account: 1 or 2 
+                       # (optional, defaults to first enabled sip account)
+        menu:
+            message: There's a burglar in da house.
 ```
 
-If you have 2 sip accounts configured you can specify `sip_account` with the values `1` or `2`.
+If there is already an outgoing call to the same number active, the request will be ignored.
 
 To hang up the call again:
 
@@ -32,9 +83,107 @@ data_template:
         number: sip:**620@fritz.box
 ```
 
-If there is already an outgoing call to the same number active, the request will be ignored.
+### Incoming calls
 
-To trigger services through DTMF you can define a menu on a call:
+#### Listen mode
+
+In `listen` mode you can trigger an automation through a [Webhook trigger](https://www.home-assistant.io/docs/automation/trigger/#webhook-trigger).
+The webhook ID must match the ID set in the configuration. 
+
+You can get the caller from `{{trigger.json.caller}}` or `{{trigger.json.parsed_caller}}` for usage in e.g. the action of your automation. 
+If you also use the menu ID webhook you also need to check for `{{ trigger.json.event == "incoming_call" }}` e.g. in a "Choose" action type.
+
+Example of "incoming call" webhook message:
+
+```json
+{
+    "event": "incoming_call",
+    "caller": "<sip:5551234456@fritz.box>",
+    "parsed_caller": 5551234456
+}
+```
+
+#### Accept mode
+
+In `accept` mode you can additionally make ha-sip to accept the call. For this you can define a menu per SIP account. Put a config file
+into your `/config` directory of your home-assistant installation (e.g. use the samba add-on to access that directory).
+
+Example content of `/config/sip-1-incoming.yaml`:
+
+```yaml
+allowed_numbers: # list of numbers which will be answered. If removed all numbers will be accepted
+    - 5551234456
+    - 5559876543
+menu:
+    message: Please enter your access code
+    choices_are_pin: true
+    choices:
+        '1234':
+            id: owner
+            message: Welcome beautiful.
+            post_action: hangup
+        '5432':
+            id: maintenance
+            message: Your entrance has been logged.
+            post_action: hangup
+        'default':
+            id: wrong_code
+            message: Wrong code, please try again
+            post_action: return
+```
+
+After that you set `incoming_call_file` in the add-on configuration to `/config/sip-1-incoming.yaml`.
+
+## Call menu definition
+
+used for incoming and outgoing calls.
+
+```yaml
+menu:
+    id: main # If "id" is present, a message will be sent via webhook (optional)
+    message: Please enter your access code # the message to be played via TTS (optional, defaults to empty)
+    language: en # TTS language (optional, defaults to the global language from add-on config)
+    choices_are_pin: true # If the choices should be handled like PINs (optional, defaults to false)
+    timeout: 10 # time in seconds before "timeout" choice is triggered (optional, defaults to 300)
+    post_action: noop # this action will be triggered after the message was played. 
+                      # Can be "noop", "return" (makes only sense in a sub-menu), and "hangup"
+                      # (optional, defaults to noop)
+    action: # action to run when menu was entered (before playing the message) (optional)
+        # For details visit https://developers.home-assistant.io/docs/api/rest/, POST on /api/services/<domain>/<service>
+        domain: switch # home-assistant domain
+        service: turn_on # home-assistant service
+        entity_id: switch.open_front_door # home assistant entity
+    choices: # the list of actions available through DTMF (optional)
+        '1234': # DTMF sequence, and definition of a sub-menu
+            id: owner # same as above, also any other option from above can be used in this sub-menu
+            message: Welcome beautiful.
+            post_action: hangup 
+        '5432':
+            id: maintenance
+            message: Your entrance has been logged.
+            post_action: hangup
+        'default': # this will be triggered if the input does not match any specified choice
+            id: wrong_code
+            message: Wrong code, please try again
+            post_action: return
+        'timeout': # this will be triggered when there is no input 
+            id: timeout
+            message: Bye.
+            post_action: hangup
+```
+
+Example content of webhook message for entering a menu:
+
+```json
+{
+    "event": "entered_menu",
+    "menu_id": "main"
+}
+```
+
+## Examples
+
+#### Trigger services through DTMF on an outgoing call
 
 ```yaml
 service: hassio.addon_stdin
@@ -44,7 +193,7 @@ data_template:
         command: dial
         number: sip:**620@fritz.box
         menu:
-            message: Press one to open the door, two to turn on light outside
+            message: Press one to open the door, two to turn on light outside, three to play music
             choices:
                 '1':
                     message: Door has been opened
@@ -66,7 +215,7 @@ data_template:
                         entity_id: script.play_music_please
 ```
 
-To only play a message you can just specify `message` without any `choices`:
+#### Play a message without DTMF interaction on sip account 1
 
 ```yaml
 service: hassio.addon_stdin
@@ -76,13 +225,12 @@ data_template:
         command: dial
         number: sip:**620@fritz.box
         ring_timeout: 15
+        sip_account: 1
     menu:
         message: There's a burglar in da house.
 ```
 
-If you specify `ring_timeout` the call will be interrupted after that delay (in seconds). The default is 300.
-
-You can also enable PIN mode, so the input of numbers is not interrupted at the first wrong input:
+#### Use PIN protection on outgoing call
 
 ```yaml
 service: hassio.addon_stdin
@@ -114,107 +262,16 @@ data_template:
                     post_action: hangup
 ```
 
-The `default` choice will be triggered if the entered PIN is not correct. The 'timeout' choice is activated after the specified `timeout` 
-(you may have guessed). You can also use those in the standard (no PIN) mode.
+All the examples are working also for incoming calls when you copy the `menu` part into your incoming configuration yaml.
 
-In this example, an `id` is also given in the menu. After entering the correct pin a message will be sent 
-to the webhook with the following content:
+## Troubleshooting
 
-```json
-{
-    "event": "entered_menu",
-    "menu_id": "owner"
-}
-```
+The first place to look is the log of the ha-sip add-on. There you can see individual SIP messages and the logs of
+ha-sip itself (prefixed with "|").
 
-Also, the `post_action` (can be `return`, `hangup` and `noop`) and `timeout` (number of seconds to wait for user input) options are used in this example. 
+## Example use-cases
 
-## Installation
-
-This add-on is for the Home Assistant OS or supervised installation methods mentioned in 
-https://www.home-assistant.io/installation/. With that in place you can install this third-party plug-in like described in
-https://www.home-assistant.io/common-tasks/os#installing-third-party-add-ons. The repository URL is 
-`https://github.com/arnonym/ha-plugins`.
-
-After that you need to configure your SIP account(s), TTS parameters and webhook ID. The default configuration looks like this:
-
-```yaml
-sip_global:
-    port: 5060
-sip:
-    enabled: true
-    registrar_uri: sip:fritz.box
-    id_uri: sip:homeassistant@fritz.box
-    realm: '*'
-    user_name: homeassistant
-    password: secure
-    answer_mode: listen
-    incoming_call_file: ""
-sip_2:
-    enabled: false
-    registrar_uri: sip:fritz.box
-    id_uri: sip:anotheruser@fritz.box
-    realm: '*'
-    user_name: anotheruser
-    password: secret
-    answer_mode: listen
-    incoming_call_file: ""
-tts:
-    platform: google_translate
-    language: en
-webhook:
-    id: sip_call_webhook_id
-```
-
-## Usage
-
-### Outgoing calls
-
-Outgoing calls are made via the `hassio.addon_stdin` service in the action part of an automation. 
-To be able to enter the full command, you must switch to YAML mode by clicking on the menu with the triple dot and 
-selecting `Edit in YAML`. See examples above.
-
-### Incoming calls
-
-In `listen` mode you can trigger an automation through the [Webhook trigger type](https://www.home-assistant.io/docs/automation/trigger/#webhook-trigger). 
-The webhook ID must match the ID set in the configuration. You can get the caller from `{{trigger.json.caller}}` for usage in e.g. the action
-of your automation. If you also use the menu ID webhook you also need to check for `{{ trigger.json.event == "incoming_call" }}` e.g. in a "Choose"
-action type.
-
-In `accept` mode you can additionally make ha-sip to accept the call. For this you can define a menu per SIP account. Put a config file 
-into your `config` directory of your home-assistant installation (e.g. use the samba add-on to access that directory). 
-This could look like this:
-
-```yaml
-allowed_numbers:
-    - 5551234456
-    - 5559876543
-menu:
-    message: Please enter your access code
-    choices_are_pin: true
-    choices:
-        '1234':
-            id: owner
-            message: Welcome beautiful.
-            post_action: hangup
-        '5432':
-            id: maintenance
-            message: Your entrance has been logged.
-            post_action: hangup
-        'default':
-            id: wrong_code
-            message: Wrong code, please try again
-            post_action: return
-```
-
-After that you can set `incoming_call_file` in the add-on configuration to `/config/incoming-sip1.yaml` (if you named it like that).
-
-If you remove the `allowed_numbers` section all calls are answered.
-
-# Use-cases
-
-Personally I use them in two automations:
-
-One with the `dial` command when the doorbell was rung, and a second with `hangup` when the front door was opened, 
+One automation with the `dial` command when the doorbell was rung, and a second with `hangup` when the front door was opened, 
 so I do not need to answer the call when not necessary.
 
+I would like to hear from you in which scenario you are using ha-sip!

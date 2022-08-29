@@ -1,6 +1,7 @@
 # Changelog
 
 ## 1.6
+#### Breaking change: if you are not using 5060 as your sip port, you need to set it in global SIP options again 
 - allow two SIP accounts
 - accept calls and define own menu for incoming calls (configurable by SIP account)
 - menu choices can consist of more than one digit
@@ -9,6 +10,7 @@
 - add option to call webhook after menu is selected
 - add `timeout` option (defaults to 300 seconds) to menu entries
 - update to the latest stable version of pjsip
+- Revamped docs on github
 
 ## 1.5
 - Add language option for TTS
