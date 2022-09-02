@@ -1,8 +1,9 @@
 from __future__ import annotations
+
 import os
+import time
 from enum import Enum
 from typing import Optional, Callable, Union, Any
-import time
 
 import pjsua2 as pj
 import yaml
@@ -39,7 +40,7 @@ class MenuFromStdin(TypedDict):
     choices_are_pin: Optional[bool]
     post_action: Optional[PostAction]
     timeout: Optional[int]
-    choices: Optional[dict[str, MenuFromStdin]]
+    choices: Optional[dict[Any, MenuFromStdin]]
 
 
 class Menu(TypedDict):
@@ -54,6 +55,18 @@ class Menu(TypedDict):
     default_choice: Optional[Menu]
     timeout_choice: Optional[Menu]
     parent_menu: Optional[Menu]
+
+
+class CallHandling(Enum):
+    LISTEN = "LISTEN"
+    ACCEPT = "ACCEPT"
+
+    @staticmethod
+    def get_or_else(name: Optional[str], default: CallHandling) -> CallHandling:
+        try:
+            return CallHandling[(name or "").upper()]
+        except (KeyError, AttributeError):
+            return default
 
 
 class Call(pj.Call):
@@ -72,8 +85,9 @@ class Call(pj.Call):
         self.callback = callback
         self.scheduled_post_action: Optional[PostAction] = None
         self.playback_is_done = False
-        self.menu = self.normalize_menu(menu) if menu else self.get_standard_menu()
         self.last_seen = time.time()
+        self.answer_at: Optional[float] = None
+        self.menu = self.normalize_menu(menu) if menu else self.get_standard_menu()
         Call.pretty_print_menu(self.menu)
         self.callback(CallStateChange.CALL, self.uri_to_call, self)
 
@@ -81,6 +95,13 @@ class Call(pj.Call):
         if not self.connected and time.time() - self.last_seen > self.ring_timeout:
             print('| Ring timeout of', self.ring_timeout, 'triggered.')
             self.hangup_call()
+            return
+        if not self.connected and self.answer_at and self.answer_at < time.time():
+            print('| Call will be answered now.')
+            self.answer_at = None
+            call_prm = pj.CallOpParam()
+            call_prm.statusCode = 200
+            self.answer(call_prm)
             return
         if not self.connected:
             return
@@ -101,6 +122,7 @@ class Call(pj.Call):
                 self.hangup_call()
             else:
                 print('| Unknown post_action:', post_action)
+            return
 
     def onCallState(self, prm) -> None:
         ci = self.getInfo()
@@ -110,6 +132,8 @@ class Call(pj.Call):
             print('| Call connected')
             self.connected = True
             self.last_seen = time.time()
+        elif ci.state == pj.PJSIP_INV_STATE_EARLY:
+            print('| Early')
         elif ci.state == pj.PJSIP_INV_STATE_DISCONNECTED:
             print('| Call disconnected')
             self.connected = False
@@ -126,7 +150,8 @@ class Call(pj.Call):
         call_info = self.getInfo()
         print('| onCallMediaState', call_info.state)
         for media_index, media in enumerate(call_info.media):
-            if media.type == pj.PJMEDIA_TYPE_AUDIO and (call_info.stateText == 'CONFIRMED' or call_info.stateText == 'INCOMING'):
+            if media.type == pj.PJMEDIA_TYPE_AUDIO and (media.status == pj.PJSUA_CALL_MEDIA_ACTIVE or media.status == pj.PJSUA_CALL_MEDIA_REMOTE_HOLD):
+                print('| Connected media.')
                 self.audio_media = self.getAudioMedia(media_index)
                 self.handle_menu(self.menu)
 
@@ -200,6 +225,13 @@ class Call(pj.Call):
     def on_playback_done(self) -> None:
         print('| Playback done.')
         self.playback_is_done = True
+
+    def accept(self, answer_mode: CallHandling, answer_after: int) -> None:
+        call_prm = pj.CallOpParam()
+        call_prm.statusCode = 180
+        self.answer(call_prm)
+        if answer_mode == CallHandling.ACCEPT:
+            self.answer_at = time.time() + answer_after
 
     def hangup_call(self) -> None:
         print('| Hang-up.')
