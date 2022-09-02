@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import re
-from enum import IntEnum
 from typing import Optional
 
 import pjsua2 as pj
@@ -9,18 +8,6 @@ import pjsua2 as pj
 import call
 import ha
 import main
-
-
-class CallHandling(IntEnum):
-    LISTEN = 180
-    ACCEPT = 200
-
-    @staticmethod
-    def get_or_else(name: str, default: CallHandling) -> CallHandling:
-        try:
-            return CallHandling[name.upper()]
-        except (KeyError, AttributeError):
-            return default
 
 
 class MyAccountConfig(object):
@@ -32,7 +19,7 @@ class MyAccountConfig(object):
         realm: str,
         user_name: str,
         password: str,
-        mode: CallHandling,
+        mode: call.CallHandling,
         incoming_call_config: Optional[main.IncomingCallConfig],
     ):
         self.enabled = enabled
@@ -73,22 +60,21 @@ class Account(pj.Account):
             return
         menu = self.config.incoming_call_config.get('menu') if self.config.incoming_call_config else None
         allowed_numbers = self.config.incoming_call_config.get('allowed_numbers') if self.config.incoming_call_config else None
+        answer_after = self.config.incoming_call_config.get('answer_after', 0) if self.config.incoming_call_config else 0
         c = call.Call(self.end_point, self, prm.callId, prm.callId, menu, self.callback, self.ha_config, call.DEFAULT_TIMEOUT)
         ci = c.getInfo()
         parsed_caller = self.parse_caller(ci.remoteUri)
-        sip_return_code = self.get_sip_return_code(self.config.mode, allowed_numbers, parsed_caller)
+        answer_mode = self.get_sip_return_code(self.config.mode, allowed_numbers, parsed_caller)
         print('| Incoming call  from  \'%s\' to \'%s\' (parsed: \'%s\')' % (ci.remoteUri, ci.localUri, parsed_caller))
         print('| Allowed numbers:', allowed_numbers)
-        print('| SIP return status code', sip_return_code.name, sip_return_code.value)
-        call_prm = pj.CallOpParam()
-        call_prm.statusCode = sip_return_code.value
-        c.answer(call_prm)
+        print('| Answer mode:', answer_mode.name)
+        c.accept(answer_mode, answer_after)
         ha.trigger_webhook(self.ha_config, {'event': 'incoming_call', 'caller': ci.remoteUri, 'parsed_caller': parsed_caller})
 
     @staticmethod
-    def get_sip_return_code(mode: CallHandling, allowed_numbers: Optional[list[str]], parsed_caller: Optional[str]) -> CallHandling:
-        if mode == CallHandling.ACCEPT and allowed_numbers:
-            return CallHandling.ACCEPT if parsed_caller in allowed_numbers else CallHandling.LISTEN
+    def get_sip_return_code(mode: call.CallHandling, allowed_numbers: Optional[list[str]], parsed_caller: Optional[str]) -> call.CallHandling:
+        if mode == call.CallHandling.ACCEPT and allowed_numbers:
+            return call.CallHandling.ACCEPT if parsed_caller in allowed_numbers else call.CallHandling.LISTEN
         else:
             return mode
 

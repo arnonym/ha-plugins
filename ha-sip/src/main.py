@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import collections.abc
 import sys
 from typing import Optional, TypedDict
 
@@ -7,18 +8,17 @@ import pjsua2 as pj
 import yaml
 
 import account
-import sip
 import call
 import command_client
-import state
-import collections.abc
-
 import ha
+import sip
+import state
 import utils
 
 
 class IncomingCallConfig(TypedDict):
     allowed_numbers: Optional[list[str]]
+    answer_after: Optional[int]
     menu: call.MenuFromStdin
 
 
@@ -98,7 +98,7 @@ def main():
             realm=config.SIP1_REALM,
             user_name=config.SIP1_USER_NAME,
             password=config.SIP1_PASSWORD,
-            mode=account.CallHandling.get_or_else(config.SIP1_ANSWER_MODE, account.CallHandling.LISTEN),
+            mode=call.CallHandling.get_or_else(config.SIP1_ANSWER_MODE, call.CallHandling.LISTEN),
             incoming_call_config=load_menu_from_file(config.SIP1_INCOMING_CALL_FILE),
         ),
         2: account.MyAccountConfig(
@@ -108,7 +108,7 @@ def main():
             realm=config.SIP2_REALM,
             user_name=config.SIP2_USER_NAME,
             password=config.SIP2_PASSWORD,
-            mode=account.CallHandling.get_or_else(config.SIP2_ANSWER_MODE, account.CallHandling.LISTEN),
+            mode=call.CallHandling.get_or_else(config.SIP2_ANSWER_MODE, call.CallHandling.LISTEN),
             incoming_call_config=load_menu_from_file(config.SIP2_INCOMING_CALL_FILE),
         ),
     }

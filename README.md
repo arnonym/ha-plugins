@@ -114,6 +114,7 @@ Example content of `/config/sip-1-incoming.yaml`:
 allowed_numbers: # list of numbers which will be answered. If removed all numbers will be accepted
     - 5551234456
     - 5559876543
+answer_after: 0 # time in seconds after the call is answered (optional, defaults to 0)
 menu:
     message: Please enter your access code
     choices_are_pin: true
