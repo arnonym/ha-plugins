@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import re
 from typing import Optional
 
 import pjsua2 as pj
@@ -8,6 +7,7 @@ import pjsua2 as pj
 import call
 import ha
 import main
+import utils
 
 
 class MyAccountConfig(object):
@@ -60,16 +60,15 @@ class Account(pj.Account):
             return
         menu = self.config.incoming_call_config.get('menu') if self.config.incoming_call_config else None
         allowed_numbers = self.config.incoming_call_config.get('allowed_numbers') if self.config.incoming_call_config else None
-        answer_after = self.config.incoming_call_config.get('answer_after', 0) if self.config.incoming_call_config else 0
-        c = call.Call(self.end_point, self, prm.callId, prm.callId, menu, self.callback, self.ha_config, call.DEFAULT_TIMEOUT)
-        ci = c.getInfo()
-        parsed_caller = self.parse_caller(ci.remoteUri)
-        answer_mode = self.get_sip_return_code(self.config.mode, allowed_numbers, parsed_caller)
-        print('| Incoming call  from  \'%s\' to \'%s\' (parsed: \'%s\')' % (ci.remoteUri, ci.localUri, parsed_caller))
+        answer_after = float(utils.convert_to_int(self.config.incoming_call_config.get('answer_after'), 0)) if self.config.incoming_call_config else 0.0
+        incoming_call = call.Call(self.end_point, self, prm.callId, None, menu, self.callback, self.ha_config, call.DEFAULT_TIMEOUT)
+        ci = incoming_call.get_call_info()
+        answer_mode = self.get_sip_return_code(self.config.mode, allowed_numbers, ci["parsed_caller"])
+        print('| Incoming call  from  \'%s\' to \'%s\' (parsed: \'%s\')' % (ci["remote_uri"], ci["local_uri"], ci["parsed_caller"]))
         print('| Allowed numbers:', allowed_numbers)
         print('| Answer mode:', answer_mode.name)
-        c.accept(answer_mode, answer_after)
-        ha.trigger_webhook(self.ha_config, {'event': 'incoming_call', 'caller': ci.remoteUri, 'parsed_caller': parsed_caller})
+        incoming_call.accept(answer_mode, answer_after)
+        ha.trigger_webhook(self.ha_config, {'event': 'incoming_call', 'caller': ci["remote_uri"], 'parsed_caller': ci["parsed_caller"]})
 
     @staticmethod
     def get_sip_return_code(mode: call.CallHandling, allowed_numbers: Optional[list[str]], parsed_caller: Optional[str]) -> call.CallHandling:
@@ -77,11 +76,6 @@ class Account(pj.Account):
             return call.CallHandling.ACCEPT if parsed_caller in allowed_numbers else call.CallHandling.LISTEN
         else:
             return mode
-
-    @staticmethod
-    def parse_caller(remote_uri: str) -> Optional[str]:
-        parsed_caller_match = re.search('<sip:(.+?)[@;>]', remote_uri)
-        return parsed_caller_match.group(1) if parsed_caller_match else None
 
 
 def create_account(end_point: pj.Endpoint, config: MyAccountConfig, callback: call.CallCallback, ha_config: ha.HaConfig, is_default: bool) -> Account:

@@ -24,7 +24,7 @@ class IncomingCallConfig(TypedDict):
 
 def handle_command(end_point: pj.Endpoint, sip_accounts: dict[int, pj.Account], call_state: state.State, command, ha_config: ha.HaConfig) -> None:
     if not isinstance(command, collections.abc.Mapping):
-        print('Error: Not an object:', command)
+        print('| Error: Not an object:', command)
         return
     verb = command.get('command')
     number = command.get('number')
@@ -33,32 +33,42 @@ def handle_command(end_point: pj.Endpoint, sip_accounts: dict[int, pj.Account], 
     sip_account_number = utils.convert_to_int(command.get('sip_account', -1), -1)
     if verb == 'dial':
         if not number:
-            print('Error: Missing number for command "dial"')
+            print('| Error: Missing number for command "dial"')
             return
-        print('Got dial command for', number)
+        print('| Got "dial" command for', number)
         if call_state.is_active(number):
-            print('Warning: already in progress:', number)
+            print('| Warning: already in progress:', number)
             return
         sip_account = sip_accounts.get(sip_account_number, next(iter(sip_accounts.values())))
         call.make_call(end_point, sip_account, number, menu, call_state.callback, ha_config, ring_timeout)
     elif verb == 'hangup':
         if not number:
-            print('Error: Missing number for command "hangup"')
+            print('| Error: Missing number for command "hangup"')
             return
-        print('Got hangup command for', number)
+        print('| Got "hangup" command for', number)
         if not call_state.is_active(number):
-            print('Warning: not in progress:', number)
+            print('| Warning: not in progress:', number)
             return
         current_call = call_state.get_call(number)
         current_call.hangup_call()
+    elif verb == 'answer':
+        if not number:
+            print('| Error: Missing number for command "answer"')
+            return
+        print('| Got "answer" command for', number)
+        if not call_state.is_active(number):
+            print('| Warning: not in progress:', number)
+            return
+        current_call = call_state.get_call(number)
+        current_call.answer_call(menu)
     elif verb == 'state':
         call_state.output()
     elif verb == 'quit':
-        print('Quit.')
+        print('| Quit.')
         end_point.libDestroy()
         sys.exit(0)
     else:
-        print('Error: Unknown command:', verb)
+        print('| Error: Unknown command:', verb)
 
 
 def handle_command_list(command_server, end_point, new_account, call_state, ha_config) -> None:
@@ -87,7 +97,7 @@ def main():
     else:
         import config
     endpoint_config = sip.MyEndpointConfig(
-        port=int(config.PORT),
+        port=utils.convert_to_int(config.PORT, 5060),
         log_level=utils.convert_to_int(config.LOG_LEVEL, 5)
     )
     account_configs = {
