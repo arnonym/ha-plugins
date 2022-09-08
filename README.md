@@ -103,6 +103,22 @@ Example of "incoming call" webhook message:
 }
 ```
 
+You can also answer an incoming call from home assistant by using the `hassio.addon_stdin` service:
+
+```yaml
+service: hassio.addon_stdin
+data_template:
+    addon: c7744bff_ha-sip
+    input:
+        command: answer
+        number: 5551234456 # if this is unclear, you can look that up in the logs ("Registering call with id <number>")
+        menu:
+          message: Bye
+          post_action: hangup
+```
+
+If you don't provide a menu the menu from `incoming_call_file` will be used.
+
 #### Accept mode
 
 In `accept` mode you can additionally make ha-sip to accept the call. For this you can define a menu per SIP account. Put a config file

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 import time
+import re
 from enum import Enum
 from typing import Optional, Callable, Union, Any
 
@@ -19,11 +20,13 @@ class CallStateChange(Enum):
     HANGUP = 2
 
 
-DEFAULT_TIMEOUT = 300
+DEFAULT_TIMEOUT = 300.0
+DEFAULT_DTMF_ON = 180
+DEFAULT_DTMF_OFF = 220
 
 CallCallback = Callable[[CallStateChange, str, 'Call'], None]
-StateType = Union[str, int, bool, float]
 PostAction = Union[Literal['return'], Literal['hangup'], Literal['noop']]
+DtmfMethod = Union[Literal['in_band'], Literal['rfc2833'], Literal['sip_info']]
 
 
 class Action(TypedDict):
@@ -50,28 +53,34 @@ class Menu(TypedDict):
     action: Optional[Action]
     choices_are_pin: bool
     post_action: PostAction
-    timeout: int
+    timeout: float
     choices: Optional[dict[str, Menu]]
     default_choice: Optional[Menu]
     timeout_choice: Optional[Menu]
     parent_menu: Optional[Menu]
 
 
+class CallInfo(TypedDict):
+    local_uri: str
+    remote_uri: str
+    parsed_caller: Optional[str]
+
+
 class CallHandling(Enum):
-    LISTEN = "LISTEN"
-    ACCEPT = "ACCEPT"
+    LISTEN = 'LISTEN'
+    ACCEPT = 'ACCEPT'
 
     @staticmethod
     def get_or_else(name: Optional[str], default: CallHandling) -> CallHandling:
         try:
-            return CallHandling[(name or "").upper()]
+            return CallHandling[(name or '').upper()]
         except (KeyError, AttributeError):
             return default
 
 
 class Call(pj.Call):
-    def __init__(self, end_point: pj.Endpoint, account: pj.Account, call_id: str, uri_to_call: str, menu: Optional[MenuFromStdin],
-                 callback: CallCallback, ha_config: ha.HaConfig, ring_timeout: int):
+    def __init__(self, end_point: pj.Endpoint, account: pj.Account, call_id: str, uri_to_call: Optional[str], menu: Optional[MenuFromStdin],
+                 callback: CallCallback, ha_config: ha.HaConfig, ring_timeout: float):
         pj.Call.__init__(self, account, call_id)
         self.player: Optional[Player] = None
         self.audio_media: Optional[pj.AudioMedia] = None
@@ -81,15 +90,19 @@ class Call(pj.Call):
         self.account = account
         self.uri_to_call = uri_to_call
         self.ha_config = ha_config
-        self.ring_timeout = float(ring_timeout)
+        self.ring_timeout = ring_timeout
         self.callback = callback
         self.scheduled_post_action: Optional[PostAction] = None
-        self.playback_is_done = False
+        self.playback_is_done = True
         self.last_seen = time.time()
         self.answer_at: Optional[float] = None
+        self.tone_gen: Optional[pj.ToneGenerator] = None
+        self.call_info: Optional[CallInfo] = None
+        self.callback_id = self.get_callback_id()
         self.menu = self.normalize_menu(menu) if menu else self.get_standard_menu()
         Call.pretty_print_menu(self.menu)
-        self.callback(CallStateChange.CALL, self.uri_to_call, self)
+        print('| Registering call with id', self.callback_id)
+        self.callback(CallStateChange.CALL, self.callback_id, self)
 
     def handle_events(self) -> None:
         if not self.connected and time.time() - self.last_seen > self.ring_timeout:
@@ -105,9 +118,8 @@ class Call(pj.Call):
             return
         if not self.connected:
             return
-        timeout = float(self.menu['timeout'])
-        if time.time() - self.last_seen > timeout:
-            print('| Timeout of', timeout, 'triggered.')
+        if time.time() - self.last_seen > self.menu['timeout']:
+            print('| Timeout of', self.menu['timeout'], 'triggered.')
             self.handle_menu(self.menu['timeout_choice'])
             return
         if self.playback_is_done and self.scheduled_post_action:
@@ -124,40 +136,64 @@ class Call(pj.Call):
                 print('| Unknown post_action:', post_action)
             return
 
+    def handle_connected_state(self):
+        print("| Call is established.")
+        ha.trigger_webhook(self.ha_config, {
+            'event': 'call_established',
+            'caller': self.call_info["remote_uri"],
+            'parsed_caller': self.call_info["parsed_caller"],
+        })
+        self.connected = True
+        self.last_seen = time.time()
+        self.handle_menu(self.menu)
+
     def onCallState(self, prm) -> None:
+        if not self.call_info:
+            self.call_info = self.get_call_info()
         ci = self.getInfo()
-        if ci.state == pj.PJSIP_INV_STATE_CONNECTING:
+        if ci.state == pj.PJSIP_INV_STATE_EARLY:
+            print('| Early')
+        elif ci.state == pj.PJSIP_INV_STATE_CALLING:
+            print('| Calling')
+        elif ci.state == pj.PJSIP_INV_STATE_CONNECTING:
             print('| Call connecting...')
         elif ci.state == pj.PJSIP_INV_STATE_CONFIRMED:
             print('| Call connected')
-            self.connected = True
-            self.last_seen = time.time()
-        elif ci.state == pj.PJSIP_INV_STATE_EARLY:
-            print('| Early')
+            self.handle_connected_state()
         elif ci.state == pj.PJSIP_INV_STATE_DISCONNECTED:
             print('| Call disconnected')
+            ha.trigger_webhook(self.ha_config, {
+                'event': 'call_disconnected',
+                'caller': self.call_info["remote_uri"],
+                'parsed_caller': self.call_info["parsed_caller"],
+            })
             self.connected = False
             self.account.c = None
             self.account.acceptCall = False
             self.account.inCall = False
             self.account.call_id = None
             self.current_input = ''
-            self.callback(CallStateChange.HANGUP, self.uri_to_call, self)
+            self.callback(CallStateChange.HANGUP, self.callback_id, self)
         else:
             print('| Unknown state:', ci.state)
 
     def onCallMediaState(self, prm) -> None:
         call_info = self.getInfo()
-        print('| onCallMediaState', call_info.state)
+        print('| onCallMediaState call info state', call_info.state)
         for media_index, media in enumerate(call_info.media):
             if media.type == pj.PJMEDIA_TYPE_AUDIO and (media.status == pj.PJSUA_CALL_MEDIA_ACTIVE or media.status == pj.PJSUA_CALL_MEDIA_REMOTE_HOLD):
                 print('| Connected media.')
                 self.audio_media = self.getAudioMedia(media_index)
-                self.handle_menu(self.menu)
 
     def onDtmfDigit(self, prm: pj.OnDtmfDigitParam) -> None:
         self.last_seen = time.time()
         print('| onDtmfDigit: digit', prm.digit)
+        ha.trigger_webhook(self.ha_config, {
+            'event': 'dtmf_digit',
+            'caller': self.call_info["remote_uri"],
+            'parsed_caller': self.call_info["parsed_caller"],
+            'digit': prm.digit,
+        })
         if not self.menu:
             return
         self.current_input += prm.digit
@@ -182,11 +218,17 @@ class Call(pj.Call):
 
     def handle_menu(self, menu: Optional[Menu]) -> None:
         if not menu:
+            print('| No menu supplied')
             return
         self.menu = menu
         menu_id = menu['id']
         if menu_id:
-            ha.trigger_webhook(self.ha_config, {'event': 'entered_menu', 'menu_id': menu_id})
+            ha.trigger_webhook(self.ha_config, {
+                'event': 'entered_menu',
+                'caller': self.call_info["remote_uri"],
+                'parsed_caller': self.call_info["parsed_caller"],
+                'menu_id': menu_id,
+            })
         self.current_input = ''
         message = menu['message']
         language = menu['language']
@@ -226,7 +268,7 @@ class Call(pj.Call):
         print('| Playback done.')
         self.playback_is_done = True
 
-    def accept(self, answer_mode: CallHandling, answer_after: int) -> None:
+    def accept(self, answer_mode: CallHandling, answer_after: float) -> None:
         call_prm = pj.CallOpParam()
         call_prm.statusCode = 180
         self.answer(call_prm)
@@ -238,18 +280,66 @@ class Call(pj.Call):
         call_prm = pj.CallOpParam(True)
         pj.Call.hangup(self, call_prm)
 
+    def answer_call(self, new_menu: Optional[MenuFromStdin]) -> None:
+        print('| Trigger answer of call (if not established already)')
+        if new_menu:
+            self.menu = self.normalize_menu(new_menu)
+        self.answer_at = time.time()
+
+    def send_dtmf(self, digits: str, method: DtmfMethod = 'in_band') -> None:
+        self.last_seen = time.time()
+        print('| Sending DTMF', digits)
+        if method == 'in_band':
+            if not self.tone_gen:
+                self.tone_gen = pj.ToneGenerator()
+                self.tone_gen.createToneGenerator()
+                self.tone_gen.startTransmit(self.audio_media)
+            tone_digits_vector = create_tone_digit_vector(digits)
+            self.tone_gen.playDigits(tone_digits_vector)
+        elif method == 'rfc2833':
+            dtmf_prm = pj.CallSendDtmfParam()
+            dtmf_prm.method = pj.PJSUA_DTMF_METHOD_RFC2833
+            dtmf_prm.duration = DEFAULT_DTMF_ON
+            dtmf_prm.digits = digits
+            self.sendDtmf(dtmf_prm)
+        elif method == 'sip_info':
+            dtmf_prm = pj.CallSendDtmfParam()
+            dtmf_prm.method = pj.PJSUA_DTMF_METHOD_SIP_INFO
+            dtmf_prm.duration = DEFAULT_DTMF_ON
+            dtmf_prm.digits = digits
+            self.sendDtmf(dtmf_prm)
+        else:
+            print('| Error: unknown DTMF method "' + str(method) + '". Valid values are "in_band", "rfc2833", "sip_info".')
+
+    def get_callback_id(self) -> str:
+        if self.uri_to_call:
+            return self.uri_to_call
+        call_info = self.get_call_info()
+        if call_info['parsed_caller']:
+            return call_info['parsed_caller']
+        return call_info['remote_uri']
+
+    def get_call_info(self) -> CallInfo:
+        ci = self.getInfo()
+        parsed_caller = self.parse_caller(ci.remoteUri)
+        return {
+            'remote_uri': ci.remoteUri,
+            'local_uri': ci.localUri,
+            'parsed_caller': parsed_caller,
+        }
+
     def normalize_menu(self, menu: MenuFromStdin, parent_menu: Optional[Menu] = None, is_default_or_timeout_choice=False) -> Menu:
         normalized_menu: Menu = {
-            'id': menu.get('id', None),
-            'message': menu.get('message', None),
-            'language': menu.get('language', self.ha_config.tts_language),
-            'action': menu.get('action', None),
-            'choices_are_pin': menu.get('choices_are_pin', False),
+            'id': menu.get('id'),
+            'message': menu.get('message'),
+            'language': menu.get('language') or self.ha_config.tts_language,
+            'action': menu.get('action'),
+            'choices_are_pin': menu.get('choices_are_pin') or False,
             'choices': None,
             'default_choice': None,
             'timeout_choice': None,
-            'timeout': utils.convert_to_int(menu.get('timeout', DEFAULT_TIMEOUT), DEFAULT_TIMEOUT),
-            'post_action': menu.get('post_action', 'noop'),
+            'timeout': float(utils.convert_to_int(menu.get('timeout'), DEFAULT_TIMEOUT)),
+            'post_action': menu.get('post_action') or 'noop',
             'parent_menu': parent_menu,
         }
         choices = menu.get('choices')
@@ -275,6 +365,16 @@ class Call(pj.Call):
         normalized_menu['default_choice'] = default_choice
         normalized_menu['timeout_choice'] = timeout_choice
         return normalized_menu
+
+    @staticmethod
+    def parse_caller(remote_uri: str) -> Optional[str]:
+        parsed_caller_match = re.search('<sip:(.+?)[@;>]', remote_uri)
+        if parsed_caller_match:
+            return parsed_caller_match.group(1)
+        parsed_caller_match_2nd_try = re.search('sip:(.+?)($|[@;>])', remote_uri)
+        if parsed_caller_match_2nd_try:
+            return parsed_caller_match_2nd_try.group(1)
+        return None
 
     @staticmethod
     def get_default_menu(parent_menu: Menu) -> Menu:
@@ -347,3 +447,19 @@ def make_call(
     call_param = pj.CallOpParam(True)
     new_call.makeCall(uri_to_call, call_param)
     return new_call
+
+
+def create_tone_digit(digit: str) -> pj.ToneDigit:
+    td = pj.ToneDigit()
+    td.digit = digit
+    td.volume = 0
+    td.on_msec = DEFAULT_DTMF_ON
+    td.off_msec = DEFAULT_DTMF_OFF
+    return td
+
+
+def create_tone_digit_vector(digits: str) -> pj.ToneDigitVector:
+    tone_digits_vector = pj.ToneDigitVector()
+    for d in digits:
+        tone_digits_vector.append(create_tone_digit(d))
+    return tone_digits_vector

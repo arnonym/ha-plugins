@@ -10,7 +10,7 @@
 - add option to call webhook after menu is selected
 - add `timeout` option (defaults to 300 seconds) to menu entries
 - update to the latest stable version of pjsip
-- Revamped docs on github
+- Revamped docs on GitHub
 
 ## 1.5
 - Add language option for TTS
