@@ -6,6 +6,7 @@
 - accept calls and define own menu for incoming calls (configurable by SIP account)
 - menu choices can consist of more than one digit
 - add option to handle menu digits as PIN
+- allow sending of DTMF digits to an established call
 - introduce `post_action` to hang up or return after menu was selected
 - add option to call webhook after menu is selected
 - add `timeout` option (defaults to 300 seconds) to menu entries
