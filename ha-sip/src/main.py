@@ -37,7 +37,7 @@ def handle_command(end_point: pj.Endpoint, sip_accounts: dict[int, pj.Account], 
             return
         print('| Got "dial" command for', number)
         if call_state.is_active(number):
-            print('| Warning: already in progress:', number)
+            print('| Warning: call already in progress:', number)
             return
         sip_account = sip_accounts.get(sip_account_number, next(iter(sip_accounts.values())))
         call.make_call(end_point, sip_account, number, menu, call_state.callback, ha_config, ring_timeout)
@@ -47,7 +47,7 @@ def handle_command(end_point: pj.Endpoint, sip_accounts: dict[int, pj.Account], 
             return
         print('| Got "hangup" command for', number)
         if not call_state.is_active(number):
-            print('| Warning: not in progress:', number)
+            print('| Warning: call not in progress:', number)
             return
         current_call = call_state.get_call(number)
         current_call.hangup_call()
@@ -57,10 +57,25 @@ def handle_command(end_point: pj.Endpoint, sip_accounts: dict[int, pj.Account], 
             return
         print('| Got "answer" command for', number)
         if not call_state.is_active(number):
-            print('| Warning: not in progress:', number)
+            print('| Warning: call not in progress:', number)
             return
         current_call = call_state.get_call(number)
         current_call.answer_call(menu)
+    elif verb == 'send_dtmf':
+        if not number:
+            print('| Error: Missing number for command "send_dtmf"')
+            return
+        digits = command.get('digits')
+        method = command.get('method', 'in_band')
+        if not digits:
+            print('| Error: Missing digits for command "send_dtmf"')
+            return
+        print('| Got "send_dtmf" command for', number)
+        if not call_state.is_active(number):
+            print('| Warning: call not in progress:', number)
+            return
+        current_call = call_state.get_call(number)
+        current_call.send_dtmf(digits, method)
     elif verb == 'state':
         call_state.output()
     elif verb == 'quit':

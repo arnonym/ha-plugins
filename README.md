@@ -6,6 +6,7 @@ Home Assistant SIP/VoIP Gateway is a Home Assistant add-on which
 - listens for incoming calls and can trigger actions (the call is not picked up)
 - accepting calls (optionally filtered by number)
 - handle PIN input before triggering actions
+- send DTMF digits to an established call (incoming or outgoing)
 
 ## Installation
 
@@ -81,6 +82,19 @@ data_template:
     input:
         command: hangup
         number: sip:**620@fritz.box
+```
+
+To send DTMF digits to an established call:
+
+```yaml
+service: hassio.addon_stdin
+data_template:
+    addon: c7744bff_ha-sip
+    input:
+        command: send_dtmf
+        number: sip:**620@fritz.box
+        digits: 123#
+        method: in_band # method can be "in_band" (default), "rfc2833" or "sip_info"
 ```
 
 ### Incoming calls
