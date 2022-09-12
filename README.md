@@ -1,9 +1,9 @@
-# ha-sip
+# ![logo](icon.png) ha-sip 
 
 Home Assistant SIP/VoIP Gateway is a Home Assistant add-on which 
-- allows the dialing and hanging up of phone numbers through a SIP end-point and triggering of services through dial tones (DTMF)
-  after the call was answered.
-- listens for incoming calls and can trigger actions (the call is not picked up)
+- allows the dialing and hanging up of phone numbers through a SIP end-point 
+- triggering of services through dial tones (DTMF) after the call was established.
+- listens for incoming calls and can trigger actions through a web-hook (the call is not picked up)
 - accepting calls (optionally filtered by number)
 - handle PIN input before triggering actions
 - send DTMF digits to an established call (incoming or outgoing)
@@ -93,7 +93,7 @@ data_template:
     input:
         command: send_dtmf
         number: sip:**620@fritz.box
-        digits: 123#
+        digits: "123#"
         method: in_band # method can be "in_band" (default), "rfc2833" or "sip_info"
 ```
 
