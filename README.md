@@ -1,6 +1,6 @@
 # ![logo](icon.png) ha-sip 
 
-Home Assistant SIP/VoIP Gateway is a Home Assistant add-on which 
+### Home Assistant SIP/VoIP Gateway is a Home Assistant add-on which 
 - allows the dialing and hanging up of phone numbers through a SIP end-point 
 - triggering of services through dial tones (DTMF) after the call was established.
 - listens for incoming calls and can trigger actions through a web-hook (the call is not picked up)
@@ -113,7 +113,7 @@ Example of "incoming call" webhook message:
 {
     "event": "incoming_call",
     "caller": "<sip:5551234456@fritz.box>",
-    "parsed_caller": 5551234456
+    "parsed_caller": "5551234456"
 }
 ```
 
@@ -171,7 +171,7 @@ used for incoming and outgoing calls.
 
 ```yaml
 menu:
-    id: main # If "id" is present, a message will be sent via webhook (optional)
+    id: main # If "id" is present, a message will be sent via webhook (entered_menu), see below (optional)
     message: Please enter your access code # the message to be played via TTS (optional, defaults to empty)
     language: en # TTS language (optional, defaults to the global language from add-on config)
     choices_are_pin: true # If the choices should be handled like PINs (optional, defaults to false)
@@ -203,12 +203,59 @@ menu:
             post_action: hangup
 ```
 
-Example content of webhook message for entering a menu:
+## Web-hooks
+
+For most events in ha-sip there's a web-hook triggered:
+
+### `incoming_call`
+
+```json
+{
+    "event": "incoming_call",
+    "caller": "<sip:5551234456@fritz.box>",
+    "parsed_caller": "5551234456"
+}
+```
+
+### `call_established`
+
+```json
+{
+    "event": "call_established",
+    "caller": "<sip:5551234456@fritz.box>",
+    "parsed_caller": "5551234456"
+}
+```
+
+### `entered_menu`
 
 ```json
 {
     "event": "entered_menu",
-    "menu_id": "main"
+    "caller": "<sip:5551234456@fritz.box>",
+    "parsed_caller": "5551234456",
+    "menu_id": "owner"
+}
+```
+
+### `dtmf_digit`
+
+```json
+{
+    "event": "dtmf_digit",
+    "caller": "<sip:5551234456@fritz.box>",
+    "parsed_caller": "5551234456",
+    "digit": "1"
+}
+```
+
+### `call_disconnected`
+
+```json
+{
+    "event": "call_disconnected",
+    "caller": "<sip:5551234456@fritz.box>",
+    "parsed_caller": "5551234456"
 }
 ```
 
