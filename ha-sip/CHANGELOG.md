@@ -10,6 +10,7 @@
 - introduce `post_action` to hang up or return after menu was selected
 - add option to call webhook after menu is selected
 - add `timeout` option (defaults to 300 seconds) to menu entries
+- Add more web-hooks to control ha-sip from home-assistant
 - update to the latest stable version of pjsip
 - Revamped docs on GitHub
 
