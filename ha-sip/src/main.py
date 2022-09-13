@@ -18,6 +18,7 @@ import utils
 
 class IncomingCallConfig(TypedDict):
     allowed_numbers: Optional[list[str]]
+    blocked_numbers: Optional[list[str]]
     answer_after: Optional[int]
     menu: call.MenuFromStdin
 
@@ -29,8 +30,8 @@ def handle_command(end_point: pj.Endpoint, sip_accounts: dict[int, pj.Account], 
     verb = command.get('command')
     number = command.get('number')
     menu = command.get('menu')
-    ring_timeout = utils.convert_to_int(command.get('ring_timeout', call.DEFAULT_TIMEOUT), call.DEFAULT_TIMEOUT)
-    sip_account_number = utils.convert_to_int(command.get('sip_account', -1), -1)
+    ring_timeout = utils.convert_to_float(command.get('ring_timeout'), call.DEFAULT_TIMEOUT)
+    sip_account_number = utils.convert_to_int(command.get('sip_account'), -1)
     if verb == 'dial':
         if not number:
             print('| Error: Missing number for command "dial"')
@@ -67,6 +68,9 @@ def handle_command(end_point: pj.Endpoint, sip_accounts: dict[int, pj.Account], 
             return
         digits = command.get('digits')
         method = command.get('method', 'in_band')
+        if (method != 'in_band') and (method != 'rfc2833') and (method != 'sip_info'):
+            print('| Error: method must be one of in_band, rfc2833, sip_info')
+            return
         if not digits:
             print('| Error: Missing digits for command "send_dtmf"')
             return

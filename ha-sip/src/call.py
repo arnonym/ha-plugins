@@ -140,8 +140,8 @@ class Call(pj.Call):
         print("| Call is established.")
         ha.trigger_webhook(self.ha_config, {
             'event': 'call_established',
-            'caller': self.call_info["remote_uri"],
-            'parsed_caller': self.call_info["parsed_caller"],
+            'caller': self.call_info["remote_uri"] if self.call_info else "unknown",
+            'parsed_caller': self.call_info["parsed_caller"] if self.call_info else None,
         })
         self.connected = True
         self.last_seen = time.time()
@@ -190,8 +190,8 @@ class Call(pj.Call):
         print('| onDtmfDigit: digit', prm.digit)
         ha.trigger_webhook(self.ha_config, {
             'event': 'dtmf_digit',
-            'caller': self.call_info["remote_uri"],
-            'parsed_caller': self.call_info["parsed_caller"],
+            'caller': self.call_info["remote_uri"] if self.call_info else "unknown",
+            'parsed_caller': self.call_info["parsed_caller"] if self.call_info else None,
             'digit': prm.digit,
         })
         if not self.menu:
@@ -225,8 +225,8 @@ class Call(pj.Call):
         if menu_id:
             ha.trigger_webhook(self.ha_config, {
                 'event': 'entered_menu',
-                'caller': self.call_info["remote_uri"],
-                'parsed_caller': self.call_info["parsed_caller"],
+                'caller': self.call_info["remote_uri"] if self.call_info else "unknown",
+                'parsed_caller': self.call_info["parsed_caller"] if self.call_info else None,
                 'menu_id': menu_id,
             })
         self.current_input = ''
@@ -308,8 +308,6 @@ class Call(pj.Call):
             dtmf_prm.duration = DEFAULT_DTMF_ON
             dtmf_prm.digits = digits
             self.sendDtmf(dtmf_prm)
-        else:
-            print('| Error: unknown DTMF method "' + str(method) + '". Valid values are "in_band", "rfc2833", "sip_info".')
 
     def get_callback_id(self) -> str:
         if self.uri_to_call:
@@ -338,7 +336,7 @@ class Call(pj.Call):
             'choices': None,
             'default_choice': None,
             'timeout_choice': None,
-            'timeout': float(utils.convert_to_int(menu.get('timeout'), DEFAULT_TIMEOUT)),
+            'timeout': utils.convert_to_float(menu.get('timeout'), DEFAULT_TIMEOUT),
             'post_action': menu.get('post_action') or 'noop',
             'parent_menu': parent_menu,
         }
@@ -441,7 +439,7 @@ def make_call(
     menu: Optional[MenuFromStdin],
     callback: CallCallback,
     ha_config: ha.HaConfig,
-    ring_timeout: int,
+    ring_timeout: float,
 ) -> Call:
     new_call = Call(ep, account, pj.PJSUA_INVALID_ID, uri_to_call, menu, callback, ha_config, ring_timeout)
     call_param = pj.CallOpParam(True)

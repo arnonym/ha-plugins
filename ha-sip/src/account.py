@@ -60,10 +60,11 @@ class Account(pj.Account):
             return
         menu = self.config.incoming_call_config.get('menu') if self.config.incoming_call_config else None
         allowed_numbers = self.config.incoming_call_config.get('allowed_numbers') if self.config.incoming_call_config else None
+        blocked_numbers = self.config.incoming_call_config.get('blocked_numbers') if self.config.incoming_call_config else None
         answer_after = float(utils.convert_to_int(self.config.incoming_call_config.get('answer_after'), 0)) if self.config.incoming_call_config else 0.0
         incoming_call = call.Call(self.end_point, self, prm.callId, None, menu, self.callback, self.ha_config, call.DEFAULT_TIMEOUT)
         ci = incoming_call.get_call_info()
-        answer_mode = self.get_sip_return_code(self.config.mode, allowed_numbers, ci["parsed_caller"])
+        answer_mode = self.get_sip_return_code(self.config.mode, allowed_numbers, blocked_numbers, ci["parsed_caller"])
         print('| Incoming call  from  \'%s\' to \'%s\' (parsed: \'%s\')' % (ci["remote_uri"], ci["local_uri"], ci["parsed_caller"]))
         print('| Allowed numbers:', allowed_numbers)
         print('| Answer mode:', answer_mode.name)
@@ -71,11 +72,20 @@ class Account(pj.Account):
         ha.trigger_webhook(self.ha_config, {'event': 'incoming_call', 'caller': ci["remote_uri"], 'parsed_caller': ci["parsed_caller"]})
 
     @staticmethod
-    def get_sip_return_code(mode: call.CallHandling, allowed_numbers: Optional[list[str]], parsed_caller: Optional[str]) -> call.CallHandling:
+    def get_sip_return_code(
+        mode: call.CallHandling,
+        allowed_numbers: Optional[list[str]],
+        blocked_numbers: Optional[list[str]],
+        parsed_caller: Optional[str],
+    ) -> call.CallHandling:
+        if allowed_numbers and blocked_numbers:
+            print('| Error: cannot specify both of allowed and blocked numbers. Call won\'t be accepted!')
+            return call.CallHandling.LISTEN
         if mode == call.CallHandling.ACCEPT and allowed_numbers:
             return call.CallHandling.ACCEPT if parsed_caller in allowed_numbers else call.CallHandling.LISTEN
-        else:
-            return mode
+        if mode == call.CallHandling.ACCEPT and blocked_numbers:
+            return call.CallHandling.ACCEPT if parsed_caller not in blocked_numbers else call.CallHandling.LISTEN
+        return mode
 
 
 def create_account(end_point: pj.Endpoint, config: MyAccountConfig, callback: call.CallCallback, ha_config: ha.HaConfig, is_default: bool) -> Account:

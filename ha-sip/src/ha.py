@@ -1,11 +1,14 @@
-from typing import TypedDict, Literal, Union, Optional, Dict
+from __future__ import annotations
+
+import os
+import tempfile
+from typing import Union, Optional, Dict
 
 import pydub
-
 import requests
-import os
+from typing_extensions import TypedDict, Literal
+
 import constants
-import tempfile
 
 
 class IncomingCallEvent(TypedDict):
@@ -14,16 +17,37 @@ class IncomingCallEvent(TypedDict):
     parsed_caller: Optional[str]
 
 
+class CallEstablishedEvent(TypedDict):
+    event: Literal['call_established']
+    caller: str
+    parsed_caller: Optional[str]
+
+
+class CallDisconnectedEvent(TypedDict):
+    event: Literal['call_disconnected']
+    caller: str
+    parsed_caller: Optional[str]
+
+
 class EnteredMenuEvent(TypedDict):
     event: Literal['entered_menu']
+    caller: str
+    parsed_caller: Optional[str]
     menu_id: str
+
+
+class DtmfDigitEvent(TypedDict):
+    event: Literal['dtmf_digit']
+    caller: str
+    parsed_caller: Optional[str]
+    digit: str
 
 
 class Timeout(TypedDict):
     event: Literal['timeout']
 
 
-WebhookEvent = Union[IncomingCallEvent, EnteredMenuEvent, Timeout]
+WebhookEvent = Union[IncomingCallEvent, CallEstablishedEvent, CallDisconnectedEvent, EnteredMenuEvent, DtmfDigitEvent, Timeout]
 
 
 class HaConfig(object):
