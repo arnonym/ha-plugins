@@ -64,6 +64,7 @@ data_template:
     input:
         command: dial
         number: sip:**620@fritz.box
+        webhook_to_call_after_call_was_established: another_webhook_id # webhook id which you can listen on in your actions
         ring_timeout: 15 # time to ring in seconds (optional, defaults to 300)
         sip_account: 1 # number of configured sip account: 1 or 2 
                        # (optional, defaults to first enabled sip account)
@@ -96,6 +97,9 @@ data_template:
         digits: "123#"
         method: in_band # method can be "in_band" (default), "rfc2833" or "sip_info"
 ```
+
+> :warning: **Warning:** You can't use the `post_action` with `send_dtmf` because I don't see a way to know when PJSIP is 
+done sending the tones.
 
 ### Incoming calls
 

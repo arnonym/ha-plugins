@@ -80,7 +80,7 @@ class CallHandling(Enum):
 
 class Call(pj.Call):
     def __init__(self, end_point: pj.Endpoint, account: pj.Account, call_id: str, uri_to_call: Optional[str], menu: Optional[MenuFromStdin],
-                 callback: CallCallback, ha_config: ha.HaConfig, ring_timeout: float):
+                 callback: CallCallback, ha_config: ha.HaConfig, ring_timeout: float, webhook_to_call: Optional[str]):
         pj.Call.__init__(self, account, call_id)
         self.player: Optional[Player] = None
         self.audio_media: Optional[pj.AudioMedia] = None
@@ -91,6 +91,7 @@ class Call(pj.Call):
         self.uri_to_call = uri_to_call
         self.ha_config = ha_config
         self.ring_timeout = ring_timeout
+        self.webhook_to_call = webhook_to_call
         self.callback = callback
         self.scheduled_post_action: Optional[PostAction] = None
         self.playback_is_done = True
@@ -138,13 +139,19 @@ class Call(pj.Call):
 
     def handle_connected_state(self):
         print("| Call is established.")
+        self.connected = True
+        self.last_seen = time.time()
+        if self.webhook_to_call:
+            ha.trigger_webhook(self.ha_config, {
+                'event': 'call_established',
+                'caller': self.call_info["remote_uri"] if self.call_info else "unknown",
+                'parsed_caller': self.call_info["parsed_caller"] if self.call_info else None,
+            }, self.webhook_to_call)
         ha.trigger_webhook(self.ha_config, {
             'event': 'call_established',
             'caller': self.call_info["remote_uri"] if self.call_info else "unknown",
             'parsed_caller': self.call_info["parsed_caller"] if self.call_info else None,
         })
-        self.connected = True
-        self.last_seen = time.time()
         self.handle_menu(self.menu)
 
     def onCallState(self, prm) -> None:
@@ -182,7 +189,7 @@ class Call(pj.Call):
         print('| onCallMediaState call info state', call_info.state)
         for media_index, media in enumerate(call_info.media):
             if media.type == pj.PJMEDIA_TYPE_AUDIO and (media.status == pj.PJSUA_CALL_MEDIA_ACTIVE or media.status == pj.PJSUA_CALL_MEDIA_REMOTE_HOLD):
-                print('| Connected media.')
+                print('| Connected media', media.status)
                 self.audio_media = self.getAudioMedia(media_index)
 
     def onDtmfDigit(self, prm: pj.OnDtmfDigitParam) -> None:
@@ -210,7 +217,7 @@ class Call(pj.Call):
                     print('| No PIN matched', self.current_input)
                     self.handle_menu(self.menu['default_choice'])
             else:
-                # in normal mode the error will play as soon as the input does not match any number
+                # in normal mode the error will play as soon as the input does not match any choice
                 still_valid = any(map(lambda choice: choice.startswith(self.current_input), choices))
                 if not still_valid:
                     print('| Invalid input', self.current_input)
@@ -369,7 +376,7 @@ class Call(pj.Call):
         parsed_caller_match = re.search('<sip:(.+?)[@;>]', remote_uri)
         if parsed_caller_match:
             return parsed_caller_match.group(1)
-        parsed_caller_match_2nd_try = re.search('sip:(.+?)($|[@;>])', remote_uri)
+        parsed_caller_match_2nd_try = re.search('sip:(.+?)($|[@;])', remote_uri)
         if parsed_caller_match_2nd_try:
             return parsed_caller_match_2nd_try.group(1)
         return None
@@ -440,8 +447,9 @@ def make_call(
     callback: CallCallback,
     ha_config: ha.HaConfig,
     ring_timeout: float,
+    webhook_to_call: Optional[str],
 ) -> Call:
-    new_call = Call(ep, account, pj.PJSUA_INVALID_ID, uri_to_call, menu, callback, ha_config, ring_timeout)
+    new_call = Call(ep, account, pj.PJSUA_INVALID_ID, uri_to_call, menu, callback, ha_config, ring_timeout, webhook_to_call)
     call_param = pj.CallOpParam(True)
     new_call.makeCall(uri_to_call, call_param)
     return new_call
