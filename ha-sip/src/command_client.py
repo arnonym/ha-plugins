@@ -2,7 +2,21 @@ import json
 import os
 import fcntl
 import sys
-from typing import List
+from typing import List, Union, Literal, Optional
+from typing_extensions import TypedDict
+
+import call
+
+
+class Command(TypedDict):
+    command: Union[Literal['dial'], Literal['hangup'], Literal['answer'], Literal['send_dtmf'], Literal['state'], Literal['quit']]
+    number: Optional[str]
+    menu: Optional[call.MenuFromStdin]
+    ring_timeout: Optional[str]
+    sip_account: Optional[str]
+    webhook_to_call_after_call_was_established: Optional[str]
+    digits: Optional[str]
+    method: Optional[call.DtmfMethod]
 
 
 class CommandClient(object):
@@ -12,7 +26,7 @@ class CommandClient(object):
         stdin_fl = fcntl.fcntl(sys.stdin, fcntl.F_GETFL)
         fcntl.fcntl(sys.stdin, fcntl.F_SETFL, stdin_fl | os.O_NONBLOCK)
 
-    def get_command_list(self) -> List[dict]:
+    def get_command_list(self) -> List[Command]:
         try:
             data = os.read(self.stdin_fd, 64)
         except BlockingIOError:
@@ -24,7 +38,7 @@ class CommandClient(object):
         return []
 
     @staticmethod
-    def list_to_json(raw_list: List[str]) -> List[dict]:
+    def list_to_json(raw_list: List[str]) -> List[Command]:
         result = []
         for entry in raw_list:
             if entry == "":
