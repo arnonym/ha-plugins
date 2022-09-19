@@ -28,6 +28,7 @@
             "user_name": "homeassistant",
             "password": "secure",
             "answer_mode": "listen",
+            "settle_time": 1,
             "incoming_call_file": ""
         },
         "sip_2": {
@@ -38,6 +39,7 @@
             "user_name": "anotheruser",
             "password": "secret",
             "answer_mode": "listen",
+            "settle_time": 1,
             "incoming_call_file": ""
         },
         "tts": {
@@ -61,6 +63,7 @@
             "user_name": "str",
             "password": "str",
             "answer_mode": "list(listen|accept)",
+            "settle_time": "float",
             "incoming_call_file": "str"
         },
         "sip_2": {
@@ -71,6 +74,7 @@
             "user_name": "str",
             "password": "str",
             "answer_mode": "list(listen|accept)",
+            "settle_time": "float",
             "incoming_call_file": "str"
         },
         "tts": {

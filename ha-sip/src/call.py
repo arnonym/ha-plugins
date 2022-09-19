@@ -12,6 +12,7 @@ from typing_extensions import TypedDict, Literal
 
 import ha
 import utils
+import account
 from player import Player
 
 
@@ -79,23 +80,25 @@ class CallHandling(Enum):
 
 
 class Call(pj.Call):
-    def __init__(self, end_point: pj.Endpoint, account: pj.Account, call_id: str, uri_to_call: Optional[str], menu: Optional[MenuFromStdin],
+    def __init__(self, end_point: pj.Endpoint, sip_account: account.Account, call_id: str, uri_to_call: Optional[str], menu: Optional[MenuFromStdin],
                  callback: CallCallback, ha_config: ha.HaConfig, ring_timeout: float, webhook_to_call: Optional[str]):
-        pj.Call.__init__(self, account, call_id)
+        pj.Call.__init__(self, sip_account, call_id)
         self.player: Optional[Player] = None
         self.audio_media: Optional[pj.AudioMedia] = None
         self.connected: bool = False
         self.current_input = ''
         self.end_point = end_point
-        self.account = account
+        self.account = sip_account
         self.uri_to_call = uri_to_call
         self.ha_config = ha_config
         self.ring_timeout = ring_timeout
+        self.settle_time = sip_account.config.settle_time
         self.webhook_to_call = webhook_to_call
         self.callback = callback
         self.scheduled_post_action: Optional[PostAction] = None
         self.playback_is_done = True
         self.last_seen = time.time()
+        self.call_settled_at: Optional[float] = None
         self.answer_at: Optional[float] = None
         self.tone_gen: Optional[pj.ToneGenerator] = None
         self.call_info: Optional[CallInfo] = None
@@ -116,6 +119,10 @@ class Call(pj.Call):
             call_prm = pj.CallOpParam()
             call_prm.statusCode = 200
             self.answer(call_prm)
+            return
+        if not self.connected and self.call_settled_at and self.call_settled_at < time.time():
+            self.call_settled_at = None
+            self.handle_connected_state()
             return
         if not self.connected:
             return
@@ -166,7 +173,7 @@ class Call(pj.Call):
             print('| Call connecting...')
         elif ci.state == pj.PJSIP_INV_STATE_CONFIRMED:
             print('| Call connected')
-            self.handle_connected_state()
+            self.call_settled_at = time.time() + self.settle_time
         elif ci.state == pj.PJSIP_INV_STATE_DISCONNECTED:
             print('| Call disconnected')
             ha.trigger_webhook(self.ha_config, {

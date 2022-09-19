@@ -29,6 +29,7 @@ sip:
     user_name: homeassistant
     password: secure
     answer_mode: listen  # "listen" or "accept", see below
+    settle_time: 1 # time to wait for playing the message/actions/etc. after call was established
     incoming_call_file: "" # config and menu definition file for incoming calls, see below
 sip_2:
     enabled: false
@@ -38,6 +39,7 @@ sip_2:
     user_name: anotheruser
     password: secret
     answer_mode: listen
+    settle_time: 1
     incoming_call_file: ""
 tts:
     platform: google_translate

@@ -2,7 +2,7 @@
 
 import collections.abc
 import sys
-from typing import Optional, TypedDict, Literal, Union
+from typing import Optional
 
 import pjsua2 as pj
 import yaml
@@ -11,30 +11,19 @@ import account
 import call
 import command_client
 import ha
+import incoming_call
 import sip
 import state
 import utils
 
 
-class IncomingCallConfig(TypedDict):
-    allowed_numbers: Optional[list[str]]
-    blocked_numbers: Optional[list[str]]
-    answer_after: Optional[int]
-    menu: call.MenuFromStdin
-
-
-class Command(TypedDict):
-    command: Union[Literal['dial'], Literal['hangup'], Literal['answer'], Literal['send_dtmf'], Literal['state'], Literal['quit']]
-    number: Optional[str]
-    menu: Optional[call.MenuFromStdin]
-    ring_timeout: Optional[str]
-    sip_account: Optional[str]
-    webhook_to_call_after_call_was_established: Optional[str]
-    digits: Optional[str]
-    method: Optional[call.DtmfMethod]
-
-
-def handle_command(end_point: pj.Endpoint, sip_accounts: dict[int, pj.Account], call_state: state.State, command: Command, ha_config: ha.HaConfig) -> None:
+def handle_command(
+    end_point: pj.Endpoint,
+    sip_accounts: dict[int, account.Account],
+    call_state: state.State,
+    command: command_client.Command,
+    ha_config: ha.HaConfig,
+) -> None:
     if not isinstance(command, collections.abc.Mapping):
         print('| Error: Not an object:', command)
         return
@@ -108,7 +97,7 @@ def handle_command_list(command_server, end_point, new_account, call_state, ha_c
         handle_command(end_point, new_account, call_state, command, ha_config)
 
 
-def load_menu_from_file(file_name: Optional[str]) -> Optional[IncomingCallConfig]:
+def load_menu_from_file(file_name: Optional[str]) -> Optional[incoming_call.IncomingCallConfig]:
     if not file_name:
         print('| No file name for incoming call config specified.')
         return None
@@ -140,6 +129,7 @@ def main():
             user_name=config.SIP1_USER_NAME,
             password=config.SIP1_PASSWORD,
             mode=call.CallHandling.get_or_else(config.SIP1_ANSWER_MODE, call.CallHandling.LISTEN),
+            settle_time=utils.convert_to_float(config.SIP1_SETTLE_TIME, 1),
             incoming_call_config=load_menu_from_file(config.SIP1_INCOMING_CALL_FILE),
         ),
         2: account.MyAccountConfig(
@@ -150,6 +140,7 @@ def main():
             user_name=config.SIP2_USER_NAME,
             password=config.SIP2_PASSWORD,
             mode=call.CallHandling.get_or_else(config.SIP2_ANSWER_MODE, call.CallHandling.LISTEN),
+            settle_time=utils.convert_to_float(config.SIP2_SETTLE_TIME, 1),
             incoming_call_config=load_menu_from_file(config.SIP2_INCOMING_CALL_FILE),
         ),
     }
