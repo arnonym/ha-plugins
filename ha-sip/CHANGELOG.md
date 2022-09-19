@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.6
+## 2.0
 #### Breaking change: if you are not using 5060 as your sip port, you need to set it in global SIP options again 
 - allow two SIP accounts
 - accept calls and define own menu for incoming calls (configurable by SIP account)

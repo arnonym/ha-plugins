@@ -70,8 +70,8 @@ class HaConfig(object):
     def get_service_url(self, domain: str, service: str) -> str:
         return self.base_url + '/services/' + domain + '/' + service
 
-    def get_webhook_url(self) -> str:
-        return self.base_url + '/webhook/' + self.webhook_id
+    def get_webhook_url(self, webhook_id: str) -> str:
+        return self.base_url + '/webhook/' + webhook_id
 
 
 def convert_mp3_to_wav(stream: bytes) -> str:
@@ -110,11 +110,12 @@ def call_service(ha_config: HaConfig, domain: str, service: str, entity_id: str)
     print('| Service response', service_response.status_code, service_response.content)
 
 
-def trigger_webhook(ha_config: HaConfig, event: WebhookEvent) -> None:
-    if not ha_config.webhook_id:
+def trigger_webhook(ha_config: HaConfig, event: WebhookEvent, overwrite_webhook_id: Optional[str] = None) -> None:
+    webhook_id = overwrite_webhook_id or ha_config.webhook_id
+    if not webhook_id:
         print('| Warning: No webhook defined.')
         return
-    print('| Calling webhook', ha_config.webhook_id, 'with data', event)
+    print('| Calling webhook', webhook_id, 'with data', event)
     headers = ha_config.create_headers()
-    service_response = requests.post(ha_config.get_webhook_url(), json=event, headers=headers)
+    service_response = requests.post(ha_config.get_webhook_url(webhook_id), json=event, headers=headers)
     print('| Webhook response', service_response.status_code, service_response.content)

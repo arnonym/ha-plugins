@@ -2,7 +2,7 @@
 
 import collections.abc
 import sys
-from typing import Optional, TypedDict
+from typing import Optional, TypedDict, Literal, Union
 
 import pjsua2 as pj
 import yaml
@@ -23,7 +23,18 @@ class IncomingCallConfig(TypedDict):
     menu: call.MenuFromStdin
 
 
-def handle_command(end_point: pj.Endpoint, sip_accounts: dict[int, pj.Account], call_state: state.State, command, ha_config: ha.HaConfig) -> None:
+class Command(TypedDict):
+    command: Union[Literal['dial'], Literal['hangup'], Literal['answer'], Literal['send_dtmf'], Literal['state'], Literal['quit']]
+    number: Optional[str]
+    menu: Optional[call.MenuFromStdin]
+    ring_timeout: Optional[str]
+    sip_account: Optional[str]
+    webhook_to_call_after_call_was_established: Optional[str]
+    digits: Optional[str]
+    method: Optional[call.DtmfMethod]
+
+
+def handle_command(end_point: pj.Endpoint, sip_accounts: dict[int, pj.Account], call_state: state.State, command: Command, ha_config: ha.HaConfig) -> None:
     if not isinstance(command, collections.abc.Mapping):
         print('| Error: Not an object:', command)
         return
@@ -40,8 +51,9 @@ def handle_command(end_point: pj.Endpoint, sip_accounts: dict[int, pj.Account], 
         if call_state.is_active(number):
             print('| Warning: call already in progress:', number)
             return
+        webhook_to_call = command.get('webhook_to_call_after_call_was_established')
         sip_account = sip_accounts.get(sip_account_number, next(iter(sip_accounts.values())))
-        call.make_call(end_point, sip_account, number, menu, call_state.callback, ha_config, ring_timeout)
+        call.make_call(end_point, sip_account, number, menu, call_state.callback, ha_config, ring_timeout, webhook_to_call)
     elif verb == 'hangup':
         if not number:
             print('| Error: Missing number for command "hangup"')
