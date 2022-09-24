@@ -68,7 +68,10 @@ class Account(pj.Account):
         ci = incoming_call_instance.get_call_info()
         answer_mode = self.get_sip_return_code(self.config.mode, allowed_numbers, blocked_numbers, ci["parsed_caller"])
         print('| Incoming call  from  \'%s\' to \'%s\' (parsed: \'%s\')' % (ci["remote_uri"], ci["local_uri"], ci["parsed_caller"]))
-        print('| Allowed numbers:', allowed_numbers)
+        if allowed_numbers:
+            print('| Allowed numbers:', allowed_numbers)
+        if blocked_numbers:
+            print('| Blocked numbers:', blocked_numbers)
         print('| Answer mode:', answer_mode.name)
         incoming_call_instance.accept(answer_mode, answer_after)
         ha.trigger_webhook(self.ha_config, {'event': 'incoming_call', 'caller': ci["remote_uri"], 'parsed_caller': ci["parsed_caller"]})
