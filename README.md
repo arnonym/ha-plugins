@@ -107,8 +107,8 @@ done sending the tones.
 
 #### Listen mode
 
-In `listen` mode you can trigger an automation through a [Webhook trigger](https://www.home-assistant.io/docs/automation/trigger/#webhook-trigger).
-The webhook ID must match the ID set in the configuration. 
+In `listen` mode no call will be answered (picked up) but you can trigger an automation through a [Webhook trigger](https://www.home-assistant.io/docs/automation/trigger/#webhook-trigger) for every incoming call.
+The webhook ID must match the ID set in the configuration.
 
 You can get the caller from `{{trigger.json.caller}}` or `{{trigger.json.parsed_caller}}` for usage in e.g. the action of your automation. 
 If you also use the menu ID webhook you also need to check for `{{ trigger.json.event == "incoming_call" }}` e.g. in a "Choose" action type.
