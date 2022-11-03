@@ -200,6 +200,8 @@ class Call(pj.Call):
                 self.audio_media = self.getAudioMedia(media_index)
 
     def onDtmfDigit(self, prm: pj.OnDtmfDigitParam) -> None:
+        if not self.playback_is_done:
+            self.player.stopTransmit(self.audio_media)
         self.last_seen = time.time()
         print('| onDtmfDigit: digit', prm.digit)
         ha.trigger_webhook(self.ha_config, {
@@ -229,6 +231,30 @@ class Call(pj.Call):
                 if not still_valid:
                     print('| Invalid input', self.current_input)
                     self.handle_menu(self.menu['default_choice'])
+
+    def onCallTransferRequest(self, prm):
+        print("| onCallTransferRequest")
+
+    def onCallTransferStatus(self, prm):
+        print("| onCallTransferStatus")
+
+    def onCallReplaceRequest(self, prm):
+        print("| onCallReplaceRequest")
+
+    def onCallReplaced(self, prm):
+        print("| onCallReplaced")
+
+    def onCallRxOffer(self, prm):
+        print("| onCallRxOffer")
+
+    def onCallRxReinvite(self, prm):
+        print("| onCallRxReinvite")
+
+    def onCallTxOffer(self, prm):
+        print("| onCallTxOffer")
+
+    def onCallRedirected(self, prm):
+        print("| onCallRedirected")
 
     def handle_menu(self, menu: Optional[Menu]) -> None:
         if not menu:

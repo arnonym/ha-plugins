@@ -28,7 +28,8 @@ def handle_command(
         print('| Error: Not an object:', command)
         return
     verb = command.get('command')
-    number = command.get('number')
+    number_unknown_type = command.get('number')
+    number = str(number_unknown_type) if number_unknown_type is not None else None
     menu = command.get('menu')
     ring_timeout = utils.convert_to_float(command.get('ring_timeout'), call.DEFAULT_TIMEOUT)
     sip_account_number = utils.convert_to_int(command.get('sip_account'), -1)
