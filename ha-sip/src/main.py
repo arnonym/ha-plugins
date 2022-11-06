@@ -98,17 +98,17 @@ def handle_command_list(command_server, end_point, new_account, call_state, ha_c
         handle_command(end_point, new_account, call_state, command, ha_config)
 
 
-def load_menu_from_file(file_name: Optional[str]) -> Optional[incoming_call.IncomingCallConfig]:
+def load_menu_from_file(file_name: Optional[str], sip_account_index: int) -> Optional[incoming_call.IncomingCallConfig]:
     if not file_name:
-        print('| No file name for incoming call config specified.')
+        print('| SIP Account %d: No file name for incoming call config specified.' % sip_account_index)
         return None
     try:
         with open(file_name) as stream:
             content = yaml.safe_load(stream)
-            print('| Loaded menu for incoming call.')
+            print('| SIP Account %d: Loaded menu for incoming call.' % sip_account_index)
             return content
     except BaseException as e:
-        print('| Error loading menu for incoming call:', e)
+        print('| SIP Account %d: Error loading menu for incoming call: %s' % (sip_account_index, e))
         return None
 
 
@@ -131,7 +131,7 @@ def main():
             password=config.SIP1_PASSWORD,
             mode=call.CallHandling.get_or_else(config.SIP1_ANSWER_MODE, call.CallHandling.LISTEN),
             settle_time=utils.convert_to_float(config.SIP1_SETTLE_TIME, 1),
-            incoming_call_config=load_menu_from_file(config.SIP1_INCOMING_CALL_FILE),
+            incoming_call_config=load_menu_from_file(config.SIP1_INCOMING_CALL_FILE, 1),
         ),
         2: account.MyAccountConfig(
             enabled=config.SIP2_ENABLED.lower() == 'true',
@@ -142,7 +142,7 @@ def main():
             password=config.SIP2_PASSWORD,
             mode=call.CallHandling.get_or_else(config.SIP2_ANSWER_MODE, call.CallHandling.LISTEN),
             settle_time=utils.convert_to_float(config.SIP2_SETTLE_TIME, 1),
-            incoming_call_config=load_menu_from_file(config.SIP2_INCOMING_CALL_FILE),
+            incoming_call_config=load_menu_from_file(config.SIP2_INCOMING_CALL_FILE, 2),
         ),
     }
     ha_config = ha.HaConfig(config.HA_BASE_URL, config.HA_TOKEN, config.TTS_PLATFORM, config.TTS_LANGUAGE, config.HA_WEBHOOK_ID)

@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.1
+- Bugfix: incoming number could not be found from a stdin action under certain circumstances
+- Bugfix: `post_action` failed to run when keys are prematurely pressed
+
 ## 2.0
 #### Breaking change: if you are not using 5060 as your sip port, you need to set it in global SIP options again 
 - allow two SIP accounts
