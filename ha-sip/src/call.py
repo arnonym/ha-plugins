@@ -102,6 +102,7 @@ class Call(pj.Call):
         self.answer_at: Optional[float] = None
         self.tone_gen: Optional[pj.ToneGenerator] = None
         self.call_info: Optional[CallInfo] = None
+        self.pressed_digit_list = []
         self.callback_id = self.get_callback_id()
         self.menu = self.normalize_menu(menu) if menu else self.get_standard_menu()
         Call.pretty_print_menu(self.menu)
@@ -142,6 +143,10 @@ class Call(pj.Call):
                 self.hangup_call()
             else:
                 print('| Unknown post_action:', post_action)
+            return
+        if len(self.pressed_digit_list) > 0:
+            next_digit = self.pressed_digit_list.pop(0)
+            self.handle_dtmf_digit(next_digit)
             return
 
     def handle_connected_state(self):
@@ -201,18 +206,23 @@ class Call(pj.Call):
 
     def onDtmfDigit(self, prm: pj.OnDtmfDigitParam) -> None:
         if not self.playback_is_done:
+            print('| Playback interrupted.')
             self.player.stopTransmit(self.audio_media)
+            self.playback_is_done = True
         self.last_seen = time.time()
-        print('| onDtmfDigit: digit', prm.digit)
+        self.pressed_digit_list.append(prm.digit)
+
+    def handle_dtmf_digit(self, pressed_digit: str) -> None:
+        print('| onDtmfDigit: digit', pressed_digit)
         ha.trigger_webhook(self.ha_config, {
             'event': 'dtmf_digit',
             'caller': self.call_info["remote_uri"] if self.call_info else "unknown",
             'parsed_caller': self.call_info["parsed_caller"] if self.call_info else None,
-            'digit': prm.digit,
+            'digit': pressed_digit,
         })
         if not self.menu:
             return
-        self.current_input += prm.digit
+        self.current_input += pressed_digit
         print('| Current input:', self.current_input)
         choices = self.menu.get('choices')
         if choices is not None:

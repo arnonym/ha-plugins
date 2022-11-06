@@ -131,7 +131,7 @@ data_template:
     addon: c7744bff_ha-sip
     input:
         command: answer
-        number: 5551234456 # if this is unclear, you can look that up in the logs ("Registering call with id <number>")
+        number: "5551234456" # if this is unclear, you can look that up in the logs ("Registering call with id <number>")
         menu:
           message: Bye
           post_action: hangup
@@ -148,11 +148,11 @@ Example content of `/config/sip-1-incoming.yaml`:
 
 ```yaml
 allowed_numbers: # list of numbers which will be answered. If removed all numbers will be accepted
-    - 5551234456
-    - 5559876543
+    - "5551234456"
+    - "5559876543"
 # blocked_numbers: # alternatively you can specify the numbers not to be answered. You can't have both.
-#    - 5551234456
-#    - 5559876543
+#    - "5551234456"
+#    - "5559876543"
 answer_after: 0 # time in seconds after the call is answered (optional, defaults to 0)
 menu:
     message: Please enter your access code
