@@ -13,7 +13,8 @@ from typing_extensions import TypedDict, Literal
 import ha
 import utils
 import account
-from player import Player
+import audio
+import player
 
 
 class CallStateChange(Enum):
@@ -39,6 +40,7 @@ class Action(TypedDict):
 class MenuFromStdin(TypedDict):
     id: Optional[str]
     message: Optional[str]
+    audio_file: Optional[str]
     language: Optional[str]
     action: Optional[Action]
     choices_are_pin: Optional[bool]
@@ -50,6 +52,7 @@ class MenuFromStdin(TypedDict):
 class Menu(TypedDict):
     id: Optional[str]
     message: Optional[str]
+    audio_file: Optional[str]
     language: str
     action: Optional[Action]
     choices_are_pin: bool
@@ -83,7 +86,7 @@ class Call(pj.Call):
     def __init__(self, end_point: pj.Endpoint, sip_account: account.Account, call_id: str, uri_to_call: Optional[str], menu: Optional[MenuFromStdin],
                  callback: CallCallback, ha_config: ha.HaConfig, ring_timeout: float, webhook_to_call: Optional[str]):
         pj.Call.__init__(self, sip_account, call_id)
-        self.player: Optional[Player] = None
+        self.player: Optional[player.Player] = None
         self.audio_media: Optional[pj.AudioMedia] = None
         self.connected: bool = False
         self.current_input = ''
@@ -207,7 +210,8 @@ class Call(pj.Call):
     def onDtmfDigit(self, prm: pj.OnDtmfDigitParam) -> None:
         if not self.playback_is_done:
             print('| Playback interrupted.')
-            self.player.stopTransmit(self.audio_media)
+            if self.player:
+                self.player.stopTransmit(self.audio_media)
             self.playback_is_done = True
         self.last_seen = time.time()
         self.pressed_digit_list.append(prm.digit)
@@ -281,11 +285,14 @@ class Call(pj.Call):
             })
         self.current_input = ''
         message = menu['message']
+        audio_file = menu['audio_file']
         language = menu['language']
         action = menu['action']
         post_action = menu['post_action']
         if message:
             self.play_message(message, language)
+        if audio_file:
+            self.play_audio_file(audio_file)
         self.handle_action(action)
         self.scheduled_post_action = post_action
 
@@ -308,7 +315,16 @@ class Call(pj.Call):
     def play_message(self, message: str, language: str) -> None:
         print('| Playing message:', message)
         sound_file_name, must_be_deleted = ha.create_and_get_tts(self.ha_config, message, language)
-        self.player = Player(self.on_playback_done)
+        self.play_wav_file(sound_file_name, must_be_deleted)
+
+    def play_audio_file(self, audio_file: str) -> None:
+        print('| Playing audio file:', audio_file)
+        sound_file_name = audio.convert_audio_to_wav(audio_file)
+        if sound_file_name:
+            self.play_wav_file(sound_file_name, True)
+
+    def play_wav_file(self, sound_file_name: str, must_be_deleted: bool) -> None:
+        self.player = player.Player(self.on_playback_done)
         self.playback_is_done = False
         self.player.play_file(self.audio_media, sound_file_name)
         if must_be_deleted:
@@ -380,6 +396,7 @@ class Call(pj.Call):
         normalized_menu: Menu = {
             'id': menu.get('id'),
             'message': menu.get('message'),
+            'audio_file': menu.get('audio_file'),
             'language': menu.get('language') or self.ha_config.tts_language,
             'action': menu.get('action'),
             'choices_are_pin': menu.get('choices_are_pin') or False,
@@ -429,6 +446,7 @@ class Call(pj.Call):
         return {
             'id': None,
             'message': 'Unknown option',
+            'audio_file': None,
             'language': 'en',
             'action': None,
             'choices_are_pin': False,
@@ -445,6 +463,7 @@ class Call(pj.Call):
         return {
             'id': None,
             'message': None,
+            'audio_file': None,
             'language': 'en',
             'action': None,
             'choices_are_pin': False,
@@ -461,6 +480,7 @@ class Call(pj.Call):
         standard_menu: Menu = {
             'id': None,
             'message': None,
+            'audio_file': None,
             'language': 'en',
             'action': None,
             'choices_are_pin': False,
