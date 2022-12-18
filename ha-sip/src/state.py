@@ -7,8 +7,10 @@ class State(object):
 
     def callback(self, state: call.CallStateChange, caller_id: str, new_call: call.Call) -> None:
         if state == call.CallStateChange.HANGUP:
+            print("| Remove from state:", caller_id)
             del self.current_call_dict[caller_id]
         elif state == call.CallStateChange.CALL:
+            print("| Add to state:", caller_id)
             self.current_call_dict[caller_id] = new_call
 
     def is_active(self, caller_id: str) -> bool:

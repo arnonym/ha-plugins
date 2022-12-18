@@ -1,14 +1,13 @@
 from __future__ import annotations
 
 import os
-import tempfile
 from typing import Union, Optional, Dict
 
-import pydub
 import requests
 from typing_extensions import TypedDict, Literal
 
 import constants
+import audio
 
 
 class IncomingCallEvent(TypedDict):
@@ -74,16 +73,6 @@ class HaConfig(object):
         return self.base_url + '/webhook/' + webhook_id
 
 
-def convert_mp3_to_wav(stream: bytes) -> str:
-    mp3_file_handler = tempfile.NamedTemporaryFile()
-    mp3_file_handler.write(stream)
-    mp3_file_handler.flush()
-    sound = pydub.AudioSegment.from_mp3(mp3_file_handler.name)
-    wave_file_handler = tempfile.NamedTemporaryFile(suffix='.wav', delete=False)
-    sound.export(wave_file_handler.name, format='wav')
-    return wave_file_handler.name
-
-
 def create_and_get_tts(ha_config: HaConfig, message: str, language: str) -> tuple[str, bool]:
     """
     Generates a .wav file for a given message
@@ -101,7 +90,12 @@ def create_and_get_tts(ha_config: HaConfig, message: str, language: str) -> tupl
     response_deserialized = create_response.json()
     mp3_url = response_deserialized['url']
     mp3_response = requests.get(mp3_url, headers=headers)
-    return convert_mp3_to_wav(mp3_response.content), True
+    wav_file_name = audio.convert_mp3_stream_to_wav(mp3_response.content)
+    if not wav_file_name:
+        print('| Error converting to wav:', wav_file_name)
+        error_file_name = os.path.join(constants.ROOT_PATH, 'sound/answer.wav')
+        return error_file_name, False
+    return wav_file_name, True
 
 
 def call_service(ha_config: HaConfig, domain: str, service: str, entity_id: str) -> None:

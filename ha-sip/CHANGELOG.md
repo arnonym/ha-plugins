@@ -1,5 +1,8 @@
 # Changelog
 
+## 2.2
+- Add ability to play sound files (.wav, .mp3) instead of TTS message
+
 ## 2.1
 - Bugfix: incoming number could not be found from a stdin action under certain circumstances
 - Bugfix: `post_action` failed to run when keys are prematurely pressed

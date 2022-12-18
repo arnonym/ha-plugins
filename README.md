@@ -102,8 +102,8 @@ data_template:
         method: in_band # method can be "in_band" (default), "rfc2833" or "sip_info"
 ```
 
-> :warning: **Warning:** You can't use the `post_action` with `send_dtmf` because I don't see a way to know when PJSIP is 
-done sending the tones.
+> **Warning** 
+> You can't use the `post_action` with `send_dtmf` because I don't see a way to know when PJSIP is done sending the tones.
 
 ### Incoming calls
 
@@ -204,6 +204,9 @@ menu:
             id: maintenance
             message: Your entrance has been logged.
             post_action: hangup
+        '7777':
+            audio_file: '/config/audio/welcome.mp3' # audio file to be played (.wav or .mp3).
+            post_action: hangup
         'default': # this will be triggered if the input does not match any specified choice
             id: wrong_code
             message: Wrong code, please try again
@@ -213,6 +216,9 @@ menu:
             message: Bye.
             post_action: hangup
 ```
+
+> **Note** 
+> The audio files need to reside in your home-assistant `config` directory, as this is the only directory accessible inside the add-on.
 
 ## Web-hooks
 
