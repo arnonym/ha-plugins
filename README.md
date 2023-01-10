@@ -102,6 +102,9 @@ data_template:
         method: in_band # method can be "in_band" (default), "rfc2833" or "sip_info"
 ```
 
+> **Note**
+> When using a `#` digit, you need to put the whole sequence in quotes, eg. `"#5"`.
+
 > **Warning** 
 > You can't use the `post_action` with `send_dtmf` because I don't see a way to know when PJSIP is done sending the tones.
 
