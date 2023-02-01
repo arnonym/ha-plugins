@@ -14,18 +14,21 @@ class IncomingCallEvent(TypedDict):
     event: Literal['incoming_call']
     caller: str
     parsed_caller: Optional[str]
+    sip_account: int
 
 
 class CallEstablishedEvent(TypedDict):
     event: Literal['call_established']
     caller: str
     parsed_caller: Optional[str]
+    sip_account: int
 
 
 class CallDisconnectedEvent(TypedDict):
     event: Literal['call_disconnected']
     caller: str
     parsed_caller: Optional[str]
+    sip_account: int
 
 
 class EnteredMenuEvent(TypedDict):
@@ -33,6 +36,7 @@ class EnteredMenuEvent(TypedDict):
     caller: str
     parsed_caller: Optional[str]
     menu_id: str
+    sip_account: int
 
 
 class DtmfDigitEvent(TypedDict):
@@ -40,6 +44,7 @@ class DtmfDigitEvent(TypedDict):
     caller: str
     parsed_caller: Optional[str]
     digit: str
+    sip_account: int
 
 
 class Timeout(TypedDict):

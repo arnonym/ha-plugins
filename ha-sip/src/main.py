@@ -124,6 +124,7 @@ def main():
     account_configs = {
         1: account.MyAccountConfig(
             enabled=config.SIP1_ENABLED.lower() == 'true',
+            index=1,
             id_uri=config.SIP1_ID_URI,
             registrar_uri=config.SIP1_REGISTRAR_URI,
             realm=config.SIP1_REALM,
@@ -135,6 +136,7 @@ def main():
         ),
         2: account.MyAccountConfig(
             enabled=config.SIP2_ENABLED.lower() == 'true',
+            index=2,
             id_uri=config.SIP2_ID_URI,
             registrar_uri=config.SIP2_REGISTRAR_URI,
             realm=config.SIP2_REALM,
