@@ -50,6 +50,9 @@ webhook:
     id: sip_call_webhook_id
 ```
 
+> **Note**
+> When your `user_name` or `password` starts with a number, you need to put it in quotes like `"1234"`.
+
 ## Usage
 
 ### Outgoing calls
