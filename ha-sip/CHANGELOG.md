@@ -1,7 +1,11 @@
 # Changelog
 
+## 2.3
+- add account index to web-hook calls.
+- update to the latest stable version of pjsip
+
 ## 2.2
-- Add ability to play sound files (.wav, .mp3) instead of TTS message
+- add ability to play sound files (.wav, .mp3) instead of TTS message
 
 ## 2.1
 - Bugfix: incoming number could not be found from a stdin action under certain circumstances
@@ -22,7 +26,7 @@
 - Revamped docs on GitHub
 
 ## 1.5
-- Add language option for TTS
+- add language option for TTS
 
 ## 1.4
 - call webhook on incoming calls

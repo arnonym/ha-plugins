@@ -14,6 +14,7 @@ class MyAccountConfig(object):
     def __init__(
         self,
         enabled: bool,
+        index: int,
         id_uri: str,
         registrar_uri: str,
         realm: str,
@@ -24,6 +25,7 @@ class MyAccountConfig(object):
         incoming_call_config: Optional[incoming_call.IncomingCallConfig],
     ):
         self.enabled = enabled
+        self.index = index
         self.id_uri = id_uri
         self.registrar_uri = registrar_uri
         self.realm = realm
@@ -74,7 +76,12 @@ class Account(pj.Account):
             print('| Blocked numbers:', blocked_numbers)
         print('| Answer mode:', answer_mode.name)
         incoming_call_instance.accept(answer_mode, answer_after)
-        ha.trigger_webhook(self.ha_config, {'event': 'incoming_call', 'caller': ci["remote_uri"], 'parsed_caller': ci["parsed_caller"]})
+        ha.trigger_webhook(self.ha_config, {
+            'event': 'incoming_call',
+            'caller': ci["remote_uri"],
+            'parsed_caller': ci["parsed_caller"],
+            'sip_account': self.config.index,
+        })
 
     @staticmethod
     def get_sip_return_code(
