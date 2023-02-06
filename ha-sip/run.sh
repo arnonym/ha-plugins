@@ -31,4 +31,5 @@ sed -i -- 's~\$HA_WEBHOOK_ID~'"$(bashio::config 'webhook.id')"'~g' /ha-sip/confi
 
 sed -i -- 's~\$TOKEN~'"${SUPERVISOR_TOKEN}"'~g' /ha-sip/config.py
 
+python3 --version
 python3 /ha-sip/main.py
