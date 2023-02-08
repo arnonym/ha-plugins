@@ -8,6 +8,7 @@ from typing_extensions import TypedDict, Literal
 
 import constants
 import audio
+from log import log
 
 
 class IncomingCallEvent(TypedDict):
@@ -89,7 +90,7 @@ def create_and_get_tts(ha_config: HaConfig, message: str, language: str) -> tupl
     headers = ha_config.create_headers()
     create_response = requests.post(ha_config.get_tts_url(), json={'platform': ha_config.tts_engine, 'message': message, 'language': language}, headers=headers)
     if create_response.status_code != 200:
-        print('| Error getting tts file', create_response.status_code, create_response.content)
+        log(None, 'Error getting tts file %s %s' % (create_response.status_code, create_response.content))
         error_file_name = os.path.join(constants.ROOT_PATH, 'sound/answer.wav')
         return error_file_name, False
     response_deserialized = create_response.json()
@@ -97,7 +98,7 @@ def create_and_get_tts(ha_config: HaConfig, message: str, language: str) -> tupl
     mp3_response = requests.get(mp3_url, headers=headers)
     wav_file_name = audio.convert_mp3_stream_to_wav(mp3_response.content)
     if not wav_file_name:
-        print('| Error converting to wav:', wav_file_name)
+        log(None, 'Error converting to wav: %s' % wav_file_name)
         error_file_name = os.path.join(constants.ROOT_PATH, 'sound/answer.wav')
         return error_file_name, False
     return wav_file_name, True
@@ -106,15 +107,15 @@ def create_and_get_tts(ha_config: HaConfig, message: str, language: str) -> tupl
 def call_service(ha_config: HaConfig, domain: str, service: str, entity_id: str) -> None:
     headers = ha_config.create_headers()
     service_response = requests.post(ha_config.get_service_url(domain, service), json={'entity_id': entity_id}, headers=headers)
-    print('| Service response', service_response.status_code, service_response.content)
+    log(None, 'Service response %s %s' % (service_response.status_code, service_response.content))
 
 
 def trigger_webhook(ha_config: HaConfig, event: WebhookEvent, overwrite_webhook_id: Optional[str] = None) -> None:
     webhook_id = overwrite_webhook_id or ha_config.webhook_id
     if not webhook_id:
-        print('| Warning: No webhook defined.')
+        log(None, 'Warning: No webhook defined.')
         return
-    print('| Calling webhook', webhook_id, 'with data', event)
+    log(None, 'Calling webhook %s with data %s' % (webhook_id, event))
     headers = ha_config.create_headers()
     service_response = requests.post(ha_config.get_webhook_url(webhook_id), json=event, headers=headers)
-    print('| Webhook response', service_response.status_code, service_response.content)
+    log(None, 'Webhook response %s %s' % (service_response.status_code, service_response.content))
