@@ -15,6 +15,7 @@ import incoming_call
 import sip
 import state
 import utils
+from log import log
 
 
 def handle_command(
@@ -25,7 +26,7 @@ def handle_command(
     ha_config: ha.HaConfig,
 ) -> None:
     if not isinstance(command, collections.abc.Mapping):
-        print('| Error: Not an object:', command)
+        log(None, 'Error: Not an object: %s' % command)
         return
     verb = command.get('command')
     number_unknown_type = command.get('number')
@@ -35,61 +36,61 @@ def handle_command(
     sip_account_number = utils.convert_to_int(command.get('sip_account'), -1)
     if verb == 'dial':
         if not number:
-            print('| Error: Missing number for command "dial"')
+            log(None, 'Error: Missing number for command "dial"')
             return
-        print('| Got "dial" command for', number)
+        log(None, 'Got "dial" command for %s' % number)
         if call_state.is_active(number):
-            print('| Warning: call already in progress:', number)
+            log(None, 'Warning: call already in progress: %s' % number)
             return
         webhook_to_call = command.get('webhook_to_call_after_call_was_established')
         sip_account = sip_accounts.get(sip_account_number, next(iter(sip_accounts.values())))
         call.make_call(end_point, sip_account, number, menu, call_state.callback, ha_config, ring_timeout, webhook_to_call)
     elif verb == 'hangup':
         if not number:
-            print('| Error: Missing number for command "hangup"')
+            log(None, 'Error: Missing number for command "hangup"')
             return
-        print('| Got "hangup" command for', number)
+        log(None, 'Got "hangup" command for %s' % number)
         if not call_state.is_active(number):
-            print('| Warning: call not in progress:', number)
+            log(None, 'Warning: call not in progress: %s' % number)
             return
         current_call = call_state.get_call(number)
         current_call.hangup_call()
     elif verb == 'answer':
         if not number:
-            print('| Error: Missing number for command "answer"')
+            log(None, 'Error: Missing number for command "answer"')
             return
-        print('| Got "answer" command for', number)
+        log(None, 'Got "answer" command for %s' % number)
         if not call_state.is_active(number):
-            print('| Warning: call not in progress:', number)
+            log(None, 'Warning: call not in progress: %s' % number)
             return
         current_call = call_state.get_call(number)
         current_call.answer_call(menu)
     elif verb == 'send_dtmf':
         if not number:
-            print('| Error: Missing number for command "send_dtmf"')
+            log(None, 'Error: Missing number for command "send_dtmf"')
             return
         digits = command.get('digits')
         method = command.get('method', 'in_band')
         if (method != 'in_band') and (method != 'rfc2833') and (method != 'sip_info'):
-            print('| Error: method must be one of in_band, rfc2833, sip_info')
+            log(None, 'Error: method must be one of in_band, rfc2833, sip_info')
             return
         if not digits:
-            print('| Error: Missing digits for command "send_dtmf"')
+            log(None, 'Error: Missing digits for command "send_dtmf"')
             return
-        print('| Got "send_dtmf" command for', number)
+        log(None, 'Got "send_dtmf" command for %s' % number)
         if not call_state.is_active(number):
-            print('| Warning: call not in progress:', number)
+            log(None, 'Warning: call not in progress: %s' % number)
             return
         current_call = call_state.get_call(number)
         current_call.send_dtmf(digits, method)
     elif verb == 'state':
         call_state.output()
     elif verb == 'quit':
-        print('| Quit.')
+        log(None, 'Quit.')
         end_point.libDestroy()
         sys.exit(0)
     else:
-        print('| Error: Unknown command:', verb)
+        log(None, 'Error: Unknown command: %s' % verb)
 
 
 def handle_command_list(command_server, end_point, new_account, call_state, ha_config) -> None:
@@ -100,15 +101,15 @@ def handle_command_list(command_server, end_point, new_account, call_state, ha_c
 
 def load_menu_from_file(file_name: Optional[str], sip_account_index: int) -> Optional[incoming_call.IncomingCallConfig]:
     if not file_name:
-        print('| SIP Account %d: No file name for incoming call config specified.' % sip_account_index)
+        log(sip_account_index, 'No file name for incoming call config specified.')
         return None
     try:
         with open(file_name) as stream:
             content = yaml.safe_load(stream)
-            print('| SIP Account %d: Loaded menu for incoming call.' % sip_account_index)
+            log(sip_account_index, 'Loaded menu for incoming call.')
             return content
     except BaseException as e:
-        print('| SIP Account %d: Error loading menu for incoming call: %s' % (sip_account_index, e))
+        log(sip_account_index, 'Error loading menu for incoming call: %s' % e)
         return None
 
 

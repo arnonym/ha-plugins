@@ -8,6 +8,7 @@ import call
 import ha
 import incoming_call
 import utils
+from log import log
 
 
 class MyAccountConfig(object):
@@ -56,11 +57,11 @@ class Account(pj.Account):
         return pj.Account.create(self, account_config, self.make_default)
 
     def onRegState(self, prm) -> None:
-        print('| OnRegState:', prm.code, prm.reason)
+        log(self.config.index, 'OnRegState: %s %s' % (prm.code, prm.reason))
 
     def onIncomingCall(self, prm) -> None:
         if not self.config:
-            print('| Error: No config set when onIncomingCall was called.')
+            log(None, 'Error: No config set when onIncomingCall was called.')
             return
         menu = self.config.incoming_call_config.get('menu') if self.config.incoming_call_config else None
         allowed_numbers = self.config.incoming_call_config.get('allowed_numbers') if self.config.incoming_call_config else None
@@ -69,12 +70,12 @@ class Account(pj.Account):
         incoming_call_instance = call.Call(self.end_point, self, prm.callId, None, menu, self.callback, self.ha_config, call.DEFAULT_TIMEOUT, None)
         ci = incoming_call_instance.get_call_info()
         answer_mode = self.get_sip_return_code(self.config.mode, allowed_numbers, blocked_numbers, ci["parsed_caller"])
-        print('| Incoming call  from  \'%s\' to \'%s\' (parsed: \'%s\')' % (ci["remote_uri"], ci["local_uri"], ci["parsed_caller"]))
+        log(self.config.index, 'Incoming call  from  \'%s\' to \'%s\' (parsed: \'%s\')' % (ci["remote_uri"], ci["local_uri"], ci["parsed_caller"]))
         if allowed_numbers:
-            print('| Allowed numbers:', allowed_numbers)
+            log(self.config.index, 'Allowed numbers: %s' % allowed_numbers)
         if blocked_numbers:
-            print('| Blocked numbers:', blocked_numbers)
-        print('| Answer mode:', answer_mode.name)
+            log(self.config.index, 'Blocked numbers: %s' % blocked_numbers)
+        log(self.config.index, 'Answer mode: %s' % answer_mode.name)
         incoming_call_instance.accept(answer_mode, answer_after)
         ha.trigger_webhook(self.ha_config, {
             'event': 'incoming_call',
@@ -83,15 +84,15 @@ class Account(pj.Account):
             'sip_account': self.config.index,
         })
 
-    @staticmethod
     def get_sip_return_code(
+        self,
         mode: call.CallHandling,
         allowed_numbers: Optional[list[str]],
         blocked_numbers: Optional[list[str]],
         parsed_caller: Optional[str],
     ) -> call.CallHandling:
         if allowed_numbers and blocked_numbers:
-            print('| Error: cannot specify both of allowed and blocked numbers. Call won\'t be accepted!')
+            log(self.config.index, 'Error: cannot specify both of allowed and blocked numbers. Call won\'t be accepted!')
             return call.CallHandling.LISTEN
         if mode == call.CallHandling.ACCEPT and allowed_numbers:
             return call.CallHandling.ACCEPT if parsed_caller in allowed_numbers else call.CallHandling.LISTEN

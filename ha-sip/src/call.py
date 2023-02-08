@@ -15,6 +15,7 @@ import utils
 import account
 import audio
 import player
+from log import log
 
 
 class CallStateChange(Enum):
@@ -109,16 +110,16 @@ class Call(pj.Call):
         self.callback_id = self.get_callback_id()
         self.menu = self.normalize_menu(menu) if menu else self.get_standard_menu()
         Call.pretty_print_menu(self.menu)
-        print('| Registering call with id', self.callback_id)
+        log(self.account.config.index, 'Registering call with id %s' % self.callback_id)
         self.callback(CallStateChange.CALL, self.callback_id, self)
 
     def handle_events(self) -> None:
         if not self.connected and time.time() - self.last_seen > self.ring_timeout:
-            print('| Ring timeout of', self.ring_timeout, 'triggered.')
+            log(self.account.config.index, 'Ring timeout of %s triggered' % self.ring_timeout)
             self.hangup_call()
             return
         if not self.connected and self.answer_at and self.answer_at < time.time():
-            print('| Call will be answered now.')
+            log(self.account.config.index, 'Call will be answered now.')
             self.answer_at = None
             call_prm = pj.CallOpParam()
             call_prm.statusCode = 200
@@ -131,13 +132,13 @@ class Call(pj.Call):
         if not self.connected:
             return
         if time.time() - self.last_seen > self.menu['timeout']:
-            print('| Timeout of', self.menu['timeout'], 'triggered.')
+            log(self.account.config.index, 'Timeout of %s triggered' % self.menu['timeout'])
             self.handle_menu(self.menu['timeout_choice'])
             return
         if self.playback_is_done and self.scheduled_post_action:
             post_action = self.scheduled_post_action
             self.scheduled_post_action = None
-            print('| Scheduled post action:', post_action)
+            log(self.account.config.index, 'Scheduled post action: %s' % post_action)
             if post_action == 'noop':
                 pass
             elif post_action == 'return':
@@ -145,7 +146,7 @@ class Call(pj.Call):
             elif post_action == 'hangup':
                 self.hangup_call()
             else:
-                print('| Unknown post_action:', post_action)
+                log(self.account.config.index, 'Unknown post_action: %s' % post_action)
             return
         if len(self.pressed_digit_list) > 0:
             next_digit = self.pressed_digit_list.pop(0)
@@ -153,7 +154,7 @@ class Call(pj.Call):
             return
 
     def handle_connected_state(self):
-        print("| Call is established.")
+        log(self.account.config.index, 'Call is established.')
         self.connected = True
         self.last_seen = time.time()
         if self.webhook_to_call:
@@ -176,16 +177,16 @@ class Call(pj.Call):
             self.call_info = self.get_call_info()
         ci = self.getInfo()
         if ci.state == pj.PJSIP_INV_STATE_EARLY:
-            print('| Early')
+            log(self.account.config.index, 'Early')
         elif ci.state == pj.PJSIP_INV_STATE_CALLING:
-            print('| Calling')
+            log(self.account.config.index, 'Calling')
         elif ci.state == pj.PJSIP_INV_STATE_CONNECTING:
-            print('| Call connecting...')
+            log(self.account.config.index, 'Call connecting...')
         elif ci.state == pj.PJSIP_INV_STATE_CONFIRMED:
-            print('| Call connected')
+            log(self.account.config.index, 'Call connected')
             self.call_settled_at = time.time() + self.settle_time
         elif ci.state == pj.PJSIP_INV_STATE_DISCONNECTED:
-            print('| Call disconnected')
+            log(self.account.config.index, 'Call disconnected')
             ha.trigger_webhook(self.ha_config, {
                 'event': 'call_disconnected',
                 'caller': self.call_info["remote_uri"],
@@ -200,19 +201,19 @@ class Call(pj.Call):
             self.current_input = ''
             self.callback(CallStateChange.HANGUP, self.callback_id, self)
         else:
-            print('| Unknown state:', ci.state)
+            log(self.account.config.index, 'Unknown state: %s' % ci.state)
 
     def onCallMediaState(self, prm) -> None:
         call_info = self.getInfo()
-        print('| onCallMediaState call info state', call_info.state)
+        log(self.account.config.index, 'onCallMediaState call info state %s' % call_info.state)
         for media_index, media in enumerate(call_info.media):
             if media.type == pj.PJMEDIA_TYPE_AUDIO and (media.status == pj.PJSUA_CALL_MEDIA_ACTIVE or media.status == pj.PJSUA_CALL_MEDIA_REMOTE_HOLD):
-                print('| Connected media', media.status)
+                log(self.account.config.index, 'Connected media %s' % media.status)
                 self.audio_media = self.getAudioMedia(media_index)
 
     def onDtmfDigit(self, prm: pj.OnDtmfDigitParam) -> None:
         if not self.playback_is_done:
-            print('| Playback interrupted.')
+            log(self.account.config.index, 'Playback interrupted.')
             if self.player:
                 self.player.stopTransmit(self.audio_media)
             self.playback_is_done = True
@@ -220,7 +221,7 @@ class Call(pj.Call):
         self.pressed_digit_list.append(prm.digit)
 
     def handle_dtmf_digit(self, pressed_digit: str) -> None:
-        print('| onDtmfDigit: digit', pressed_digit)
+        log(self.account.config.index, 'onDtmfDigit: digit %s' % pressed_digit)
         ha.trigger_webhook(self.ha_config, {
             'event': 'dtmf_digit',
             'caller': self.call_info["remote_uri"] if self.call_info else "unknown",
@@ -231,7 +232,7 @@ class Call(pj.Call):
         if not self.menu:
             return
         self.current_input += pressed_digit
-        print('| Current input:', self.current_input)
+        log(self.account.config.index, 'Current input: %s' % self.current_input)
         choices = self.menu.get('choices')
         if choices is not None:
             if self.current_input in choices:
@@ -241,42 +242,42 @@ class Call(pj.Call):
                 # in PIN mode the error message will play if the input has same length than the longest PIN
                 max_choice_length = max(map(lambda choice: len(choice), choices))
                 if len(self.current_input) == max_choice_length:
-                    print('| No PIN matched', self.current_input)
+                    log(self.account.config.index, 'No PIN matched %s' % self.current_input)
                     self.handle_menu(self.menu['default_choice'])
             else:
                 # in normal mode the error will play as soon as the input does not match any choice
                 still_valid = any(map(lambda choice: choice.startswith(self.current_input), choices))
                 if not still_valid:
-                    print('| Invalid input', self.current_input)
+                    log(self.account.config.index, 'Invalid input %s' % self.current_input)
                     self.handle_menu(self.menu['default_choice'])
 
     def onCallTransferRequest(self, prm):
-        print("| onCallTransferRequest")
+        log(self.account.config.index, 'onCallTransferRequest')
 
     def onCallTransferStatus(self, prm):
-        print("| onCallTransferStatus")
+        log(self.account.config.index, 'onCallTransferStatus')
 
     def onCallReplaceRequest(self, prm):
-        print("| onCallReplaceRequest")
+        log(self.account.config.index, 'onCallReplaceRequest')
 
     def onCallReplaced(self, prm):
-        print("| onCallReplaced")
+        log(self.account.config.index, 'onCallReplaced')
 
     def onCallRxOffer(self, prm):
-        print("| onCallRxOffer")
+        log(self.account.config.index, 'onCallRxOffer')
 
     def onCallRxReinvite(self, prm):
-        print("| onCallRxReinvite")
+        log(self.account.config.index, 'onCallRxReinvite')
 
     def onCallTxOffer(self, prm):
-        print("| onCallTxOffer")
+        log(self.account.config.index, 'onCallTxOffer')
 
     def onCallRedirected(self, prm):
-        print("| onCallRedirected")
+        log(self.account.config.index, 'onCallRedirected')
 
     def handle_menu(self, menu: Optional[Menu]) -> None:
         if not menu:
-            print('| No menu supplied')
+            log(self.account.config.index, 'No menu supplied')
             return
         self.menu = menu
         menu_id = menu['id']
@@ -303,27 +304,27 @@ class Call(pj.Call):
 
     def handle_action(self, action: Optional[Action]) -> None:
         if not action:
-            print('| No action supplied')
+            log(self.account.config.index, 'No action supplied')
             return
         domain = action.get('domain')
         service = action.get('service')
         entity_id = action.get('entity_id')
         if (not domain) or (not service) or (not entity_id):
-            print('| Error: one of domain, service or entity_id was not provided')
+            log(self.account.config.index, 'Error: one of domain, service or entity_id was not provided')
             return
-        print('| Calling home assistant service on domain', domain, 'service', service, 'with entity', entity_id)
+        log(self.account.config.index, 'Calling home assistant service on domain %s service %s with entity %s' % (domain, service, entity_id))
         try:
             ha.call_service(self.ha_config, domain, service, entity_id)
         except Exception as e:
-            print('| Error calling home-assistant service:', e)
+            log(self.account.config.index, 'Error calling home-assistant service: %s' % e)
 
     def play_message(self, message: str, language: str) -> None:
-        print('| Playing message:', message)
+        log(self.account.config.index, 'Playing message: %s' % message)
         sound_file_name, must_be_deleted = ha.create_and_get_tts(self.ha_config, message, language)
         self.play_wav_file(sound_file_name, must_be_deleted)
 
     def play_audio_file(self, audio_file: str) -> None:
-        print('| Playing audio file:', audio_file)
+        log(self.account.config.index, 'Playing audio file: %s' % audio_file)
         sound_file_name = audio.convert_audio_to_wav(audio_file)
         if sound_file_name:
             self.play_wav_file(sound_file_name, True)
@@ -336,7 +337,7 @@ class Call(pj.Call):
             os.remove(sound_file_name)
 
     def on_playback_done(self) -> None:
-        print('| Playback done.')
+        log(self.account.config.index, 'Playback done.')
         self.playback_is_done = True
 
     def accept(self, answer_mode: CallHandling, answer_after: float) -> None:
@@ -347,19 +348,19 @@ class Call(pj.Call):
             self.answer_at = time.time() + answer_after
 
     def hangup_call(self) -> None:
-        print('| Hang-up.')
+        log(self.account.config.index, 'Hang-up.')
         call_prm = pj.CallOpParam(True)
         pj.Call.hangup(self, call_prm)
 
     def answer_call(self, new_menu: Optional[MenuFromStdin]) -> None:
-        print('| Trigger answer of call (if not established already)')
+        log(self.account.config.index, 'Trigger answer of call (if not established already)')
         if new_menu:
             self.menu = self.normalize_menu(new_menu)
         self.answer_at = time.time()
 
     def send_dtmf(self, digits: str, method: DtmfMethod = 'in_band') -> None:
         self.last_seen = time.time()
-        print('| Sending DTMF', digits)
+        log(self.account.config.index, 'Sending DTMF %s' % digits)
         if method == 'in_band':
             if not self.tone_gen:
                 self.tone_gen = pj.ToneGenerator()
