@@ -4,6 +4,7 @@ export PYTHONUNBUFFERED=1
 
 sed -i -- 's~\$PORT~'"$(bashio::config 'sip_global.port')"'~g' /ha-sip/config.py
 sed -i -- 's~\$LOG_LEVEL~'"$(bashio::config 'sip_global.log_level')"'~g' /ha-sip/config.py
+sed -i -- 's~\$NAME_SERVER~'"$(bashio::config 'sip_global.name_server')"'~g' /ha-sip/config.py
 
 sed -i -- 's~\$SIP1_ENABLED~'"$(bashio::config 'sip.enabled')"'~g' /ha-sip/config.py
 sed -i -- 's~\$SIP1_ID_URI~'"$(bashio::config 'sip.id_uri')"'~g' /ha-sip/config.py

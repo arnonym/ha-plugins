@@ -118,9 +118,14 @@ def main():
         import config_local as config
     else:
         import config
+    name_server = [ns.strip() for ns in config.NAME_SERVER.split(",")]
+    name_server_without_empty = [ns for ns in name_server if ns]
+    if name_server_without_empty:
+        log(None, "Setting name server: %s" % name_server)
     endpoint_config = sip.MyEndpointConfig(
         port=utils.convert_to_int(config.PORT, 5060),
-        log_level=utils.convert_to_int(config.LOG_LEVEL, 5)
+        log_level=utils.convert_to_int(config.LOG_LEVEL, 5),
+        name_server=name_server_without_empty
     )
     account_configs = {
         1: account.MyAccountConfig(
