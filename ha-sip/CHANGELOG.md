@@ -1,7 +1,11 @@
 # Changelog
 
+## 2.4
+- add name server config for SIP servers that must be resolved via SRV record
+- improve logging
+
 ## 2.3
-- add account index to web-hook calls.
+- add account index to web-hook calls
 - update to the latest stable version of pjsip
 
 ## 2.2

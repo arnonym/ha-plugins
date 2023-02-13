@@ -23,6 +23,7 @@ After that you need to configure your SIP account(s), TTS parameters and webhook
 sip_global:
     port: 5060
     log_level: 5 # log level of pjsip library
+    name_server: '' # comma separated list of name servers, must be set if sip server must be resolved via SRV record
 sip:
     enabled: true
     registrar_uri: sip:fritz.box
