@@ -28,7 +28,7 @@ DEFAULT_DTMF_ON = 180
 DEFAULT_DTMF_OFF = 220
 
 CallCallback = Callable[[CallStateChange, str, 'Call'], None]
-PostAction = Union[Literal['return'], Literal['hangup'], Literal['noop']]
+PostAction = Union[Literal['return'], Literal['hangup'], Literal['noop'], Literal['repeat_message']]
 DtmfMethod = Union[Literal['in_band'], Literal['rfc2833'], Literal['sip_info']]
 
 
@@ -145,6 +145,8 @@ class Call(pj.Call):
                 self.handle_menu(self.menu['parent_menu'])
             elif post_action == 'hangup':
                 self.hangup_call()
+            elif post_action == 'repeat_message':
+                self.handle_menu(self.menu, send_webhook_event=False, handle_action=False, reset_input=False)
             else:
                 log(self.account.config.index, 'Unknown post_action: %s' % post_action)
             return
@@ -275,13 +277,13 @@ class Call(pj.Call):
     def onCallRedirected(self, prm):
         log(self.account.config.index, 'onCallRedirected')
 
-    def handle_menu(self, menu: Optional[Menu]) -> None:
+    def handle_menu(self, menu: Optional[Menu], send_webhook_event=True, handle_action=True, reset_input=True) -> None:
         if not menu:
             log(self.account.config.index, 'No menu supplied')
             return
         self.menu = menu
         menu_id = menu['id']
-        if menu_id:
+        if menu_id and send_webhook_event:
             ha.trigger_webhook(self.ha_config, {
                 'event': 'entered_menu',
                 'caller': self.call_info["remote_uri"] if self.call_info else "unknown",
@@ -289,7 +291,8 @@ class Call(pj.Call):
                 'menu_id': menu_id,
                 'sip_account': self.account.config.index,
             })
-        self.current_input = ''
+        if reset_input:
+            self.current_input = ''
         message = menu['message']
         audio_file = menu['audio_file']
         language = menu['language']
@@ -299,7 +302,8 @@ class Call(pj.Call):
             self.play_message(message, language)
         if audio_file:
             self.play_audio_file(audio_file)
-        self.handle_action(action)
+        if handle_action:
+            self.handle_action(action)
         self.scheduled_post_action = post_action
 
     def handle_action(self, action: Optional[Action]) -> None:

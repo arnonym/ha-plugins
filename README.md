@@ -195,8 +195,11 @@ menu:
     language: en # TTS language (optional, defaults to the global language from add-on config)
     choices_are_pin: true # If the choices should be handled like PINs (optional, defaults to false)
     timeout: 10 # time in seconds before "timeout" choice is triggered (optional, defaults to 300)
-    post_action: noop # this action will be triggered after the message was played. 
-                      # Can be "noop", "return" (makes only sense in a sub-menu), and "hangup"
+    post_action: noop # this action will be triggered after the message was played. Can be 
+                      # "noop" (do nothing), 
+                      # "return" (makes only sense in a sub-menu), 
+                      # "hangup" (hang-up the call) and
+                      # "repeat_message" (repeat the message until the time-out is reached)
                       # (optional, defaults to noop)
     action: # action to run when menu was entered (before playing the message) (optional)
         # For details visit https://developers.home-assistant.io/docs/api/rest/, POST on /api/services/<domain>/<service>
