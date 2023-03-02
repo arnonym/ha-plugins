@@ -1,5 +1,8 @@
 # Changelog
 
+## 2.5
+- Add option to repeat message until timeout is reached
+
 ## 2.4
 - add name server config for SIP servers that must be resolved via SRV record
 - improve logging
