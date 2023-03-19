@@ -162,14 +162,14 @@ class Call(pj.Call):
         if self.webhook_to_call:
             ha.trigger_webhook(self.ha_config, {
                 'event': 'call_established',
-                'caller': self.call_info["remote_uri"] if self.call_info else "unknown",
-                'parsed_caller': self.call_info["parsed_caller"] if self.call_info else None,
+                'caller': self.call_info['remote_uri'] if self.call_info else 'unknown',
+                'parsed_caller': self.call_info['parsed_caller'] if self.call_info else None,
                 'sip_account': self.account.config.index,
             }, self.webhook_to_call)
         ha.trigger_webhook(self.ha_config, {
             'event': 'call_established',
-            'caller': self.call_info["remote_uri"] if self.call_info else "unknown",
-            'parsed_caller': self.call_info["parsed_caller"] if self.call_info else None,
+            'caller': self.call_info['remote_uri'] if self.call_info else 'unknown',
+            'parsed_caller': self.call_info['parsed_caller'] if self.call_info else None,
             'sip_account': self.account.config.index,
         })
         self.handle_menu(self.menu)
@@ -191,8 +191,8 @@ class Call(pj.Call):
             log(self.account.config.index, 'Call disconnected')
             ha.trigger_webhook(self.ha_config, {
                 'event': 'call_disconnected',
-                'caller': self.call_info["remote_uri"],
-                'parsed_caller': self.call_info["parsed_caller"],
+                'caller': self.call_info['remote_uri'],
+                'parsed_caller': self.call_info['parsed_caller'],
                 'sip_account': self.account.config.index,
             })
             self.connected = False
@@ -226,8 +226,8 @@ class Call(pj.Call):
         log(self.account.config.index, 'onDtmfDigit: digit %s' % pressed_digit)
         ha.trigger_webhook(self.ha_config, {
             'event': 'dtmf_digit',
-            'caller': self.call_info["remote_uri"] if self.call_info else "unknown",
-            'parsed_caller': self.call_info["parsed_caller"] if self.call_info else None,
+            'caller': self.call_info['remote_uri'] if self.call_info else 'unknown',
+            'parsed_caller': self.call_info['parsed_caller'] if self.call_info else None,
             'digit': pressed_digit,
             'sip_account': self.account.config.index,
         })
@@ -286,8 +286,8 @@ class Call(pj.Call):
         if menu_id and send_webhook_event:
             ha.trigger_webhook(self.ha_config, {
                 'event': 'entered_menu',
-                'caller': self.call_info["remote_uri"] if self.call_info else "unknown",
-                'parsed_caller': self.call_info["parsed_caller"] if self.call_info else None,
+                'caller': self.call_info['remote_uri'] if self.call_info else 'unknown',
+                'parsed_caller': self.call_info['parsed_caller'] if self.call_info else None,
                 'menu_id': menu_id,
                 'sip_account': self.account.config.index,
             })

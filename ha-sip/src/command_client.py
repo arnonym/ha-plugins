@@ -21,7 +21,7 @@ class Command(TypedDict):
 
 class CommandClient(object):
     def __init__(self):
-        self.buffer = ""
+        self.buffer = ''
         self.stdin_fd = fcntl.fcntl(sys.stdin, fcntl.F_GETFD)
         stdin_fl = fcntl.fcntl(sys.stdin, fcntl.F_GETFL)
         fcntl.fcntl(sys.stdin, fcntl.F_SETFL, stdin_fl | os.O_NONBLOCK)
@@ -30,10 +30,10 @@ class CommandClient(object):
         try:
             data = os.read(self.stdin_fd, 64)
         except BlockingIOError:
-            data = b""
-        self.buffer += data.decode("utf-8", "ignore")
-        if "\n" in self.buffer:
-            *line_list, self.buffer = self.buffer.split("\n")
+            data = b''
+        self.buffer += data.decode('utf-8', 'ignore')
+        if '\n' in self.buffer:
+            *line_list, self.buffer = self.buffer.split('\n')
             return CommandClient.list_to_json(line_list)
         return []
 
@@ -41,11 +41,11 @@ class CommandClient(object):
     def list_to_json(raw_list: List[str]) -> List[Command]:
         result = []
         for entry in raw_list:
-            if entry == "":
+            if entry == '':
                 continue
             try:
                 from_json = json.loads(entry)
                 result.append(from_json)
             except json.JSONDecodeError:
-                print("Could not deserialize JSON:", entry)
+                print('Could not deserialize JSON:', entry)
         return result

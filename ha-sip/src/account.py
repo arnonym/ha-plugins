@@ -69,8 +69,8 @@ class Account(pj.Account):
         answer_after = float(utils.convert_to_int(self.config.incoming_call_config.get('answer_after'), 0)) if self.config.incoming_call_config else 0.0
         incoming_call_instance = call.Call(self.end_point, self, prm.callId, None, menu, self.callback, self.ha_config, call.DEFAULT_TIMEOUT, None)
         ci = incoming_call_instance.get_call_info()
-        answer_mode = self.get_sip_return_code(self.config.mode, allowed_numbers, blocked_numbers, ci["parsed_caller"])
-        log(self.config.index, 'Incoming call  from  \'%s\' to \'%s\' (parsed: \'%s\')' % (ci["remote_uri"], ci["local_uri"], ci["parsed_caller"]))
+        answer_mode = self.get_sip_return_code(self.config.mode, allowed_numbers, blocked_numbers, ci['parsed_caller'])
+        log(self.config.index, 'Incoming call  from  \'%s\' to \'%s\' (parsed: \'%s\')' % (ci['remote_uri'], ci['local_uri'], ci['parsed_caller']))
         if allowed_numbers:
             log(self.config.index, 'Allowed numbers: %s' % allowed_numbers)
         if blocked_numbers:
@@ -79,8 +79,8 @@ class Account(pj.Account):
         incoming_call_instance.accept(answer_mode, answer_after)
         ha.trigger_webhook(self.ha_config, {
             'event': 'incoming_call',
-            'caller': ci["remote_uri"],
-            'parsed_caller': ci["parsed_caller"],
+            'caller': ci['remote_uri'],
+            'parsed_caller': ci['parsed_caller'],
             'sip_account': self.config.index,
         })
 
