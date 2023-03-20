@@ -43,8 +43,9 @@ def handle_command(
             log(None, 'Warning: call already in progress: %s' % number)
             return
         webhook_to_call = command.get('webhook_to_call_after_call_was_established')
+        webhooks = command.get('webhook_to_call')
         sip_account = sip_accounts.get(sip_account_number, next(iter(sip_accounts.values())))
-        call.make_call(end_point, sip_account, number, menu, call_state.callback, ha_config, ring_timeout, webhook_to_call)
+        call.make_call(end_point, sip_account, number, menu, call_state.callback, ha_config, ring_timeout, webhook_to_call, webhooks)
     elif verb == 'hangup':
         if not number:
             log(None, 'Error: Missing number for command "hangup"')

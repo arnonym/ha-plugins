@@ -1,5 +1,23 @@
 # Changelog
 
+## 2.6
+- Call additional web-hooks for incoming and outgoing calls
+#### Deprecation notice: `webhook_to_call_after_call_was_established` will be removed in the next release and is replaced by the more granular `webhook_to_call`.
+
+The old config option can be converted from
+
+```yaml
+webhook_to_call_after_call_was_established: another_webhook_id
+```
+
+to
+
+```yaml
+webhook_to_call:
+    call_established: another_webhook_id
+```
+
+
 ## 2.5
 - Add option to repeat message until timeout is reached
 

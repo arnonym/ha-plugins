@@ -32,6 +32,13 @@ PostAction = Union[Literal['return'], Literal['hangup'], Literal['noop'], Litera
 DtmfMethod = Union[Literal['in_band'], Literal['rfc2833'], Literal['sip_info']]
 
 
+class WebhookToCall(TypedDict):
+    call_established: Optional[str]
+    entered_menu: Optional[str]
+    dtmf_digit: Optional[str]
+    call_disconnected: Optional[str]
+
+
 class Action(TypedDict):
     domain: str
     service: str
@@ -85,7 +92,7 @@ class CallHandling(Enum):
 
 class Call(pj.Call):
     def __init__(self, end_point: pj.Endpoint, sip_account: account.Account, call_id: str, uri_to_call: Optional[str], menu: Optional[MenuFromStdin],
-                 callback: CallCallback, ha_config: ha.HaConfig, ring_timeout: float, webhook_to_call: Optional[str]):
+                 callback: CallCallback, ha_config: ha.HaConfig, ring_timeout: float, webhook_to_call: Optional[str], webhooks: Optional[WebhookToCall]):
         pj.Call.__init__(self, sip_account, call_id)
         self.player: Optional[player.Player] = None
         self.audio_media: Optional[pj.AudioMedia] = None
@@ -98,6 +105,7 @@ class Call(pj.Call):
         self.ring_timeout = ring_timeout
         self.settle_time = sip_account.config.settle_time
         self.webhook_to_call = webhook_to_call
+        self.webhooks: WebhookToCall = webhooks or WebhookToCall(call_established=None, entered_menu=None, dtmf_digit=None, call_disconnected=None)
         self.callback = callback
         self.scheduled_post_action: Optional[PostAction] = None
         self.playback_is_done = True
@@ -155,6 +163,13 @@ class Call(pj.Call):
             self.handle_dtmf_digit(next_digit)
             return
 
+    def trigger_webhook(self, event: ha.WebhookEvent):
+        event_id = event.get('event')
+        additional_webhook = self.webhooks.get(event_id)
+        if additional_webhook:
+            ha.trigger_webhook(self.ha_config, event, additional_webhook)
+        ha.trigger_webhook(self.ha_config, event)
+
     def handle_connected_state(self):
         log(self.account.config.index, 'Call is established.')
         self.connected = True
@@ -166,7 +181,7 @@ class Call(pj.Call):
                 'parsed_caller': self.call_info['parsed_caller'] if self.call_info else None,
                 'sip_account': self.account.config.index,
             }, self.webhook_to_call)
-        ha.trigger_webhook(self.ha_config, {
+        self.trigger_webhook({
             'event': 'call_established',
             'caller': self.call_info['remote_uri'] if self.call_info else 'unknown',
             'parsed_caller': self.call_info['parsed_caller'] if self.call_info else None,
@@ -189,7 +204,7 @@ class Call(pj.Call):
             self.call_settled_at = time.time() + self.settle_time
         elif ci.state == pj.PJSIP_INV_STATE_DISCONNECTED:
             log(self.account.config.index, 'Call disconnected')
-            ha.trigger_webhook(self.ha_config, {
+            self.trigger_webhook({
                 'event': 'call_disconnected',
                 'caller': self.call_info['remote_uri'],
                 'parsed_caller': self.call_info['parsed_caller'],
@@ -224,7 +239,7 @@ class Call(pj.Call):
 
     def handle_dtmf_digit(self, pressed_digit: str) -> None:
         log(self.account.config.index, 'onDtmfDigit: digit %s' % pressed_digit)
-        ha.trigger_webhook(self.ha_config, {
+        self.trigger_webhook({
             'event': 'dtmf_digit',
             'caller': self.call_info['remote_uri'] if self.call_info else 'unknown',
             'parsed_caller': self.call_info['parsed_caller'] if self.call_info else None,
@@ -284,7 +299,7 @@ class Call(pj.Call):
         self.menu = menu
         menu_id = menu['id']
         if menu_id and send_webhook_event:
-            ha.trigger_webhook(self.ha_config, {
+            self.trigger_webhook({
                 'event': 'entered_menu',
                 'caller': self.call_info['remote_uri'] if self.call_info else 'unknown',
                 'parsed_caller': self.call_info['parsed_caller'] if self.call_info else None,
@@ -521,8 +536,9 @@ def make_call(
     ha_config: ha.HaConfig,
     ring_timeout: float,
     webhook_to_call: Optional[str],
+    webhooks: Optional[WebhookToCall],
 ) -> Call:
-    new_call = Call(ep, account, pj.PJSUA_INVALID_ID, uri_to_call, menu, callback, ha_config, ring_timeout, webhook_to_call)
+    new_call = Call(ep, account, pj.PJSUA_INVALID_ID, uri_to_call, menu, callback, ha_config, ring_timeout, webhook_to_call, webhooks)
     call_param = pj.CallOpParam(True)
     new_call.makeCall(uri_to_call, call_param)
     return new_call
