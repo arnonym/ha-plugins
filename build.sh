@@ -3,6 +3,7 @@
 export TMP_URL=~/tmp/ha-plugins-next
 export REPO_URL=https://github.com/arnonym/ha-plugins
 export NEXT_REPO_URL=https://github.com/arnonym/ha-plugins-next
+export NEXT_REPO_SSH=git@github.com:arnonym/ha-plugins-next.git
 
 if [ -z "$DOCKER_HUB_PASSWORD" ]
   then
@@ -34,7 +35,7 @@ case "$1" in
         fi
         cd $TMP_URL || exit
         git commit -a -m "Changes for next repository."
-        git remote set-url origin git@github.com:arnonym/ha-plugins-next.git
+        git remote set-url origin $NEXT_REPO_SSH
         git push --force
         docker run \
             --rm --privileged -v /var/run/docker.sock:/var/run/docker.sock:ro \
