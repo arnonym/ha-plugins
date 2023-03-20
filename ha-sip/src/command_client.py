@@ -15,6 +15,7 @@ class Command(TypedDict):
     ring_timeout: Optional[str]
     sip_account: Optional[str]
     webhook_to_call_after_call_was_established: Optional[str]
+    webhook_to_call: Optional[call.WebhookToCall]
     digits: Optional[str]
     method: Optional[call.DtmfMethod]
 

@@ -72,7 +72,12 @@ data_template:
     input:
         command: dial
         number: sip:**620@fritz.box
-        webhook_to_call_after_call_was_established: another_webhook_id # webhook id which you can listen on in your actions
+        webhook_to_call_after_call_was_established: another_webhook_id # web-hook id which you can listen on in your actions (deprecated)
+        webhook_to_call: # web-hook IDs which you can listen on in your actions (additional to the global web-hook)
+            call_established: another_webhook_id # can be all the same, or different
+            entered_menu: another_webhook_id
+            dtmf_digit: another_webhook_id
+            call_disconnected: another_webhook_id
         ring_timeout: 15 # time to ring in seconds (optional, defaults to 300)
         sip_account: 1 # number of configured sip account: 1 or 2 
                        # (optional, defaults to first enabled sip account)
@@ -164,6 +169,11 @@ allowed_numbers: # list of numbers which will be answered. If removed all number
 #    - "5551234456"
 #    - "5559876543"
 answer_after: 0 # time in seconds after the call is answered (optional, defaults to 0)
+webhook_to_call: # web-hook IDs which you can listen on in your actions (additional to the global web-hook)
+    call_established: another_webhook_id # can be all the same, or different
+    entered_menu: another_webhook_id
+    dtmf_digit: another_webhook_id
+    call_disconnected: another_webhook_id
 menu:
     message: Please enter your access code
     choices_are_pin: true

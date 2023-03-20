@@ -67,7 +67,10 @@ class Account(pj.Account):
         allowed_numbers = self.config.incoming_call_config.get('allowed_numbers') if self.config.incoming_call_config else None
         blocked_numbers = self.config.incoming_call_config.get('blocked_numbers') if self.config.incoming_call_config else None
         answer_after = float(utils.convert_to_int(self.config.incoming_call_config.get('answer_after'), 0)) if self.config.incoming_call_config else 0.0
-        incoming_call_instance = call.Call(self.end_point, self, prm.callId, None, menu, self.callback, self.ha_config, call.DEFAULT_TIMEOUT, None)
+        webhook_to_call = self.config.incoming_call_config.get('webhook_to_call') if self.config.incoming_call_config else None
+        incoming_call_instance = call.Call(
+            self.end_point, self, prm.callId, None, menu, self.callback, self.ha_config, call.DEFAULT_TIMEOUT, None, webhook_to_call
+        )
         ci = incoming_call_instance.get_call_info()
         answer_mode = self.get_sip_return_code(self.config.mode, allowed_numbers, blocked_numbers, ci['parsed_caller'])
         log(self.config.index, 'Incoming call  from  \'%s\' to \'%s\' (parsed: \'%s\')' % (ci['remote_uri'], ci['local_uri'], ci['parsed_caller']))
