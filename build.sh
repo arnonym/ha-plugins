@@ -61,8 +61,27 @@ case "$1" in
         echo "Running type-check..."
         pyright ha-sip
         ;;
+    create-venv)
+        SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd)
+        rm -rf $SCRIPT_DIR/venv $SCRIPT_DIR/deps
+        python3 -m venv $SCRIPT_DIR/venv
+        source $SCRIPT_DIR/venv/bin/activate
+        pip3 install pydub requests PyYAML typing_extensions
+        mkdir $SCRIPT_DIR/deps
+        cd $SCRIPT_DIR/deps || exit
+        git clone --depth 1 --branch 2.13 https://github.com/pjsip/pjproject.git
+        cd pjproject || exit
+        ./configure --enable-shared --disable-libwebrtc --prefix $SCRIPT_DIR/venv
+        make
+        make dep
+        make install
+        cd pjsip-apps/src/swig || exit
+        make python
+        cd python || exit
+        python setup.py install
+        ;;
     *)
-        echo "Supply one of 'build-next', 'build', 'test' or 'update'"
+        echo "Supply one of 'build-next', 'build', 'test', 'update' or 'create-venv'"
         exit 1
         ;;
 esac

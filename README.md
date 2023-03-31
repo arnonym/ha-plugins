@@ -396,3 +396,14 @@ One automation with the `dial` command when the doorbell was rung, and a second 
 so I do not need to answer the call when not necessary.
 
 I would like to hear from you in which scenario you are using ha-sip!
+
+## Development
+
+1. Create a virtual environment with pjsip and dependencies installed running `./build.sh create-venv` from the root directory of the repo
+2. Copy `ha-sip/src/config.py` to `ha-sip/src/config_local.py` and replace the variable place-holders with your real configuration.
+
+   `HA_BASE_URL` is something like "http://homeassistant.local:8123/api"
+   
+   The access token is created from http://homeassistant.local:8123/profile 
+3. Run `ha-sip/src/main.py local` to run the add-on locally
+4. Paste commands as json (without line-breaks) into stdin of the running add-on
