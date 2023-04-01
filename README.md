@@ -400,10 +400,16 @@ I would like to hear from you in which scenario you are using ha-sip!
 ## Development
 
 1. Create a virtual environment with pjsip and dependencies installed running `./build.sh create-venv` from the root directory of the repo
-2. Copy `ha-sip/src/config.py` to `ha-sip/src/config_local.py` and replace the variable place-holders with your real configuration.
+2. Activate virtual env with `source venv/bin/activate` (bash, might be different with other shells)
+3. Copy `ha-sip/src/config.py` to `ha-sip/src/config_local.py` and replace the variable place-holders with your real configuration.
 
    `HA_BASE_URL` is something like "http://homeassistant.local:8123/api"
    
    The access token is created from http://homeassistant.local:8123/profile 
-3. Run `ha-sip/src/main.py local` to run the add-on locally
-4. Paste commands as json (without line-breaks) into stdin of the running add-on
+4. Run `ha-sip/src/main.py local` to run the add-on locally
+5. Paste commands as json (without line-breaks) into stdin of the running add-on:
+
+   Example: 
+   ```json
+   { "command": "dial", "number": "sip:**620@fritz.box", "menu": { "message": "Hello from ha-sip.", "language": "en" } }
+   ```
