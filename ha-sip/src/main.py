@@ -165,11 +165,10 @@ def main():
             is_first_enabled_account = False
     command_server = command_client.CommandClient()
     while True:
-        if end_point:
-            end_point.libHandleEvents(20)
-            handle_command_list(command_server, end_point, sip_accounts, call_state, ha_config)
-            for c in list(call_state.current_call_dict.values()):
-                c.handle_events()
+        end_point.libHandleEvents(20)
+        handle_command_list(command_server, end_point, sip_accounts, call_state, ha_config)
+        for c in list(call_state.current_call_dict.values()):
+            c.handle_events()
 
 
 if __name__ == '__main__':

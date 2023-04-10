@@ -302,6 +302,30 @@ class Call(pj.Call):
                     log(self.account.config.index, 'Invalid input %s' % self.current_input)
                     self.handle_menu(self.menu['default_choice'])
 
+    def onCallTransferRequest(self, prm):
+        log(self.account.config.index, 'onCallTransferRequest')
+
+    def onCallTransferStatus(self, prm):
+        log(self.account.config.index, 'onCallTransferStatus')
+
+    def onCallReplaceRequest(self, prm):
+        log(self.account.config.index, 'onCallReplaceRequest')
+
+    def onCallReplaced(self, prm):
+        log(self.account.config.index, 'onCallReplaced')
+
+    def onCallRxOffer(self, prm):
+        log(self.account.config.index, 'onCallRxOffer')
+
+    def onCallRxReinvite(self, prm):
+        log(self.account.config.index, 'onCallRxReinvite')
+
+    def onCallTxOffer(self, prm):
+        log(self.account.config.index, 'onCallTxOffer')
+
+    def onCallRedirected(self, prm):
+        log(self.account.config.index, 'onCallRedirected')
+
     def handle_menu(self, menu: Optional[Menu], send_webhook_event=True, handle_action=True, reset_input=True) -> None:
         if not menu:
             log(self.account.config.index, 'No menu supplied')
