@@ -8,10 +8,10 @@
   ```yaml
     menu:
         playlist:
-            - type: message
-              value: "Hello World!"
+            - type: tts
+              message: "Hello World!"
             - type: audio_file
-              value: "/config/audio/welcome.mp3"
+              audio_file: "/config/audio/welcome.mp3"
         post_action: "repeat_playlist"
         repeat_wait: 2
     ```

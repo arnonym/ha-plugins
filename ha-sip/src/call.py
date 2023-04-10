@@ -31,12 +31,13 @@ DEFAULT_DTMF_OFF = 220
 CallCallback = Callable[[CallStateChange, str, 'Call'], None]
 PostAction = Union[Literal['return'], Literal['hangup'], Literal['noop'], Literal['repeat_message'], Literal['repeat_playlist']]
 DtmfMethod = Union[Literal['in_band'], Literal['rfc2833'], Literal['sip_info']]
-PlaylistItemType = Literal['message', 'audio_file']
+PlaylistItemType = Literal['tts', 'audio_file']
 
 
 class PlaylistItem(TypedDict):
     type: PlaylistItemType
-    value: str
+    message: str
+    audio_file: str
 
 
 Playlist = List[PlaylistItem]
@@ -390,20 +391,23 @@ class Call(pj.Call):
         wav_playlist = list()
         playlist = [playlist[-1]] if self.scheduled_post_action == 'repeat_message' else playlist
         for playlist_item in playlist:
-            if playlist_item['type'] == 'message':
-                sound_file_name, must_be_deleted = ha.create_and_get_tts(self.ha_config, playlist_item['value'], language)
+            if playlist_item['type'] == 'tts':
+                if not playlist_item.get('message'):
+                    log(self.account.config.index, "'message:' missing for playlist item.")
+                    continue
+                sound_file_name, must_be_deleted = ha.create_and_get_tts(self.ha_config, playlist_item['message'], language)
                 wav_playlist.append(sound_file_name)
                 if must_be_deleted:
                     self.files_to_remove.append(sound_file_name)
             elif playlist_item['type'] == 'audio_file':
-                sound_file_name = audio.convert_audio_to_wav(playlist_item['value'], parameters=["-ac", "1", "-ar", "24000"])
+                sound_file_name = audio.convert_audio_to_wav(playlist_item.get('audio_file', ''), parameters=["-ac", "1", "-ar", "24000"])
                 if sound_file_name:
                     wav_playlist.append(sound_file_name)
                     self.files_to_remove.append(sound_file_name)
                 else:
-                    log(self.account.config.index, "Sound file couldn't be converted: %s" % repr(playlist_item['value']))
+                    log(self.account.config.index, "Sound file couldn't be converted: %s" % repr(playlist_item.get('audio_file')))
             else:
-                log(self.account.config.index, 'Playlist item has wrong format: "%s.". Must start with "message:" or "audio_file:"' % repr(playlist_item))
+                log(self.account.config.index, 'Playlist item has wrong format: %s.' % repr(playlist_item))
         if not wav_playlist:
             log(self.account.config.index, 'Playlist is empty')
             return
