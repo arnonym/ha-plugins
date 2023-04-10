@@ -7,7 +7,8 @@ from typing import Optional
 import pydub
 
 
-def convert_audio_to_wav(audio_file_name: str) -> Optional[str]:
+def convert_audio_to_wav(audio_file_name: str, parameters: Optional[list] = None) -> Optional[str]:
+
     def get_audio_segment(file_name: str) -> Optional[pydub.AudioSegment]:
         _, file_extension = os.path.splitext(file_name)
         if file_extension == '.mp3':
@@ -25,7 +26,7 @@ def convert_audio_to_wav(audio_file_name: str) -> Optional[str]:
     if not audio_segment:
         print('Error: could not figure out file format (.mp3, .ogg, .wav is supported):', audio_file_name)
         return None
-    audio_segment.export(wave_file_handler.name, format='wav')
+    audio_segment.export(wave_file_handler.name, format='wav', parameters=parameters if parameters else None)
     return wave_file_handler.name
 
 

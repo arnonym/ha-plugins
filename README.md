@@ -203,10 +203,10 @@ menu:
     id: main # If "id" is present, a message will be sent via webhook (entered_menu), see below (optional)
     message: Please enter your access code # the message to be played via TTS (optional, defaults to empty)
     playlist: # (optional)
-        # items must begin with 'message:' or 'audio_file:'. 
-        # items must be put into quotes
-        - "message: Hello World!"
-        - "audio_file: /config/audio/welcome.mp3"
+        - type: message
+          value: Hello World!
+        - type: audio_file
+          value: ''/config/audio/welcome.mp3'
     language: en # TTS language (optional, defaults to the global language from add-on config)
     choices_are_pin: true # If the choices should be handled like PINs (optional, defaults to false)
     timeout: 10 # time in seconds before "timeout" choice is triggered (optional, defaults to 300)
