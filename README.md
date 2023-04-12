@@ -165,6 +165,8 @@ Example content of `/config/sip-1-incoming.yaml`:
 allowed_numbers: # list of numbers which will be answered. If removed all numbers will be accepted
     - "5551234456"
     - "5559876543"
+    - "555{*}" # matches every number starting with 555
+    - "555{?}" # matches every number starting with 555 which is 4 digits long
 # blocked_numbers: # alternatively you can specify the numbers not to be answered. You can't have both.
 #    - "5551234456"
 #    - "5559876543"
@@ -207,9 +209,10 @@ menu:
     timeout: 10 # time in seconds before "timeout" choice is triggered (optional, defaults to 300)
     post_action: noop # this action will be triggered after the message was played. Can be 
                       # "noop" (do nothing), 
-                      # "return" (makes only sense in a sub-menu), 
+                      # "return <level>" (makes only sense in a sub-menu, returns <level> levels, defaults to 1), 
                       # "hangup" (hang-up the call) and
                       # "repeat_message" (repeat the message until the time-out is reached)
+                      # "jump <menu-id>" (jumps to menu with id <menu-id>)
                       # (optional, defaults to noop)
     action: # action to run when menu was entered (before playing the message) (optional)
         # For details visit https://developers.home-assistant.io/docs/api/rest/, POST on /api/services/<domain>/<service>
@@ -227,7 +230,7 @@ menu:
             post_action: hangup
         '7777':
             audio_file: '/config/audio/welcome.mp3' # audio file to be played (.wav or .mp3).
-            post_action: hangup
+            post_action: jump owner # jump to menu id 'owner'
         'default': # this will be triggered if the input does not match any specified choice
             id: wrong_code
             message: Wrong code, please try again
