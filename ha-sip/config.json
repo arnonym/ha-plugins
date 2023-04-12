@@ -2,7 +2,7 @@
     "name": "ha-sip",
     "version": "2.6",
     "slug": "ha-sip",
-    "url": "https://github.com/arnonym/ha-plugins",
+    "url": "https://github.com/topic2k/ha-plugins",
     "description": "Home-Assistant SIP Gateway",
     "arch": [
         "aarch64",
@@ -11,7 +11,7 @@
         "armv7",
         "i386"
     ],
-    "image": "agellhaus/{arch}-ha-sip",
+    "image": "topic2k/{arch}-ha-sip",
     "init": "false",
     "startup": "application",
     "boot": "auto",

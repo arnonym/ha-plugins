@@ -1,5 +1,5 @@
 {
-    "name": "Home Assistant addons by Arne Gellhaus",
-    "url": "https://github.com/arnonym/ha-plugins",
-    "maintainer": "Arne Gellhaus"
+    "name": "Home Assistant addons by Arne Gellhaus (topic2k's fork)",
+    "url": "https://github.com/topic2k/ha-plugins",
+    "maintainer": ["fork: topic2k", "origin: Arne Gellhaus"]
 }
