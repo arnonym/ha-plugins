@@ -60,8 +60,9 @@ case "$1" in
         docker pull homeassistant/amd64-builder:dev
         ;;
     test)
-        echo "Running type-check..."
+        echo "Running unit tests..."
         python3 -m unittest discover -s "$SCRIPT_DIR"/ha-sip/src
+        echo "Running type-check..."
         pyright ha-sip
         ;;
     run-local)

@@ -212,7 +212,7 @@ class Call(pj.Call):
     def handle_connected_state(self):
         log(self.account.config.index, 'Call is established.')
         self.connected = True
-        self.last_seen = time.time()
+        self.reset_timeout()
         if self.webhook_to_call:
             ha.trigger_webhook(self.ha_config, {
                 'event': 'call_established',
@@ -273,7 +273,7 @@ class Call(pj.Call):
             if self.player:
                 self.player.stopTransmit(self.audio_media)
             self.playback_is_done = True
-        self.last_seen = time.time()
+        self.reset_timeout()
         self.pressed_digit_list.append(prm.digit)
 
     def handle_dtmf_digit(self, pressed_digit: str) -> None:
@@ -332,6 +332,7 @@ class Call(pj.Call):
         log(self.account.config.index, 'onCallRedirected')
 
     def handle_menu(self, menu: Optional[Menu], send_webhook_event=True, handle_action=True, reset_input=True) -> None:
+        self.reset_timeout()
         if not menu:
             log(self.account.config.index, 'No menu supplied')
             return
@@ -417,7 +418,7 @@ class Call(pj.Call):
         self.answer_at = time.time()
 
     def send_dtmf(self, digits: str, method: DtmfMethod = 'in_band') -> None:
-        self.last_seen = time.time()
+        self.reset_timeout()
         log(self.account.config.index, 'Sending DTMF %s' % digits)
         if method == 'in_band':
             if not self.tone_gen:
@@ -455,6 +456,9 @@ class Call(pj.Call):
             'local_uri': ci.localUri,
             'parsed_caller': parsed_caller,
         }
+
+    def reset_timeout(self):
+        self.last_seen = time.time()
 
     def normalize_menu(self, menu: MenuFromStdin, parent_menu: Optional[Menu] = None, is_default_or_timeout_choice=False) -> Menu:
         def parse_post_action(action: Optional[str]) -> PostAction:
