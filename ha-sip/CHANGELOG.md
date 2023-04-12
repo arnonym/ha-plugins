@@ -4,6 +4,7 @@
 - More flexible `return` post action: specify how many levels to go back from the sub-menu
 - Added `jump` post action to jump to any menu with an id
 - Add wildcard support for incoming call `allowed_numbers` and `blocked_numbers` filter
+- Bugfix: time-out not reset when returning to parent menu
 
 ## 2.6
 - Call additional web-hooks for incoming and outgoing calls
