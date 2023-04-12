@@ -15,3 +15,10 @@ def convert_to_float(s: Any, default=0.0) -> float:
     except (ValueError, TypeError):
         return default
     return i
+
+
+def safe_list_get(source_list: list, index: int, default: Any = None) -> Any:
+    try:
+        return source_list[index]
+    except IndexError:
+        return default

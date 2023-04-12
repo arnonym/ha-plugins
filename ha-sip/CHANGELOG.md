@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.7
+- More flexible `return` post action: specify how many levels to go back from the sub-menu
+- Added `jump` post action to jump to any menu with an id
+- Add wildcard support for incoming call `allowed_numbers` and `blocked_numbers` filter
+
 ## 2.6
 - Call additional web-hooks for incoming and outgoing calls
 #### Deprecation notice: `webhook_to_call_after_call_was_established` will be removed in the next release and is replaced by the more granular `webhook_to_call`.

@@ -128,8 +128,8 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
+/deps/
 /attic/
-/pjproject/
 .idea
 /ha-sip/src/config_local.py
 /incoming.yaml
