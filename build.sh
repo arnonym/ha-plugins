@@ -8,7 +8,7 @@ export NEXT_REPO_SSH=git@github.com:topic2k/ha-plugins.git
 function check_environment () {
     if [ -z "$DOCKER_HUB_PASSWORD" ] || [ -z "$DOCKER_HUB_USER" ]
     then
-        echo "\$DOCKER_HUB_PASSWORD must be set"
+        echo "\$DOCKER_HUB_PASSWORD and \$DOCKER_HUB_USER must be set"
         exit 1
     fi
 }
