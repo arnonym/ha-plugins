@@ -11,6 +11,8 @@ if [ -z "$DOCKER_HUB_PASSWORD" ]
     exit 1
 fi
 
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd)
+
 case "$1" in
     build-next)
         echo "Building on next repo (aarch64 only)..."
@@ -58,20 +60,24 @@ case "$1" in
         docker pull homeassistant/amd64-builder:dev
         ;;
     test)
+        echo "Running unit tests..."
+        python3 -m unittest discover -s "$SCRIPT_DIR"/ha-sip/src
         echo "Running type-check..."
         pyright ha-sip
         ;;
+    run-local)
+        "$SCRIPT_DIR"/ha-sip/src/main.py local
+        ;;
     create-venv)
-        SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd)
-        rm -rf $SCRIPT_DIR/venv $SCRIPT_DIR/deps
-        python3 -m venv $SCRIPT_DIR/venv
-        source $SCRIPT_DIR/venv/bin/activate
+        rm -rf "$SCRIPT_DIR"/venv "$SCRIPT_DIR"/deps
+        python3 -m venv "$SCRIPT_DIR"/venv
+        source "$SCRIPT_DIR"/venv/bin/activate
         pip3 install pydub requests PyYAML typing_extensions
-        mkdir $SCRIPT_DIR/deps
-        cd $SCRIPT_DIR/deps || exit
+        mkdir "$SCRIPT_DIR"/deps
+        cd "$SCRIPT_DIR"/deps || exit
         git clone --depth 1 --branch 2.13 https://github.com/pjsip/pjproject.git
         cd pjproject || exit
-        ./configure --enable-shared --disable-libwebrtc --prefix $SCRIPT_DIR/venv
+        ./configure --enable-shared --disable-libwebrtc --prefix "$SCRIPT_DIR"/venv
         make
         make dep
         make install

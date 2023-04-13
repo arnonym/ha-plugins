@@ -1,4 +1,5 @@
 from __future__ import annotations
+import re
 
 from typing import Optional
 
@@ -98,10 +99,29 @@ class Account(pj.Account):
             log(self.config.index, 'Error: cannot specify both of allowed and blocked numbers. Call won\'t be accepted!')
             return call.CallHandling.LISTEN
         if mode == call.CallHandling.ACCEPT and allowed_numbers:
-            return call.CallHandling.ACCEPT if parsed_caller in allowed_numbers else call.CallHandling.LISTEN
+            return call.CallHandling.ACCEPT if Account.is_number_in_list(parsed_caller, allowed_numbers) else call.CallHandling.LISTEN
         if mode == call.CallHandling.ACCEPT and blocked_numbers:
-            return call.CallHandling.ACCEPT if parsed_caller not in blocked_numbers else call.CallHandling.LISTEN
+            return call.CallHandling.ACCEPT if not Account.is_number_in_list(parsed_caller, blocked_numbers) else call.CallHandling.LISTEN
         return mode
+
+    @staticmethod
+    def is_number_in_list(number: Optional[str], number_list: list[str]) -> bool:
+        def map_to_regex(st: str) -> str:
+            if st == '{*}':
+                return '.*'
+            if st == '{?}':
+                return '.'
+            return re.escape(st)
+        if not number:
+            return False
+        for n in number_list:
+            # split by {*} and {?} keeping delimiters
+            n_split = re.split(r'(\{\*}|\{\?})', n)
+            n_regex = '^' + ''.join(map(map_to_regex, n_split)) + '$'
+            match = re.match(n_regex, number)
+            if match:
+                return True
+        return False
 
 
 def create_account(end_point: pj.Endpoint, config: MyAccountConfig, callback: call.CallCallback, ha_config: ha.HaConfig, is_default: bool) -> Account:
