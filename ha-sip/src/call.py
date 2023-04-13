@@ -24,11 +24,22 @@ class CallStateChange(Enum):
 
 
 DEFAULT_TIMEOUT = 300.0
+DEFAULT_REPEAT_WAIT = 0.0
 DEFAULT_DTMF_ON = 180
 DEFAULT_DTMF_OFF = 220
 
 CallCallback = Callable[[CallStateChange, str, 'Call'], None]
 DtmfMethod = Union[Literal['in_band'], Literal['rfc2833'], Literal['sip_info']]
+PlaylistItemType = Literal['tts', 'audio_file']
+
+
+class PlaylistItem(TypedDict):
+    type: PlaylistItemType
+    message: str
+    audio_file: str
+
+
+Playlist = List[PlaylistItem]
 
 
 class WebhookToCall(TypedDict):
@@ -66,17 +77,23 @@ class PostActionRepeatMessage(TypedDict):
     action: Literal['repeat_message']
 
 
-PostAction = Union[PostActionReturn, PostActionJump, PostActionHangup, PostActionNoop, PostActionRepeatMessage]
+class PostActionRepeatPlaylist(TypedDict):
+    action: Literal['repeat_playlist']
+
+
+PostAction = Union[PostActionReturn, PostActionJump, PostActionHangup, PostActionNoop, PostActionRepeatMessage, PostActionRepeatPlaylist]
 
 
 class MenuFromStdin(TypedDict):
     id: Optional[str]
     message: Optional[str]
     audio_file: Optional[str]
+    playlist: Optional[Playlist]
     language: Optional[str]
     action: Optional[Action]
     choices_are_pin: Optional[bool]
     post_action: Optional[str]
+    repeat_wait: int
     timeout: Optional[int]
     choices: Optional[dict[Any, MenuFromStdin]]
 
@@ -85,10 +102,12 @@ class Menu(TypedDict):
     id: Optional[str]
     message: Optional[str]
     audio_file: Optional[str]
+    playlist: Optional[Playlist]
     language: str
     action: Optional[Action]
     choices_are_pin: bool
     post_action: PostAction
+    repeat_wait: float
     timeout: float
     choices: Optional[dict[str, Menu]]
     default_choice: Optional[Menu]
@@ -118,6 +137,7 @@ class Call(pj.Call):
     def __init__(self, end_point: pj.Endpoint, sip_account: account.Account, call_id: str, uri_to_call: Optional[str], menu: Optional[MenuFromStdin],
                  callback: CallCallback, ha_config: ha.HaConfig, ring_timeout: float, webhook_to_call: Optional[str], webhooks: Optional[WebhookToCall]):
         pj.Call.__init__(self, sip_account, call_id)
+        self.files_to_remove: list[str] = []
         self.player: Optional[player.Player] = None
         self.audio_media: Optional[pj.AudioMedia] = None
         self.connected = False
@@ -142,6 +162,7 @@ class Call(pj.Call):
         self.callback_id = self.get_callback_id()
         self.menu = self.normalize_menu(menu) if menu else self.get_standard_menu()
         self.menu_map = self.create_menu_map(self.menu)
+        self.repeat_wait_begin: float | int = -1
         Call.pretty_print_menu(self.menu)
         log(self.account.config.index, 'Registering call with id %s' % self.callback_id)
         self.callback(CallStateChange.CALL, self.callback_id, self)
@@ -172,14 +193,14 @@ class Call(pj.Call):
             post_action = self.scheduled_post_action
             self.scheduled_post_action = None
             self.handle_post_action(post_action)
-            return
         if len(self.pressed_digit_list) > 0:
             next_digit = self.pressed_digit_list.pop(0)
             self.handle_dtmf_digit(next_digit)
             return
 
     def handle_post_action(self, post_action: PostAction):
-        log(self.account.config.index, 'Scheduled post action: %s' % post_action["action"])
+        if post_action["action"] not in ['repeat_message', 'repeat_playlist']:
+            log(self.account.config.index, 'Scheduled post action: %s' % post_action["action"])
         if post_action["action"] == 'noop':
             pass
         elif post_action["action"] == 'return':
@@ -199,7 +220,22 @@ class Call(pj.Call):
                 log(self.account.config.index, 'Could not find menu id: %s' % post_action["menu_id"])
         elif post_action["action"] == 'hangup':
             self.hangup_call()
-        elif post_action["action"] == 'repeat_message':
+        elif post_action["action"] in ['repeat_message', 'repeat_playlist']:
+            self.handle_repeat_wait()
+        else:
+            log(self.account.config.index, 'Unknown post_action: %s' % repr(post_action["action"]))
+
+    def handle_repeat_wait(self):
+        self.scheduled_post_action = self.menu["post_action"]
+        if not self.menu['repeat_wait']:
+            log(self.account.config.index, 'Scheduled post action (no wait): %s' % self.scheduled_post_action["action"])
+            self.handle_menu(self.menu, send_webhook_event=False, handle_action=False, reset_input=False)
+        elif self.menu['repeat_wait'] and self.repeat_wait_begin == -1:
+            log(self.account.config.index, 'Wait %.3f seconds before %s' % (self.menu['repeat_wait'], self.scheduled_post_action["action"]))
+            self.repeat_wait_begin = time.time()
+        elif self.menu['repeat_wait'] and time.time() - self.repeat_wait_begin > self.menu['repeat_wait']:
+            log(self.account.config.index, 'Scheduled post action (with wait): %s' % self.scheduled_post_action["action"])
+            self.repeat_wait_begin = -1
             self.handle_menu(self.menu, send_webhook_event=False, handle_action=False, reset_input=False)
 
     def trigger_webhook(self, event: ha.WebhookEvent):
@@ -273,6 +309,7 @@ class Call(pj.Call):
             if self.player:
                 self.player.stopTransmit(self.audio_media)
             self.playback_is_done = True
+            self.scheduled_post_action = None
         self.reset_timeout()
         self.pressed_digit_list.append(prm.digit)
 
@@ -291,6 +328,7 @@ class Call(pj.Call):
         log(self.account.config.index, 'Current input: %s' % self.current_input)
         choices = self.menu.get('choices')
         if choices is not None:
+            self.repeat_wait_begin = -1
             if self.current_input in choices:
                 self.handle_menu(choices[self.current_input])
                 return
@@ -350,6 +388,7 @@ class Call(pj.Call):
             self.current_input = ''
         message = menu['message']
         audio_file = menu['audio_file']
+        playlist = menu['playlist']
         language = menu['language']
         action = menu['action']
         post_action = menu['post_action']
@@ -357,6 +396,8 @@ class Call(pj.Call):
             self.play_message(message, language)
         if audio_file:
             self.play_audio_file(audio_file)
+        if playlist:
+            self.play_playlist(playlist, language)
         if handle_action:
             self.handle_action(action)
         self.scheduled_post_action = post_action
@@ -388,6 +429,36 @@ class Call(pj.Call):
         if sound_file_name:
             self.play_wav_file(sound_file_name, True)
 
+    def play_playlist(self, playlist: Playlist, language: str) -> None:
+        log(self.account.config.index, 'Playing playlist')
+        wav_playlist = list()
+        if self.scheduled_post_action:
+            playlist = [playlist[-1]] if self.scheduled_post_action.get("action", '') == 'repeat_message' else playlist
+        for playlist_item in playlist:
+            if playlist_item['type'] == 'tts':
+                if not playlist_item.get('message'):
+                    log(self.account.config.index, "'message:' missing for playlist item.")
+                    continue
+                sound_file_name, must_be_deleted = ha.create_and_get_tts(self.ha_config, playlist_item['message'], language)
+                wav_playlist.append(sound_file_name)
+                if must_be_deleted:
+                    self.files_to_remove.append(sound_file_name)
+            elif playlist_item['type'] == 'audio_file':
+                sound_file_name = audio.convert_audio_to_wav(playlist_item.get('audio_file', ''), parameters=["-ac", "1", "-ar", "24000"])
+                if sound_file_name:
+                    wav_playlist.append(sound_file_name)
+                    self.files_to_remove.append(sound_file_name)
+                else:
+                    log(self.account.config.index, "Sound file couldn't be converted: %s" % repr(playlist_item.get('audio_file')))
+            else:
+                log(self.account.config.index, 'Playlist item has wrong format: %s.' % repr(playlist_item))
+        if not wav_playlist:
+            log(self.account.config.index, 'Playlist is empty')
+            return
+        self.playback_is_done = False
+        self.player = player.Player(self.on_playback_done)
+        self.player.play_playlist(self.audio_media, wav_playlist)
+
     def play_wav_file(self, sound_file_name: str, must_be_deleted: bool) -> None:
         self.player = player.Player(self.on_playback_done)
         self.playback_is_done = False
@@ -396,8 +467,12 @@ class Call(pj.Call):
             os.remove(sound_file_name)
 
     def on_playback_done(self) -> None:
-        log(self.account.config.index, 'Playback done.')
         self.playback_is_done = True
+        if self.files_to_remove:
+            for file_name in self.files_to_remove:
+                os.remove(file_name)
+            self.files_to_remove = []
+        log(self.account.config.index, 'Playback done.')
 
     def accept(self, answer_mode: CallHandling, answer_after: float) -> None:
         call_prm = pj.CallOpParam()
@@ -468,6 +543,8 @@ class Call(pj.Call):
                 return PostActionHangup(action='hangup')
             elif action == 'repeat_message':
                 return PostActionRepeatMessage(action='repeat_message')
+            elif action == 'repeat_playlist':
+                return PostActionRepeatPlaylist(action='repeat_playlist')
             elif action.startswith('return'):
                 _, *params = action.split()
                 level_str = utils.safe_list_get(params, 0, 1)
@@ -502,6 +579,7 @@ class Call(pj.Call):
             'id': menu.get('id'),
             'message': menu.get('message'),
             'audio_file': menu.get('audio_file'),
+            'playlist': menu.get('playlist'),
             'language': menu.get('language') or self.ha_config.tts_language,
             'action': menu.get('action'),
             'choices_are_pin': menu.get('choices_are_pin') or False,
@@ -509,6 +587,7 @@ class Call(pj.Call):
             'default_choice': None,
             'timeout_choice': None,
             'timeout': utils.convert_to_float(menu.get('timeout'), DEFAULT_TIMEOUT),
+            'repeat_wait': utils.convert_to_float(menu.get('repeat_wait'), DEFAULT_REPEAT_WAIT),
             'post_action': parse_post_action(menu.get('post_action')),
             'parent_menu': parent_menu,
         }
@@ -548,6 +627,7 @@ class Call(pj.Call):
             'id': None,
             'message': 'Unknown option',
             'audio_file': None,
+            'playlist': None,
             'language': 'en',
             'action': None,
             'choices_are_pin': False,
@@ -556,6 +636,7 @@ class Call(pj.Call):
             'timeout_choice': None,
             'post_action': PostActionReturn(action="return", level=1),
             'timeout': DEFAULT_TIMEOUT,
+            'repeat_wait': DEFAULT_REPEAT_WAIT,
             'parent_menu': parent_menu,
         }
 
@@ -565,6 +646,7 @@ class Call(pj.Call):
             'id': None,
             'message': None,
             'audio_file': None,
+            'playlist': None,
             'language': 'en',
             'action': None,
             'choices_are_pin': False,
@@ -573,6 +655,7 @@ class Call(pj.Call):
             'timeout_choice': None,
             'post_action': PostActionHangup(action="hangup"),
             'timeout': DEFAULT_TIMEOUT,
+            'repeat_wait': DEFAULT_REPEAT_WAIT,
             'parent_menu': parent_menu,
         }
 
@@ -582,6 +665,7 @@ class Call(pj.Call):
             'id': None,
             'message': None,
             'audio_file': None,
+            'playlist': None,
             'language': 'en',
             'action': None,
             'choices_are_pin': False,
@@ -590,6 +674,7 @@ class Call(pj.Call):
             'timeout_choice': None,
             'post_action': PostActionNoop(action="noop"),
             'timeout': DEFAULT_TIMEOUT,
+            'repeat_wait': DEFAULT_REPEAT_WAIT,
             'parent_menu': None,
         }
         standard_menu['default_choice'] = Call.get_default_menu(standard_menu)

@@ -1,5 +1,20 @@
 # Changelog
 
+## 2.8
+- Added option to play a list of messages and/or audio files
+- Added option `repeat_playlist` to `post_action`: repeat whole playlist. `repeat_message` will repeat only the last item in case of a playlist.
+- Added option `repeat_wait` for an extra delay between repeated messages (in seconds).
+  ```yaml
+    menu:
+        playlist:
+            - type: tts
+              message: "Hello World!"
+            - type: audio_file
+              audio_file: "/config/audio/welcome.mp3"
+        post_action: "repeat_playlist"
+        repeat_wait: 2
+    ```
+
 ## 2.7
 - More flexible `return` post action: specify how many levels to go back from the sub-menu
 - Added `jump` post action to jump to any menu with an id

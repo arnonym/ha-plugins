@@ -204,14 +204,21 @@ used for incoming and outgoing calls.
 menu:
     id: main # If "id" is present, a message will be sent via webhook (entered_menu), see below (optional)
     message: Please enter your access code # the message to be played via TTS (optional, defaults to empty)
+    playlist: # (optional)
+        - type: tts
+          message: Hello World!
+        - type: audio_file
+          audio_file: /config/audio/welcome.mp3'
     language: en # TTS language (optional, defaults to the global language from add-on config)
     choices_are_pin: true # If the choices should be handled like PINs (optional, defaults to false)
     timeout: 10 # time in seconds before "timeout" choice is triggered (optional, defaults to 300)
+    repeat_wait: 2 # time in seconds to wait before repeating a message/playlist (optional, defaults to 0 seconds)
     post_action: noop # this action will be triggered after the message was played. Can be 
                       # "noop" (do nothing), 
                       # "return <level>" (makes only sense in a sub-menu, returns <level> levels, defaults to 1), 
                       # "hangup" (hang-up the call) and
-                      # "repeat_message" (repeat the message until the time-out is reached)
+                      # "repeat_message" (repeat the message or last playlist item until the time-out is reached)
+                      # "repeat_playlist" (repeat the whole playlist until the time-out is reached)
                       # "jump <menu-id>" (jumps to menu with id <menu-id>)
                       # (optional, defaults to noop)
     action: # action to run when menu was entered (before playing the message) (optional)
