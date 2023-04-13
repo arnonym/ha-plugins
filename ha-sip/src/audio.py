@@ -8,7 +8,6 @@ import pydub
 
 
 def convert_audio_to_wav(audio_file_name: str, parameters: Optional[list] = None) -> Optional[str]:
-
     def get_audio_segment(file_name: str) -> Optional[pydub.AudioSegment]:
         _, file_extension = os.path.splitext(file_name)
         if file_extension == '.mp3':

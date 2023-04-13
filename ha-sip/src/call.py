@@ -29,7 +29,6 @@ DEFAULT_DTMF_ON = 180
 DEFAULT_DTMF_OFF = 220
 
 CallCallback = Callable[[CallStateChange, str, 'Call'], None]
-PostAction = Union[Literal['return'], Literal['hangup'], Literal['noop'], Literal['repeat_message'], Literal['repeat_playlist']]
 DtmfMethod = Union[Literal['in_band'], Literal['rfc2833'], Literal['sip_info']]
 PlaylistItemType = Literal['tts', 'audio_file']
 
@@ -56,6 +55,35 @@ class Action(TypedDict):
     entity_id: str
 
 
+class PostActionReturn(TypedDict):
+    action: Literal['return']
+    level: int
+
+
+class PostActionJump(TypedDict):
+    action: Literal['jump']
+    menu_id: str
+
+
+class PostActionHangup(TypedDict):
+    action: Literal['hangup']
+
+
+class PostActionNoop(TypedDict):
+    action: Literal['noop']
+
+
+class PostActionRepeatMessage(TypedDict):
+    action: Literal['repeat_message']
+
+
+class PostActionRepeatPlaylist(TypedDict):
+    action: Literal['repeat_playlist']
+
+
+PostAction = Union[PostActionReturn, PostActionJump, PostActionHangup, PostActionNoop, PostActionRepeatMessage, PostActionRepeatPlaylist]
+
+
 class MenuFromStdin(TypedDict):
     id: Optional[str]
     message: Optional[str]
@@ -64,7 +92,7 @@ class MenuFromStdin(TypedDict):
     language: Optional[str]
     action: Optional[Action]
     choices_are_pin: Optional[bool]
-    post_action: Optional[PostAction]
+    post_action: Optional[str]
     repeat_wait: int
     timeout: Optional[int]
     choices: Optional[dict[Any, MenuFromStdin]]
@@ -112,7 +140,7 @@ class Call(pj.Call):
         self.files_to_remove: list[str] = []
         self.player: Optional[player.Player] = None
         self.audio_media: Optional[pj.AudioMedia] = None
-        self.connected: bool = False
+        self.connected = False
         self.current_input = ''
         self.end_point = end_point
         self.account = sip_account
@@ -130,9 +158,10 @@ class Call(pj.Call):
         self.answer_at: Optional[float] = None
         self.tone_gen: Optional[pj.ToneGenerator] = None
         self.call_info: Optional[CallInfo] = None
-        self.pressed_digit_list = []
+        self.pressed_digit_list: List[str] = []
         self.callback_id = self.get_callback_id()
         self.menu = self.normalize_menu(menu) if menu else self.get_standard_menu()
+        self.menu_map = self.create_menu_map(self.menu)
         self.repeat_wait_begin: float | int = -1
         Call.pretty_print_menu(self.menu)
         log(self.account.config.index, 'Registering call with id %s' % self.callback_id)
@@ -162,40 +191,51 @@ class Call(pj.Call):
             return
         if self.playback_is_done and self.scheduled_post_action:
             post_action = self.scheduled_post_action
-            if post_action not in ['repeat_message', 'repeat_playlist']:
-                log(self.account.config.index, 'Scheduled post action: %s' % post_action)
-            if post_action == 'noop':
-                pass
-            elif post_action == 'return':
-                self.handle_menu(self.menu['parent_menu'])
-                return
-            elif post_action == 'hangup':
-                self.hangup_call()
-            elif post_action == 'repeat_message':
-                self.handle_repeat_wait()
-                return
-            elif post_action == 'repeat_playlist':
-                self.handle_repeat_wait()
-                return
-            else:
-                log(self.account.config.index, 'Unknown post_action: %s' % post_action)
             self.scheduled_post_action = None
-            return
+            self.handle_post_action(post_action)
         if len(self.pressed_digit_list) > 0:
             next_digit = self.pressed_digit_list.pop(0)
             self.handle_dtmf_digit(next_digit)
             return
 
+    def handle_post_action(self, post_action: PostAction):
+        if post_action["action"] not in ['repeat_message', 'repeat_playlist']:
+            log(self.account.config.index, 'Scheduled post action: %s' % post_action["action"])
+        if post_action["action"] == 'noop':
+            pass
+        elif post_action["action"] == 'return':
+            m = self.menu
+            for _ in range(0, post_action['level']):
+                if m:
+                    m = m['parent_menu']
+            if m:
+                self.handle_menu(m)
+            else:
+                log(self.account.config.index, 'Could not return %s level in current menu' % post_action["level"])
+        elif post_action["action"] == 'jump':
+            new_menu = self.menu_map.get(post_action['menu_id'])
+            if new_menu:
+                self.handle_menu(new_menu)
+            else:
+                log(self.account.config.index, 'Could not find menu id: %s' % post_action["menu_id"])
+        elif post_action["action"] == 'hangup':
+            self.hangup_call()
+        elif post_action["action"] in ['repeat_message', 'repeat_playlist']:
+            self.handle_repeat_wait()
+        else:
+            log(self.account.config.index, 'Unknown post_action: %s' % repr(post_action["action"]))
+
     def handle_repeat_wait(self):
+        self.scheduled_post_action = self.menu["post_action"]
         if not self.menu['repeat_wait']:
-            log(self.account.config.index, 'Scheduled post action (no wait): %s' % self.scheduled_post_action)
+            log(self.account.config.index, 'Scheduled post action (no wait): %s' % self.scheduled_post_action["action"])
             self.handle_menu(self.menu, send_webhook_event=False, handle_action=False, reset_input=False)
         elif self.menu['repeat_wait'] and self.repeat_wait_begin == -1:
-            log(self.account.config.index, 'Wait %.3f seconds before %s' % (self.menu['repeat_wait'], self.scheduled_post_action))
+            log(self.account.config.index, 'Wait %.3f seconds before %s' % (self.menu['repeat_wait'], self.scheduled_post_action["action"]))
             self.repeat_wait_begin = time.time()
         elif self.menu['repeat_wait'] and time.time() - self.repeat_wait_begin > self.menu['repeat_wait']:
+            log(self.account.config.index, 'Scheduled post action (with wait): %s' % self.scheduled_post_action["action"])
             self.repeat_wait_begin = -1
-            log(self.account.config.index, 'Scheduled post action (with wait): %s' % self.scheduled_post_action)
             self.handle_menu(self.menu, send_webhook_event=False, handle_action=False, reset_input=False)
 
     def trigger_webhook(self, event: ha.WebhookEvent):
@@ -208,7 +248,7 @@ class Call(pj.Call):
     def handle_connected_state(self):
         log(self.account.config.index, 'Call is established.')
         self.connected = True
-        self.last_seen = time.time()
+        self.reset_timeout()
         if self.webhook_to_call:
             ha.trigger_webhook(self.ha_config, {
                 'event': 'call_established',
@@ -269,7 +309,8 @@ class Call(pj.Call):
             if self.player:
                 self.player.stopTransmit(self.audio_media)
             self.playback_is_done = True
-        self.last_seen = time.time()
+            self.scheduled_post_action = None
+        self.reset_timeout()
         self.pressed_digit_list.append(prm.digit)
 
     def handle_dtmf_digit(self, pressed_digit: str) -> None:
@@ -287,6 +328,7 @@ class Call(pj.Call):
         log(self.account.config.index, 'Current input: %s' % self.current_input)
         choices = self.menu.get('choices')
         if choices is not None:
+            self.repeat_wait_begin = -1
             if self.current_input in choices:
                 self.handle_menu(choices[self.current_input])
                 return
@@ -328,6 +370,7 @@ class Call(pj.Call):
         log(self.account.config.index, 'onCallRedirected')
 
     def handle_menu(self, menu: Optional[Menu], send_webhook_event=True, handle_action=True, reset_input=True) -> None:
+        self.reset_timeout()
         if not menu:
             log(self.account.config.index, 'No menu supplied')
             return
@@ -389,7 +432,8 @@ class Call(pj.Call):
     def play_playlist(self, playlist: Playlist, language: str) -> None:
         log(self.account.config.index, 'Playing playlist')
         wav_playlist = list()
-        playlist = [playlist[-1]] if self.scheduled_post_action == 'repeat_message' else playlist
+        if self.scheduled_post_action:
+            playlist = [playlist[-1]] if self.scheduled_post_action.get("action", '') == 'repeat_message' else playlist
         for playlist_item in playlist:
             if playlist_item['type'] == 'tts':
                 if not playlist_item.get('message'):
@@ -449,7 +493,7 @@ class Call(pj.Call):
         self.answer_at = time.time()
 
     def send_dtmf(self, digits: str, method: DtmfMethod = 'in_band') -> None:
-        self.last_seen = time.time()
+        self.reset_timeout()
         log(self.account.config.index, 'Sending DTMF %s' % digits)
         if method == 'in_band':
             if not self.tone_gen:
@@ -488,7 +532,49 @@ class Call(pj.Call):
             'parsed_caller': parsed_caller,
         }
 
+    def reset_timeout(self):
+        self.last_seen = time.time()
+
     def normalize_menu(self, menu: MenuFromStdin, parent_menu: Optional[Menu] = None, is_default_or_timeout_choice=False) -> Menu:
+        def parse_post_action(action: Optional[str]) -> PostAction:
+            if (not action) or (action == 'noop'):
+                return PostActionNoop(action='noop')
+            elif action == 'hangup':
+                return PostActionHangup(action='hangup')
+            elif action == 'repeat_message':
+                return PostActionRepeatMessage(action='repeat_message')
+            elif action == 'repeat_playlist':
+                return PostActionRepeatPlaylist(action='repeat_playlist')
+            elif action.startswith('return'):
+                _, *params = action.split()
+                level_str = utils.safe_list_get(params, 0, 1)
+                level = utils.convert_to_int(level_str, 1)
+                return PostActionReturn(action='return', level=level)
+            elif action.startswith('jump'):
+                _, *params = action.split(None)
+                menu_id = utils.safe_list_get(params, 0, None)
+                return PostActionJump(action='jump', menu_id=menu_id)
+            else:
+                log(self.account.config.index, 'Unknown post_action: %s' % action)
+                return PostActionNoop(action='noop')
+
+        def normalize_choice(item: tuple[Any, MenuFromStdin], parent_menu_for_choice: Menu) -> tuple[str, Menu]:
+            choice, sub_menu = item
+            normalized_choice = str(choice).lower()
+            normalized_sub_menu = self.normalize_menu(sub_menu, parent_menu_for_choice, normalized_choice in ['default', 'timeout'])
+            return normalized_choice, normalized_sub_menu
+
+        def get_default_or_timeout_choice(choice: Union[Literal['default'], Literal['timeout']], parent_menu_for_choice: Menu) -> Optional[Menu]:
+            if is_default_or_timeout_choice:
+                return None
+            elif choice in normalized_choices:
+                return normalized_choices.pop(choice)
+            else:
+                if choice == 'default':
+                    return Call.get_default_menu(parent_menu_for_choice)
+                else:
+                    return Call.get_timeout_menu(parent_menu_for_choice)
+
         normalized_menu: Menu = {
             'id': menu.get('id'),
             'message': menu.get('message'),
@@ -501,33 +587,29 @@ class Call(pj.Call):
             'default_choice': None,
             'timeout_choice': None,
             'timeout': utils.convert_to_float(menu.get('timeout'), DEFAULT_TIMEOUT),
-            'post_action': menu.get('post_action') or 'noop',
             'repeat_wait': utils.convert_to_float(menu.get('repeat_wait'), DEFAULT_REPEAT_WAIT),
+            'post_action': parse_post_action(menu.get('post_action')),
             'parent_menu': parent_menu,
         }
         choices = menu.get('choices')
-
-        def normalize_choice(item: tuple[Any, MenuFromStdin]) -> tuple[str, Menu]:
-            choice, sub_menu = item
-            normalized_choice = str(choice).lower()
-            normalized_sub_menu = self.normalize_menu(sub_menu, normalized_menu, normalized_choice in ['default', 'timeout'])
-            return normalized_choice, normalized_sub_menu
-
-        def get_default_or_timeout_choice(choice: Union[Literal['default'], Literal['timeout']]) -> Optional[Menu]:
-            if is_default_or_timeout_choice:
-                return None
-            elif choice in normalized_choices:
-                return normalized_choices.pop(choice)
-            else:
-                return Call.get_default_menu(normalized_menu) if choice == 'default' else Call.get_timeout_menu(normalized_menu)
-
-        normalized_choices = dict(map(normalize_choice, choices.items())) if choices else dict()
-        default_choice = get_default_or_timeout_choice('default')
-        timeout_choice = get_default_or_timeout_choice('timeout')
+        normalized_choices = dict(map(lambda c: normalize_choice(c, normalized_menu), choices.items())) if choices else dict()
+        default_choice = get_default_or_timeout_choice('default', normalized_menu)
+        timeout_choice = get_default_or_timeout_choice('timeout', normalized_menu)
         normalized_menu['choices'] = normalized_choices
         normalized_menu['default_choice'] = default_choice
         normalized_menu['timeout_choice'] = timeout_choice
         return normalized_menu
+
+    @staticmethod
+    def create_menu_map(menu: Menu) -> dict[str, Menu]:
+        def add_to_map(menu_map: dict[str, Menu], m: Menu) -> dict[str, Menu]:
+            if m['id']:
+                menu_map[m['id']] = m
+            if m['choices']:
+                for m in m['choices'].values():
+                    add_to_map(menu_map, m)
+            return menu_map
+        return add_to_map({}, menu)
 
     @staticmethod
     def parse_caller(remote_uri: str) -> Optional[str]:
@@ -552,7 +634,7 @@ class Call(pj.Call):
             'choices': None,
             'default_choice': None,
             'timeout_choice': None,
-            'post_action': 'return',
+            'post_action': PostActionReturn(action="return", level=1),
             'timeout': DEFAULT_TIMEOUT,
             'repeat_wait': DEFAULT_REPEAT_WAIT,
             'parent_menu': parent_menu,
@@ -571,7 +653,7 @@ class Call(pj.Call):
             'choices': None,
             'default_choice': None,
             'timeout_choice': None,
-            'post_action': 'hangup',
+            'post_action': PostActionHangup(action="hangup"),
             'timeout': DEFAULT_TIMEOUT,
             'repeat_wait': DEFAULT_REPEAT_WAIT,
             'parent_menu': parent_menu,
@@ -590,7 +672,7 @@ class Call(pj.Call):
             'choices': dict(),
             'default_choice': None,
             'timeout_choice': None,
-            'post_action': 'noop',
+            'post_action': PostActionNoop(action="noop"),
             'timeout': DEFAULT_TIMEOUT,
             'repeat_wait': DEFAULT_REPEAT_WAIT,
             'parent_menu': None,
