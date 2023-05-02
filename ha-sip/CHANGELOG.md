@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.8
+- Add fault-handler
+- Upgrade to python 3.10
+- Use alpine image instead of ubuntu
+
 ## 2.7
 - More flexible `return` post action: specify how many levels to go back from the sub-menu
 - Added `jump` post action to jump to any menu with an id

@@ -2,6 +2,7 @@
 
 import collections.abc
 import sys
+import faulthandler
 from typing import Optional
 
 import pjsua2 as pj
@@ -172,4 +173,5 @@ def main():
 
 
 if __name__ == '__main__':
+    faulthandler.enable()
     main()

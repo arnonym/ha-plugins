@@ -61,18 +61,22 @@ case "$1" in
         ;;
     test)
         echo "Running unit tests..."
+        export LD_LIBRARY_PATH="$SCRIPT_DIR"/venv/lib:$LD_LIBRARY_PATH
+        source "$SCRIPT_DIR"/venv/bin/activate
         python3 -m unittest discover -s "$SCRIPT_DIR"/ha-sip/src
         echo "Running type-check..."
         pyright ha-sip
         ;;
     run-local)
+        export LD_LIBRARY_PATH="$SCRIPT_DIR"/venv/lib:$LD_LIBRARY_PATH
+        source "$SCRIPT_DIR"/venv/bin/activate
         "$SCRIPT_DIR"/ha-sip/src/main.py local
         ;;
     create-venv)
         rm -rf "$SCRIPT_DIR"/venv "$SCRIPT_DIR"/deps
         python3 -m venv "$SCRIPT_DIR"/venv
         source "$SCRIPT_DIR"/venv/bin/activate
-        pip3 install pydub requests PyYAML typing_extensions
+        pip3 install pydub requests PyYAML typing_extensions pyright
         mkdir "$SCRIPT_DIR"/deps
         cd "$SCRIPT_DIR"/deps || exit
         git clone --depth 1 --branch 2.13 https://github.com/pjsip/pjproject.git
@@ -87,7 +91,7 @@ case "$1" in
         python setup.py install
         ;;
     *)
-        echo "Supply one of 'build-next', 'build', 'test', 'update' or 'create-venv'"
+        echo "Supply one of 'build-next', 'build', 'test', 'update', 'run-local' or 'create-venv'"
         exit 1
         ;;
 esac
