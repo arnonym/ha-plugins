@@ -2,8 +2,9 @@ ARG BUILD_FROM
 FROM $BUILD_FROM
 ENV LANG C.UTF-8
 
-RUN apt-get update
-RUN apt-get install -y build-essential git swig python3 python3-dev python3-pip ffmpeg
+RUN apk update
+RUN apk upgrade
+RUN apk add build-base openssl-dev alsa-lib-dev gsm-dev speex-dev speexdsp-dev portaudio-dev libsrtp-dev libsamplerate-dev linux-headers python3-dev swig ffmpeg git
 
 RUN pip3 install pydub requests PyYAML typing_extensions
 
@@ -18,7 +19,6 @@ RUN set -xe \
     && cd pjsip-apps/src/swig \
     && make python \
     && make -C python install \
-    && ldconfig \
     && rm -rf /tmp/pjproject
 
 COPY run.sh /
