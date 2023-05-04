@@ -17,6 +17,7 @@ def convert_audio_to_wav(audio_file_name: str) -> Optional[str]:
         if file_extension == '.wav':
             return pydub.AudioSegment.from_wav(file_name)
         return None
+
     if not os.path.exists(audio_file_name):
         print('Error: could not find audio file:', audio_file_name)
         return None
@@ -34,3 +35,10 @@ def convert_mp3_stream_to_wav(stream: bytes) -> Optional[str]:
     mp3_file_handler.write(stream)
     mp3_file_handler.flush()
     return convert_audio_to_wav(mp3_file_handler.name)
+
+
+def write_wav_to_file(stream: bytes) -> Optional[str]:
+    wav_file_handler = tempfile.NamedTemporaryFile(suffix=".wav")
+    wav_file_handler.write(stream)
+    wav_file_handler.flush()
+    return wav_file_handler.name

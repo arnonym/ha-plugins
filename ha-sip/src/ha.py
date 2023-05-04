@@ -96,7 +96,10 @@ def create_and_get_tts(ha_config: HaConfig, message: str, language: str) -> tupl
     response_deserialized = create_response.json()
     mp3_url = response_deserialized['url']
     mp3_response = requests.get(mp3_url, headers=headers)
-    wav_file_name = audio.convert_mp3_stream_to_wav(mp3_response.content)
+    if mp3_url.split(".")[-1] == "mp3":
+        wav_file_name = audio.convert_mp3_stream_to_wav(mp3_response.content)
+    else:
+        wav_file_name = audio.write_wav_to_file(mp3_response.content)
     if not wav_file_name:
         log(None, 'Error converting to wav: %s' % wav_file_name)
         error_file_name = os.path.join(constants.ROOT_PATH, 'sound/answer.wav')
