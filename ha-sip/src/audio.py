@@ -38,7 +38,7 @@ def convert_mp3_stream_to_wav(stream: bytes) -> Optional[str]:
 
 
 def write_wav_to_file(stream: bytes) -> Optional[str]:
-    wav_file_handler = tempfile.NamedTemporaryFile(suffix=".wav")
+    wav_file_handler = tempfile.NamedTemporaryFile(suffix=".wav", delete=False)
     wav_file_handler.write(stream)
     wav_file_handler.flush()
     return wav_file_handler.name
