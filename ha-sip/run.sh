@@ -26,6 +26,16 @@ sed -i -- 's~\$SIP2_ANSWER_MODE~'"$(bashio::config 'sip_2.answer_mode')"'~g' /ha
 sed -i -- 's~\$SIP2_SETTLE_TIME~'"$(bashio::config 'sip_2.settle_time')"'~g' /ha-sip/config.py
 sed -i -- 's~\$SIP2_INCOMING_CALL_FILE~'"$(bashio::config 'sip_2.incoming_call_file')"'~g' /ha-sip/config.py
 
+sed -i -- 's~\$SIP3_ENABLED~'"$(bashio::config 'sip_3.enabled')"'~g' /ha-sip/config.py
+sed -i -- 's~\$SIP3_ID_URI~'"$(bashio::config 'sip_3.id_uri')"'~g' /ha-sip/config.py
+sed -i -- 's~\$SIP3_REGISTRAR_URI~'"$(bashio::config 'sip_3.registrar_uri')"'~g' /ha-sip/config.py
+sed -i -- 's~\$SIP3_REALM~'"$(bashio::config 'sip_3.realm')"'~g' /ha-sip/config.py
+sed -i -- 's~\$SIP3_USER_NAME~'"$(bashio::config 'sip_3.user_name')"'~g' /ha-sip/config.py
+sed -i -- 's~\$SIP3_PASSWORD~'"$(bashio::config 'sip_3.password')"'~g' /ha-sip/config.py
+sed -i -- 's~\$SIP3_ANSWER_MODE~'"$(bashio::config 'sip_3.answer_mode')"'~g' /ha-sip/config.py
+sed -i -- 's~\$SIP3_SETTLE_TIME~'"$(bashio::config 'sip_3.settle_time')"'~g' /ha-sip/config.py
+sed -i -- 's~\$SIP3_INCOMING_CALL_FILE~'"$(bashio::config 'sip_3.incoming_call_file')"'~g' /ha-sip/config.py
+
 sed -i -- 's~\$TTS_PLATFORM~'"$(bashio::config 'tts.platform')"'~g' /ha-sip/config.py
 sed -i -- 's~\$TTS_LANGUAGE~'"$(bashio::config 'tts.language')"'~g' /ha-sip/config.py
 sed -i -- 's~\$HA_WEBHOOK_ID~'"$(bashio::config 'webhook.id')"'~g' /ha-sip/config.py

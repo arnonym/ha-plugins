@@ -87,7 +87,7 @@ data_template:
 
 If there is already an outgoing call to the same number active, the request will be ignored.
 
-To hang up the call again:
+#### To hang up the call again:
 
 ```yaml
 service: hassio.addon_stdin
@@ -98,7 +98,7 @@ data_template:
         number: sip:**620@fritz.box
 ```
 
-To send DTMF digits to an established call:
+#### To send DTMF digits to an established call:
 
 ```yaml
 service: hassio.addon_stdin
@@ -114,8 +114,32 @@ data_template:
 > **Note**
 > When using a `#` digit, you need to put the whole sequence in quotes, eg. `"#5"`.
 
-> **Warning** 
+> **Warning**
 > You can't use the `post_action` with `send_dtmf` because I don't see a way to know when PJSIP is done sending the tones.
+
+#### To transfer a call to a different SIP URI:
+
+```yaml
+service: hassio.addon_stdin
+data_template:
+    addon: c7744bff_ha-sip
+    input:
+        command: transfer
+        number: sip:**620@fritz.box
+        transfer_to: sip:**623@fritz.box
+```
+
+#### To bridge the audio streams of two active calls:
+
+```yaml
+service: hassio.addon_stdin
+data_template:
+    addon: c7744bff_ha-sip
+    input:
+        command: bridge_audio
+        number: sip:**620@fritz.box
+        bridge_to: sip:**623@fritz.box
+```
 
 ### Incoming calls
 

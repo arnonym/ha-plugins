@@ -1,6 +1,6 @@
 {
     "name": "ha-sip",
-    "version": "2.8",
+    "version": "2.9",
     "slug": "ha-sip",
     "url": "https://github.com/arnonym/ha-plugins",
     "description": "Home-Assistant SIP Gateway",
@@ -43,6 +43,17 @@
             "settle_time": 1,
             "incoming_call_file": ""
         },
+        "sip_3": {
+            "enabled": false,
+            "registrar_uri": "sip:192.168.178.10",
+            "id_uri": "",
+            "realm": "*",
+            "user_name": "",
+            "password": "",
+            "answer_mode": "listen",
+            "settle_time": 1,
+            "incoming_call_file": ""
+        },
         "tts": {
             "platform": "google_translate",
             "language": "en"
@@ -69,6 +80,17 @@
             "incoming_call_file": "str"
         },
         "sip_2": {
+            "enabled": "bool",
+            "registrar_uri": "str",
+            "id_uri": "str",
+            "realm": "str",
+            "user_name": "str",
+            "password": "str",
+            "answer_mode": "list(listen|accept)",
+            "settle_time": "float",
+            "incoming_call_file": "str"
+        },
+        "sip_3": {
             "enabled": "bool",
             "registrar_uri": "str",
             "id_uri": "str",

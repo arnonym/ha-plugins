@@ -4,7 +4,7 @@ ENV LANG C.UTF-8
 
 RUN apk update
 RUN apk upgrade
-RUN apk add build-base openssl-dev alsa-lib-dev gsm-dev speex-dev speexdsp-dev portaudio-dev libsrtp-dev libsamplerate-dev linux-headers python3-dev swig ffmpeg git
+RUN apk add build-base openssl-dev alsa-lib-dev gsm-dev opus-dev speex-dev speexdsp-dev portaudio-dev libsrtp-dev libsamplerate-dev linux-headers python3-dev swig ffmpeg git
 
 RUN pip3 install pydub requests PyYAML typing_extensions
 
