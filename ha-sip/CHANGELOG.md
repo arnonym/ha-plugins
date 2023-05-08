@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.9
+- Allow transfer of calls
+- Bridge audio streams between calls
+- Add handling of wav files returned from TTS services
+- Allow three SIP accounts
+
 ## 2.8
 - Add fault-handler
 - Upgrade to python 3.10

@@ -9,7 +9,16 @@ import call
 
 
 class Command(TypedDict):
-    command: Union[Literal['dial'], Literal['hangup'], Literal['answer'], Literal['send_dtmf'], Literal['state'], Literal['quit']]
+    command: Union[
+        Literal['dial'],
+        Literal['hangup'],
+        Literal['answer'],
+        Literal['transfer'],
+        Literal['bridge_audio'],
+        Literal['send_dtmf'],
+        Literal['state'],
+        Literal['quit'],
+    ]
     number: Optional[str]
     menu: Optional[call.MenuFromStdin]
     ring_timeout: Optional[str]
@@ -18,6 +27,8 @@ class Command(TypedDict):
     webhook_to_call: Optional[call.WebhookToCall]
     digits: Optional[str]
     method: Optional[call.DtmfMethod]
+    bridge_to: Optional[str]
+    transfer_to: Optional[str]
 
 
 class CommandClient(object):

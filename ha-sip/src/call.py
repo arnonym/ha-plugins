@@ -250,10 +250,6 @@ class Call(pj.Call):
                 'sip_account': self.account.config.index,
             })
             self.connected = False
-            self.account.c = None
-            self.account.acceptCall = False
-            self.account.inCall = False
-            self.account.call_id = None
             self.current_input = ''
             self.callback(CallStateChange.HANGUP, self.callback_id, self)
         else:
@@ -311,7 +307,7 @@ class Call(pj.Call):
         log(self.account.config.index, 'onCallTransferRequest')
 
     def onCallTransferStatus(self, prm):
-        log(self.account.config.index, 'onCallTransferStatus')
+        log(self.account.config.index, 'onCallTransferStatus. Status code: %s (%s)' % (prm.statusCode, prm.reason))
 
     def onCallReplaceRequest(self, prm):
         log(self.account.config.index, 'onCallReplaceRequest')
@@ -389,9 +385,12 @@ class Call(pj.Call):
             self.play_wav_file(sound_file_name, True)
 
     def play_wav_file(self, sound_file_name: str, must_be_deleted: bool) -> None:
-        self.player = player.Player(self.on_playback_done)
-        self.playback_is_done = False
-        self.player.play_file(self.audio_media, sound_file_name)
+        if self.audio_media:
+            self.player = player.Player(self.on_playback_done)
+            self.playback_is_done = False
+            self.player.play_file(self.audio_media, sound_file_name)
+        else:
+            log(self.account.config.index, 'Audio media not connected. Cannot play audio stream!')
         if must_be_deleted:
             os.remove(sound_file_name)
 
@@ -409,13 +408,27 @@ class Call(pj.Call):
     def hangup_call(self) -> None:
         log(self.account.config.index, 'Hang-up.')
         call_prm = pj.CallOpParam(True)
-        pj.Call.hangup(self, call_prm)
+        self.hangup(call_prm)
 
     def answer_call(self, new_menu: Optional[MenuFromStdin]) -> None:
         log(self.account.config.index, 'Trigger answer of call (if not established already)')
         if new_menu:
             self.menu = self.normalize_menu(new_menu)
         self.answer_at = time.time()
+
+    def transfer(self, transfer_to):
+        log(self.account.config.index, 'Transfer call to %s' % transfer_to)
+        xfer_param = pj.CallOpParam(True)
+        self.xfer(transfer_to, xfer_param)
+
+    def bridge_audio(self, call_two: Call):
+        if self.audio_media and call_two.audio_media:
+            log(self.account.config.index, 'Connect audio stream of "%s" and "%s"' % (self.get_callback_id(), call_two.get_callback_id()))
+            self.audio_media.startTransmit(call_two.audio_media)
+            call_two.audio_media.startTransmit(self.audio_media)
+            log(self.account.config.index, 'Audio streams connected.')
+        else:
+            log(self.account.config.index, 'At least one audio media is not connected. Cannot bridge audio between calls!')
 
     def send_dtmf(self, digits: str, method: DtmfMethod = 'in_band') -> None:
         self.reset_timeout()
@@ -605,7 +618,7 @@ class Call(pj.Call):
 
 def make_call(
     ep: pj.Endpoint,
-    account: pj.Account,
+    acc: account.Account,
     uri_to_call: str,
     menu: Optional[MenuFromStdin],
     callback: CallCallback,
@@ -614,7 +627,7 @@ def make_call(
     webhook_to_call: Optional[str],
     webhooks: Optional[WebhookToCall],
 ) -> Call:
-    new_call = Call(ep, account, pj.PJSUA_INVALID_ID, uri_to_call, menu, callback, ha_config, ring_timeout, webhook_to_call, webhooks)
+    new_call = Call(ep, acc, pj.PJSUA_INVALID_ID, uri_to_call, menu, callback, ha_config, ring_timeout, webhook_to_call, webhooks)
     call_param = pj.CallOpParam(True)
     new_call.makeCall(uri_to_call, call_param)
     return new_call

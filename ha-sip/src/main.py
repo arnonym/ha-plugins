@@ -67,6 +67,36 @@ def handle_command(
             return
         current_call = call_state.get_call(number)
         current_call.answer_call(menu)
+    elif verb == 'transfer':
+        if not number:
+            log(None, 'Error: Missing number for command "transfer"')
+            return
+        transfer_to = command.get('transfer_to')
+        if not transfer_to:
+            log(None, 'Error: Missing transfer_to for command "transfer_to"')
+            return
+        if not call_state.is_active(number):
+            log(None, 'Warning: call not in progress: %s' % number)
+            return
+        current_call = call_state.get_call(number)
+        current_call.transfer(transfer_to)
+    elif verb == 'bridge_audio':
+        if not number:
+            log(None, 'Error: Missing number for command "bridge_audio"')
+            return
+        bridge_to = command.get('bridge_to')
+        if not bridge_to:
+            log(None, 'Error: Missing bridge_to for command "bridge_audio"')
+            return
+        if not call_state.is_active(number):
+            log(None, 'Warning: call not in progress: %s' % number)
+            return
+        if not call_state.is_active(bridge_to):
+            log(None, 'Warning: call not in progress: %s' % bridge_to)
+            return
+        call_one = call_state.get_call(number)
+        call_two = call_state.get_call(bridge_to)
+        call_one.bridge_audio(call_two)
     elif verb == 'send_dtmf':
         if not number:
             log(None, 'Error: Missing number for command "send_dtmf"')
@@ -153,6 +183,18 @@ def main():
             mode=call.CallHandling.get_or_else(config.SIP2_ANSWER_MODE, call.CallHandling.LISTEN),
             settle_time=utils.convert_to_float(config.SIP2_SETTLE_TIME, 1),
             incoming_call_config=load_menu_from_file(config.SIP2_INCOMING_CALL_FILE, 2),
+        ),
+        3: account.MyAccountConfig(
+            enabled=config.SIP3_ENABLED.lower() == 'true',
+            index=3,
+            id_uri=config.SIP3_ID_URI,
+            registrar_uri=config.SIP3_REGISTRAR_URI,
+            realm=config.SIP3_REALM,
+            user_name=config.SIP3_USER_NAME,
+            password=config.SIP3_PASSWORD,
+            mode=call.CallHandling.get_or_else(config.SIP3_ANSWER_MODE, call.CallHandling.LISTEN),
+            settle_time=utils.convert_to_float(config.SIP3_SETTLE_TIME, 1),
+            incoming_call_config=load_menu_from_file(config.SIP3_INCOMING_CALL_FILE, 3),
         ),
     }
     ha_config = ha.HaConfig(config.HA_BASE_URL, config.HA_TOKEN, config.TTS_PLATFORM, config.TTS_LANGUAGE, config.HA_WEBHOOK_ID)
