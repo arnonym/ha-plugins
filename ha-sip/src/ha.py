@@ -94,12 +94,13 @@ def create_and_get_tts(ha_config: HaConfig, message: str, language: str) -> tupl
         error_file_name = os.path.join(constants.ROOT_PATH, 'sound/answer.wav')
         return error_file_name, False
     response_deserialized = create_response.json()
-    mp3_url = response_deserialized['url']
-    mp3_response = requests.get(mp3_url, headers=headers)
-    if mp3_url.split(".")[-1] == "mp3":
-        wav_file_name = audio.convert_mp3_stream_to_wav(mp3_response.content)
+    tts_url = response_deserialized['url']
+    log(None, 'Getting audio from "%s"' % tts_url)
+    tts_response = requests.get(tts_url, headers=headers)
+    if tts_url.endswith('.mp3'):
+        wav_file_name = audio.convert_mp3_stream_to_wav_file(tts_response.content)
     else:
-        wav_file_name = audio.write_wav_to_file(mp3_response.content)
+        wav_file_name = audio.write_wav_stream_to_wav_file(tts_response.content)
     if not wav_file_name:
         log(None, 'Error converting to wav: %s' % wav_file_name)
         error_file_name = os.path.join(constants.ROOT_PATH, 'sound/answer.wav')
