@@ -90,7 +90,7 @@ def create_and_get_tts(ha_config: HaConfig, message: str, language: str) -> tupl
     headers = ha_config.create_headers()
     create_response = requests.post(ha_config.get_tts_url(), json={'platform': ha_config.tts_engine, 'message': message, 'language': language}, headers=headers)
     if create_response.status_code != 200:
-        log(None, 'Error getting tts file %s %s' % (create_response.status_code, create_response.content))
+        log(None, 'Error getting tts file %r %r' % (create_response.status_code, create_response.content))
         error_file_name = os.path.join(constants.ROOT_PATH, 'sound/answer.wav')
         return error_file_name, False
     response_deserialized = create_response.json()
@@ -111,7 +111,7 @@ def create_and_get_tts(ha_config: HaConfig, message: str, language: str) -> tupl
 def call_service(ha_config: HaConfig, domain: str, service: str, entity_id: str) -> None:
     headers = ha_config.create_headers()
     service_response = requests.post(ha_config.get_service_url(domain, service), json={'entity_id': entity_id}, headers=headers)
-    log(None, 'Service response %s %s' % (service_response.status_code, service_response.content))
+    log(None, 'Service response %r %r' % (service_response.status_code, service_response.content))
 
 
 def trigger_webhook(ha_config: HaConfig, event: WebhookEvent, overwrite_webhook_id: Optional[str] = None) -> None:
@@ -122,4 +122,4 @@ def trigger_webhook(ha_config: HaConfig, event: WebhookEvent, overwrite_webhook_
     log(None, 'Calling webhook %s with data %s' % (webhook_id, event))
     headers = ha_config.create_headers()
     service_response = requests.post(ha_config.get_webhook_url(webhook_id), json=event, headers=headers)
-    log(None, 'Webhook response %s %s' % (service_response.status_code, service_response.content))
+    log(None, 'Webhook response %r %r' % (service_response.status_code, service_response.content))

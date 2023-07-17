@@ -1,6 +1,6 @@
 from __future__ import annotations
-import re
 
+import re
 from typing import Optional
 
 import pjsua2 as pj
@@ -9,7 +9,9 @@ import call
 import ha
 import incoming_call
 import utils
+from constants import DEFAULT_RING_TIMEOUT
 from log import log
+from command_handler import CommandHandler
 
 
 class MyAccountConfig(object):
@@ -40,11 +42,11 @@ class MyAccountConfig(object):
 
 
 class Account(pj.Account):
-    def __init__(self, end_point: pj.Endpoint, config: MyAccountConfig, callback: call.CallCallback, ha_config: ha.HaConfig, make_default=False):
+    def __init__(self, end_point: pj.Endpoint, config: MyAccountConfig, command_handler: CommandHandler, ha_config: ha.HaConfig, make_default=False):
         pj.Account.__init__(self)
         self.config = config
         self.end_point = end_point
-        self.callback = callback
+        self.command_handler = command_handler
         self.ha_config = ha_config
         self.make_default = make_default
 
@@ -70,7 +72,7 @@ class Account(pj.Account):
         answer_after = float(utils.convert_to_int(self.config.incoming_call_config.get('answer_after'), 0)) if self.config.incoming_call_config else 0.0
         webhook_to_call = self.config.incoming_call_config.get('webhook_to_call') if self.config.incoming_call_config else None
         incoming_call_instance = call.Call(
-            self.end_point, self, prm.callId, None, menu, self.callback, self.ha_config, call.DEFAULT_TIMEOUT, None, webhook_to_call
+            self.end_point, self, prm.callId, None, menu, self.command_handler, self.ha_config, DEFAULT_RING_TIMEOUT, None, webhook_to_call,
         )
         ci = incoming_call_instance.get_call_info()
         answer_mode = self.get_sip_return_code(self.config.mode, allowed_numbers, blocked_numbers, ci['parsed_caller'])
@@ -124,7 +126,7 @@ class Account(pj.Account):
         return False
 
 
-def create_account(end_point: pj.Endpoint, config: MyAccountConfig, callback: call.CallCallback, ha_config: ha.HaConfig, is_default: bool) -> Account:
-    account = Account(end_point, config, callback, ha_config, is_default)
+def create_account(end_point: pj.Endpoint, config: MyAccountConfig, command_handler: CommandHandler, ha_config: ha.HaConfig, is_default: bool) -> Account:
+    account = Account(end_point, config, command_handler, ha_config, is_default)
     account.create()
     return account

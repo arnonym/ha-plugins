@@ -10,7 +10,7 @@ RUN pip3 install pydub requests PyYAML typing_extensions
 
 WORKDIR /tmp
 RUN set -xe \
-    && git clone --depth 1 --branch 2.13 https://github.com/pjsip/pjproject.git \
+    && git clone --depth 1 --branch 2.13.1 https://github.com/pjsip/pjproject.git \
     && cd pjproject \
     && ./configure --enable-shared --disable-libwebrtc \
     && make \

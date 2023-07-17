@@ -1,5 +1,10 @@
 # Changelog
 
+## 3.0
+- Added option to call commands directly from menu 
+  (previously only possible through stdin action in home-assistant)
+- Updated pjsip to latest version
+
 ## 2.9
 - Allow transfer of calls
 - Bridge audio streams between calls
