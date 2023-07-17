@@ -1,15 +1,22 @@
+from __future__ import annotations
+
+import fcntl
 import json
 import os
-import fcntl
 import sys
 from typing import List, Union, Literal, Optional
+from typing import TYPE_CHECKING
+
 from typing_extensions import TypedDict
 
-import call
+if TYPE_CHECKING:
+    import call
 
 
 class Command(TypedDict):
     command: Union[
+        None,
+        Literal['call_service'],
         Literal['dial'],
         Literal['hangup'],
         Literal['answer'],
@@ -29,6 +36,9 @@ class Command(TypedDict):
     method: Optional[call.DtmfMethod]
     bridge_to: Optional[str]
     transfer_to: Optional[str]
+    domain: Optional[str]
+    service: Optional[str]
+    entity_id: Optional[str]
 
 
 class CommandClient(object):

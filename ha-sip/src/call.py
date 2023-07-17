@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import os
-import time
 import re
+import time
 from enum import Enum
 from typing import Optional, Callable, Union, Any, List
 
@@ -10,22 +10,17 @@ import pjsua2 as pj
 import yaml
 from typing_extensions import TypedDict, Literal
 
-import ha
-import utils
 import account
 import audio
+import ha
 import player
+import utils
+from call_state_change import CallStateChange
+from command_client import Command
+from command_handler import CommandHandler
+from constants import DEFAULT_RING_TIMEOUT, DEFAULT_DTMF_ON, DEFAULT_DTMF_OFF
 from log import log
 
-
-class CallStateChange(Enum):
-    CALL = 1
-    HANGUP = 2
-
-
-DEFAULT_TIMEOUT = 300.0
-DEFAULT_DTMF_ON = 180
-DEFAULT_DTMF_OFF = 220
 
 CallCallback = Callable[[CallStateChange, str, 'Call'], None]
 DtmfMethod = Union[Literal['in_band'], Literal['rfc2833'], Literal['sip_info']]
@@ -36,12 +31,6 @@ class WebhookToCall(TypedDict):
     entered_menu: Optional[str]
     dtmf_digit: Optional[str]
     call_disconnected: Optional[str]
-
-
-class Action(TypedDict):
-    domain: str
-    service: str
-    entity_id: str
 
 
 class PostActionReturn(TypedDict):
@@ -74,7 +63,7 @@ class MenuFromStdin(TypedDict):
     message: Optional[str]
     audio_file: Optional[str]
     language: Optional[str]
-    action: Optional[Action]
+    action: Optional[Command]
     choices_are_pin: Optional[bool]
     post_action: Optional[str]
     timeout: Optional[int]
@@ -86,7 +75,7 @@ class Menu(TypedDict):
     message: Optional[str]
     audio_file: Optional[str]
     language: str
-    action: Optional[Action]
+    action: Optional[Command]
     choices_are_pin: bool
     post_action: PostAction
     timeout: float
@@ -116,7 +105,8 @@ class CallHandling(Enum):
 
 class Call(pj.Call):
     def __init__(self, end_point: pj.Endpoint, sip_account: account.Account, call_id: str, uri_to_call: Optional[str], menu: Optional[MenuFromStdin],
-                 callback: CallCallback, ha_config: ha.HaConfig, ring_timeout: float, webhook_to_call: Optional[str], webhooks: Optional[WebhookToCall]):
+                 command_handler: CommandHandler, ha_config: ha.HaConfig, ring_timeout: float, webhook_to_call: Optional[str],
+                 webhooks: Optional[WebhookToCall]):
         pj.Call.__init__(self, sip_account, call_id)
         self.player: Optional[player.Player] = None
         self.audio_media: Optional[pj.AudioMedia] = None
@@ -130,7 +120,7 @@ class Call(pj.Call):
         self.settle_time = sip_account.config.settle_time
         self.webhook_to_call = webhook_to_call
         self.webhooks: WebhookToCall = webhooks or WebhookToCall(call_established=None, entered_menu=None, dtmf_digit=None, call_disconnected=None)
-        self.callback = callback
+        self.command_handler = command_handler
         self.scheduled_post_action: Optional[PostAction] = None
         self.playback_is_done = True
         self.last_seen = time.time()
@@ -144,7 +134,7 @@ class Call(pj.Call):
         self.menu_map = self.create_menu_map(self.menu)
         Call.pretty_print_menu(self.menu)
         log(self.account.config.index, 'Registering call with id %s' % self.callback_id)
-        self.callback(CallStateChange.CALL, self.callback_id, self)
+        self.command_handler.on_state_change(CallStateChange.CALL, self.callback_id, self)
 
     def handle_events(self) -> None:
         if not self.connected and time.time() - self.last_seen > self.ring_timeout:
@@ -251,7 +241,7 @@ class Call(pj.Call):
             })
             self.connected = False
             self.current_input = ''
-            self.callback(CallStateChange.HANGUP, self.callback_id, self)
+            self.command_handler.on_state_change(CallStateChange.HANGUP, self.callback_id, self)
         else:
             log(self.account.config.index, 'Unknown state: %s' % ci.state)
 
@@ -357,21 +347,11 @@ class Call(pj.Call):
             self.handle_action(action)
         self.scheduled_post_action = post_action
 
-    def handle_action(self, action: Optional[Action]) -> None:
+    def handle_action(self, action: Optional[Command]) -> None:
         if not action:
             log(self.account.config.index, 'No action supplied')
             return
-        domain = action.get('domain')
-        service = action.get('service')
-        entity_id = action.get('entity_id')
-        if (not domain) or (not service) or (not entity_id):
-            log(self.account.config.index, 'Error: one of domain, service or entity_id was not provided')
-            return
-        log(self.account.config.index, 'Calling home assistant service on domain %s service %s with entity %s' % (domain, service, entity_id))
-        try:
-            ha.call_service(self.ha_config, domain, service, entity_id)
-        except Exception as e:
-            log(self.account.config.index, 'Error calling home-assistant service: %s' % e)
+        self.command_handler.handle_command(action, self)
 
     def play_message(self, message: str, language: str) -> None:
         log(self.account.config.index, 'Playing message: %s' % message)
@@ -521,7 +501,7 @@ class Call(pj.Call):
             'choices': None,
             'default_choice': None,
             'timeout_choice': None,
-            'timeout': utils.convert_to_float(menu.get('timeout'), DEFAULT_TIMEOUT),
+            'timeout': utils.convert_to_float(menu.get('timeout'), DEFAULT_RING_TIMEOUT),
             'post_action': parse_post_action(menu.get('post_action')),
             'parent_menu': parent_menu,
         }
@@ -568,7 +548,7 @@ class Call(pj.Call):
             'default_choice': None,
             'timeout_choice': None,
             'post_action': PostActionReturn(action="return", level=1),
-            'timeout': DEFAULT_TIMEOUT,
+            'timeout': DEFAULT_RING_TIMEOUT,
             'parent_menu': parent_menu,
         }
 
@@ -585,7 +565,7 @@ class Call(pj.Call):
             'default_choice': None,
             'timeout_choice': None,
             'post_action': PostActionHangup(action="hangup"),
-            'timeout': DEFAULT_TIMEOUT,
+            'timeout': DEFAULT_RING_TIMEOUT,
             'parent_menu': parent_menu,
         }
 
@@ -602,7 +582,7 @@ class Call(pj.Call):
             'default_choice': None,
             'timeout_choice': None,
             'post_action': PostActionNoop(action="noop"),
-            'timeout': DEFAULT_TIMEOUT,
+            'timeout': DEFAULT_RING_TIMEOUT,
             'parent_menu': None,
         }
         standard_menu['default_choice'] = Call.get_default_menu(standard_menu)
@@ -621,13 +601,13 @@ def make_call(
     acc: account.Account,
     uri_to_call: str,
     menu: Optional[MenuFromStdin],
-    callback: CallCallback,
+    command_handler: CommandHandler,
     ha_config: ha.HaConfig,
     ring_timeout: float,
     webhook_to_call: Optional[str],
     webhooks: Optional[WebhookToCall],
 ) -> Call:
-    new_call = Call(ep, acc, pj.PJSUA_INVALID_ID, uri_to_call, menu, callback, ha_config, ring_timeout, webhook_to_call, webhooks)
+    new_call = Call(ep, acc, pj.PJSUA_INVALID_ID, uri_to_call, menu, command_handler, ha_config, ring_timeout, webhook_to_call, webhooks)
     call_param = pj.CallOpParam(True)
     new_call.makeCall(uri_to_call, call_param)
     return new_call
