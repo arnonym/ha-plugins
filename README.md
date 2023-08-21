@@ -46,7 +46,7 @@ sip_2:
     incoming_call_file: ""
 tts:
     platform: google_translate
-    language: en
+    language: en # might also be in en-US format depending, on the platform
 webhook:
     id: sip_call_webhook_id
 ```
