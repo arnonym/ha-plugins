@@ -3,7 +3,8 @@
 > **Note**
 > As of version 3.0 you need to change `c7744bff_ha-sip` to `c7744bff_ha_sip` (dash to underscore)
 > inside the `hassio.addon_stdin` command, because home-assistant 2023.9 requires no dashes in the 
-> slug of an add-on.
+> slug of an add-on. You might need to uninstall and reinstall the plug-in, remember to save your
+> config.
 
 
 ### Home Assistant SIP/VoIP Gateway is a Home Assistant add-on which 
