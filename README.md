@@ -1,12 +1,5 @@
 # ![logo](icon.png) ha-sip 
 
-> **Note**
-> As of version 3.0 you need to change `c7744bff_ha-sip` to `c7744bff_ha_sip` (dash to underscore)
-> inside the `hassio.addon_stdin` command, because home-assistant 2023.9 requires no dashes in the 
-> slug of an add-on. You might need to uninstall and reinstall the plug-in, remember to save your
-> config.
-
-
 ### Home Assistant SIP/VoIP Gateway is a Home Assistant add-on which 
 - allows the dialing and hanging up of phone numbers through a SIP end-point 
 - triggering of services through dial tones (DTMF) after the call was established.
@@ -75,7 +68,7 @@ your automation:
 ```yaml
 service: hassio.addon_stdin
 data_template:
-    addon: c7744bff_ha_sip
+    addon: c7744bff_ha-sip
     input:
         command: dial
         number: sip:**620@fritz.box
@@ -99,7 +92,7 @@ If there is already an outgoing call to the same number active, the request will
 ```yaml
 service: hassio.addon_stdin
 data_template:
-    addon: c7744bff_ha_sip
+    addon: c7744bff_ha-sip
     input:
         command: hangup
         number: sip:**620@fritz.box
@@ -110,7 +103,7 @@ data_template:
 ```yaml
 service: hassio.addon_stdin
 data_template:
-    addon: c7744bff_ha_sip
+    addon: c7744bff_ha-sip
     input:
         command: send_dtmf
         number: sip:**620@fritz.box
@@ -129,7 +122,7 @@ data_template:
 ```yaml
 service: hassio.addon_stdin
 data_template:
-    addon: c7744bff_ha_sip
+    addon: c7744bff_ha-sip
     input:
         command: transfer
         number: sip:**620@fritz.box
@@ -141,7 +134,7 @@ data_template:
 ```yaml
 service: hassio.addon_stdin
 data_template:
-    addon: c7744bff_ha_sip
+    addon: c7744bff_ha-sip
     input:
         command: bridge_audio
         number: sip:**620@fritz.box
@@ -174,7 +167,7 @@ You can also answer an incoming call from home assistant by using the `hassio.ad
 ```yaml
 service: hassio.addon_stdin
 data_template:
-    addon: c7744bff_ha_sip
+    addon: c7744bff_ha-sip
     input:
         command: answer
         number: "5551234456" # if this is unclear, you can look that up in the logs ("Registering call with id <number>")
@@ -343,7 +336,7 @@ For most events in ha-sip there's a web-hook triggered:
 ```yaml
 service: hassio.addon_stdin
 data_template:
-    addon: c7744bff_ha_sip
+    addon: c7744bff_ha-sip
     input:
         command: dial
         number: sip:**620@fritz.box
@@ -375,7 +368,7 @@ data_template:
 ```yaml
 service: hassio.addon_stdin
 data_template:
-    addon: c7744bff_ha_sip
+    addon: c7744bff_ha-sip
     input:
         command: dial
         number: sip:**620@fritz.box
@@ -390,7 +383,7 @@ data_template:
 ```yaml
 service: hassio.addon_stdin
 data_template:
-    addon: c7744bff_ha_sip
+    addon: c7744bff_ha-sip
     input:
         command: dial
         number: sip:**620@fritz.box

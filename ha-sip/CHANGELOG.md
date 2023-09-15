@@ -1,6 +1,7 @@
 # Changelog
 
-## Note: as of version 3.0 you need to change `c7744bff_ha-sip` to `c7744bff_ha_sip` (dash to underscore) inside the `hassio.addon_stdin` command, because home-assistant 2023.9 requires no dashes in the slug of an add-on.
+## 3.1
+- Reverted slug change because requirements where changed again in 2023.9.2 and created issues. If you already changed the slug in your automations you need to redo that. Sorry for any inconvenience.
 
 ## 3.0
 - Changed slug to new requirements in home-assistant 2023.9

@@ -23,7 +23,7 @@ case "$1" in
         contents="$(jq --indent 4 '.url = env.NEXT_REPO_URL' $REPO_JSON)" && echo -E "${contents}" > $REPO_JSON
         CONFIG_JSON=$TMP_URL/ha-sip/config.json
         contents="$(jq --indent 4 '.name = "ha-sip-next"' $CONFIG_JSON)" && echo -E "${contents}" > $CONFIG_JSON
-        contents="$(jq --indent 4 '.slug = "ha_sip_next"' $CONFIG_JSON)" && echo -E "${contents}" > $CONFIG_JSON
+        contents="$(jq --indent 4 '.slug = "ha-sip-next"' $CONFIG_JSON)" && echo -E "${contents}" > $CONFIG_JSON
         contents="$(jq --indent 4 '.url = env.NEXT_REPO_URL' $CONFIG_JSON)" && echo -E "${contents}" > $CONFIG_JSON
         contents="$(jq --indent 4 '.description = "Home-Assistant SIP Gateway (next version)"' $CONFIG_JSON)" && echo -E "${contents}" > $CONFIG_JSON
         contents="$(jq --indent 4 '.image = "agellhaus/{arch}-ha-sip-next"' $CONFIG_JSON)" && echo -E "${contents}" > $CONFIG_JSON
