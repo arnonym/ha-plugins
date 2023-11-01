@@ -1,5 +1,8 @@
 # Changelog
 
+## 3.2
+- Updated pjsip to latest version
+
 ## 3.1
 - Reverted slug change because requirements where changed again in 2023.9.2 and created issues. If you already changed the slug in your automations you need to redo that. Sorry for any inconvenience.
 
