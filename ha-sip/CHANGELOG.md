@@ -1,5 +1,8 @@
 # Changelog
 
+## 3.3
+- Disable debug mode for pjsip
+
 ## 3.2
 - Updated pjsip to latest version
 

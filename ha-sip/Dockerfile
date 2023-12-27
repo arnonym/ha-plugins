@@ -8,10 +8,13 @@ RUN apk add build-base openssl-dev alsa-lib-dev gsm-dev opus-dev speex-dev speex
 
 RUN pip3 install pydub requests PyYAML typing_extensions
 
-WORKDIR /tmp
+RUN git clone --depth 1 --branch 2.14 https://github.com/pjsip/pjproject.git /tmp/pjproject
+
+COPY user.mak /tmp/pjproject
+
+WORKDIR /tmp/pjproject
+
 RUN set -xe \
-    && git clone --depth 1 --branch 2.14 https://github.com/pjsip/pjproject.git \
-    && cd pjproject \
     && ./configure --enable-shared --disable-libwebrtc \
     && make \
     && make dep \
@@ -19,6 +22,7 @@ RUN set -xe \
     && cd pjsip-apps/src/swig \
     && make python \
     && make -C python install \
+    && cd / \
     && rm -rf /tmp/pjproject
 
 COPY run.sh /
