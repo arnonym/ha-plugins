@@ -4,7 +4,7 @@ import fcntl
 import json
 import os
 import sys
-from typing import List, Union, Literal, Optional
+from typing import List, Union, Literal, Optional, Dict, Any
 from typing import TYPE_CHECKING
 
 from typing_extensions import TypedDict
@@ -39,6 +39,7 @@ class Command(TypedDict):
     domain: Optional[str]
     service: Optional[str]
     entity_id: Optional[str]
+    service_data: Optional[Dict[str, Any]]
 
 
 class CommandClient(object):

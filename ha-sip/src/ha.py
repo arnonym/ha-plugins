@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import os
-from typing import Union, Optional, Dict
+from typing import Union, Optional, Dict, Any
 
 import requests
 from typing_extensions import TypedDict, Literal
@@ -108,9 +108,12 @@ def create_and_get_tts(ha_config: HaConfig, message: str, language: str) -> tupl
     return wav_file_name, True
 
 
-def call_service(ha_config: HaConfig, domain: str, service: str, entity_id: str) -> None:
+def call_service(ha_config: HaConfig, domain: str, service: str, entity_id: str, service_data: Optional[Dict[str, Any]]) -> None:
     headers = ha_config.create_headers()
-    service_response = requests.post(ha_config.get_service_url(domain, service), json={'entity_id': entity_id}, headers=headers)
+    payload: Dict[str, Any] = {'entity_id': entity_id}
+    if service_data:
+        payload.update(service_data)
+    service_response = requests.post(ha_config.get_service_url(domain, service), json=payload, headers=headers)
     log(None, 'Service response %r %r' % (service_response.status_code, service_response.content))
 
 
