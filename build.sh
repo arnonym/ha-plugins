@@ -18,15 +18,21 @@ case "$1" in
         echo "Building on next repo (aarch64 only)..."
         rm -rf $TMP_URL
         git clone -b next $REPO_URL $TMP_URL
+        # Change repo
         REPO_JSON=$TMP_URL/repository.json
         contents="$(jq --indent 4 '.name = "Home Assistant addons by Arne Gellhaus (next version)"' $REPO_JSON)" && echo -E "${contents}" > $REPO_JSON
         contents="$(jq --indent 4 '.url = env.NEXT_REPO_URL' $REPO_JSON)" && echo -E "${contents}" > $REPO_JSON
+        # Change config
         CONFIG_JSON=$TMP_URL/ha-sip/config.json
         contents="$(jq --indent 4 '.name = "ha-sip-next"' $CONFIG_JSON)" && echo -E "${contents}" > $CONFIG_JSON
         contents="$(jq --indent 4 '.slug = "ha-sip-next"' $CONFIG_JSON)" && echo -E "${contents}" > $CONFIG_JSON
         contents="$(jq --indent 4 '.url = env.NEXT_REPO_URL' $CONFIG_JSON)" && echo -E "${contents}" > $CONFIG_JSON
         contents="$(jq --indent 4 '.description = "Home-Assistant SIP Gateway (next version)"' $CONFIG_JSON)" && echo -E "${contents}" > $CONFIG_JSON
         contents="$(jq --indent 4 '.image = "agellhaus/{arch}-ha-sip-next"' $CONFIG_JSON)" && echo -E "${contents}" > $CONFIG_JSON
+        # Change readme
+        README=$TMP_URL/README.md
+        sed -i -e 's/ha-plugins/ha-plugins-next/g' $README
+        sed -i -e 's/c7744bff_ha-sip/8cd50eef_ha-sip-next/g' $README
         if [ -z "$2" ]
           then
             echo "Don't overwrite version."
