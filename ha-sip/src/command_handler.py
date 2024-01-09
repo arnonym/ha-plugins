@@ -54,12 +54,13 @@ class CommandHandler(object):
                 domain = command.get('domain')
                 service = command.get('service')
                 entity_id = command.get('entity_id')
+                service_data = command.get('service_data')
                 if (not domain) or (not service) or (not entity_id):
                     log(None, 'Error: one of domain, service or entity_id was not provided')
                     return
                 log(None, 'Calling home assistant service on domain %s service %s with entity %s' % (domain, service, entity_id))
                 try:
-                    ha.call_service(self.ha_config, domain, service, entity_id)
+                    ha.call_service(self.ha_config, domain, service, entity_id, service_data)
                 except Exception as e:
                     log(None, 'Error calling home-assistant service: %s' % e)
             case 'dial':

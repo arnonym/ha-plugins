@@ -50,7 +50,7 @@ class Account(pj.Account):
         self.ha_config = ha_config
         self.make_default = make_default
 
-    def create(self) -> None:
+    def init(self) -> None:
         account_config = pj.AccountConfig()
         account_config.idUri = self.config.id_uri
         account_config.regConfig.registrarUri = self.config.registrar_uri
@@ -128,5 +128,5 @@ class Account(pj.Account):
 
 def create_account(end_point: pj.Endpoint, config: MyAccountConfig, command_handler: CommandHandler, ha_config: ha.HaConfig, is_default: bool) -> Account:
     account = Account(end_point, config, command_handler, ha_config, is_default)
-    account.create()
+    account.init()
     return account

@@ -361,6 +361,9 @@ data_template:
                         domain: script
                         service: turn_on
                         entity_id: script.play_music_please
+                        service_data:
+                          variables:
+                            song: 'Never gonna give you up'
 ```
 
 #### Play a message without DTMF interaction on sip account 1
@@ -433,7 +436,7 @@ I would like to hear from you in which scenario you are using ha-sip!
    `HA_BASE_URL` is something like "http://homeassistant.local:8123/api"
    
    The access token is created from http://homeassistant.local:8123/profile 
-4. Run `ha-sip/src/main.py local` to run the add-on locally
+4. Run `./build.sh run-local` to run the add-on locally
 5. Paste commands as json (without line-breaks) into stdin of the running add-on:
 
    Example: 
