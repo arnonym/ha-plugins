@@ -84,7 +84,7 @@ class CommandHandler(object):
                     return
                 log(None, 'Got "hangup" command for %s' % number)
                 if not self.is_active(number):
-                    log(None, 'Warning: call not in progress: %s' % number)
+                    self.call_not_in_progress_error(number)
                     return
                 current_call = self.get_call_from_state_unsafe(number)
                 current_call.hangup_call()
@@ -94,7 +94,7 @@ class CommandHandler(object):
                     return
                 log(None, 'Got "answer" command for %s' % number)
                 if not self.is_active(number):
-                    log(None, 'Warning: call not in progress: %s' % number)
+                    self.call_not_in_progress_error(number)
                     return
                 menu = command.get('menu')
                 current_call = self.get_call_from_state_unsafe(number)
@@ -108,7 +108,7 @@ class CommandHandler(object):
                     log(None, 'Error: Missing transfer_to for command "transfer_to"')
                     return
                 if not self.is_active(number):
-                    log(None, 'Warning: call not in progress: %s' % number)
+                    self.call_not_in_progress_error(number)
                     return
                 current_call = self.get_call_from_state_unsafe(number)
                 current_call.transfer(transfer_to)
@@ -123,10 +123,10 @@ class CommandHandler(object):
                 call_one = from_call if number == 'self' else self.get_call_from_state(number)
                 call_two = from_call if bridge_to == 'self' else self.get_call_from_state(bridge_to)
                 if not call_one:
-                    log(None, 'Warning: call not in progress: %s' % number)
+                    self.call_not_in_progress_error(number)
                     return
                 if not call_two:
-                    log(None, 'Warning: call not in progress: %s' % bridge_to)
+                    self.call_not_in_progress_error(bridge_to)
                     return
                 call_one.bridge_audio(call_two)
             case 'send_dtmf':
@@ -143,7 +143,7 @@ class CommandHandler(object):
                     return
                 log(None, 'Got "send_dtmf" command for %s' % number)
                 if not self.is_active(number):
-                    log(None, 'Warning: call not in progress: %s' % number)
+                    self.call_not_in_progress_error(number)
                     return
                 current_call = self.get_call_from_state_unsafe(number)
                 current_call.send_dtmf(digits, method)
@@ -155,3 +155,7 @@ class CommandHandler(object):
                 sys.exit(0)
             case _:
                 log(None, 'Error: Unknown command: %s' % verb)
+
+    def call_not_in_progress_error(self, number: str):
+        log(None, 'Warning: call not in progress: %s' % number)
+        self.call_state.output()

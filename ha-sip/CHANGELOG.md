@@ -2,6 +2,7 @@
 
 ## 3.4
 - Add additional data to home-assistant service calls (e.g. add variables to script calls)
+- Additional logging for troubleshooting
 
 ## 3.3
 - Disable debug mode for pjsip
