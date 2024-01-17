@@ -48,7 +48,7 @@ case "$1" in
         docker run \
             --rm --privileged -v /var/run/docker.sock:/var/run/docker.sock:ro \
             homeassistant/amd64-builder:dev \
-            --no-cache --aarch64 \
+            --no-cache --aarch64 --amd64 \
             -t ha-sip -r $NEXT_REPO_URL -b next \
             --docker-user agellhaus --docker-password "$DOCKER_HUB_PASSWORD"
         ;;

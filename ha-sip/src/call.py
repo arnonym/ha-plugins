@@ -196,6 +196,7 @@ class Call(pj.Call):
         event_id = event.get('event')
         additional_webhook = self.webhooks.get(event_id)
         if additional_webhook:
+            log(self.account.config.index, 'Calling additional webhook %s for event %s' % (additional_webhook, event_id))
             ha.trigger_webhook(self.ha_config, event, additional_webhook)
         ha.trigger_webhook(self.ha_config, event)
 

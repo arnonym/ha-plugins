@@ -24,8 +24,12 @@ class State(object):
         return caller_id in self.current_call_dict
 
     def output(self) -> None:
-        for number in self.current_call_dict.keys():
-            print(number)
+        if self.current_call_dict:
+            log(None, 'Currently registered calls:')
+            for number in self.current_call_dict.keys():
+                log(None, '    %s' % number)
+        else:
+            log(None, 'No active calls.')
 
     def get_call(self, caller_id: str) -> Optional[call.Call]:
         return self.current_call_dict.get(caller_id)
