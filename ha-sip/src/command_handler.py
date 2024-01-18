@@ -147,6 +147,42 @@ class CommandHandler(object):
                     return
                 current_call = self.get_call_from_state_unsafe(number)
                 current_call.send_dtmf(digits, method)
+            case 'play_audio_file':
+                if not number:
+                    log(None, 'Error: Missing number for command "play_audio_file"')
+                    return
+                if not self.is_active(number):
+                    self.call_not_in_progress_error(number)
+                    return
+                current_call = self.get_call_from_state_unsafe(number)
+                audio_file = command.get('audio_file')
+                if not audio_file:
+                    log(None, 'Error: Missing parameter "audio_file" for command "play_audio_file"')
+                    return
+                current_call.play_audio_file(audio_file)
+            case 'play_message':
+                if not number:
+                    log(None, 'Error: Missing number for command "play_message"')
+                    return
+                if not self.is_active(number):
+                    self.call_not_in_progress_error(number)
+                    return
+                current_call = self.get_call_from_state_unsafe(number)
+                message = command.get('message')
+                if not message:
+                    log(None, 'Error: Missing parameter "message" for command "play_message"')
+                    return
+                tts_language = command.get('tts_language') or self.ha_config.tts_language
+                current_call.play_message(message, tts_language)
+            case 'stop_playback':
+                if not number:
+                    log(None, 'Error: Missing number for command "stop_playback"')
+                    return
+                if not self.is_active(number):
+                    self.call_not_in_progress_error(number)
+                    return
+                current_call = self.get_call_from_state_unsafe(number)
+                current_call.stop_playback()
             case 'state':
                 self.call_state.output()
             case 'quit':

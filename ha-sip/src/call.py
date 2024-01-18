@@ -31,6 +31,9 @@ class WebhookToCall(TypedDict):
     entered_menu: Optional[str]
     dtmf_digit: Optional[str]
     call_disconnected: Optional[str]
+    timeout: Optional[str]
+    ring_timeout: Optional[str]
+    playback_done: Optional[str]
 
 
 class PostActionReturn(TypedDict):
@@ -119,7 +122,15 @@ class Call(pj.Call):
         self.ring_timeout = ring_timeout
         self.settle_time = sip_account.config.settle_time
         self.webhook_to_call = webhook_to_call
-        self.webhooks: WebhookToCall = webhooks or WebhookToCall(call_established=None, entered_menu=None, dtmf_digit=None, call_disconnected=None)
+        self.webhooks: WebhookToCall = webhooks or WebhookToCall(
+            call_established=None,
+            entered_menu=None,
+            dtmf_digit=None,
+            call_disconnected=None,
+            timeout=None,
+            ring_timeout=None,
+            playback_done=None,
+        )
         self.command_handler = command_handler
         self.scheduled_post_action: Optional[PostAction] = None
         self.playback_is_done = True
@@ -130,6 +141,7 @@ class Call(pj.Call):
         self.call_info: Optional[CallInfo] = None
         self.pressed_digit_list: List[str] = []
         self.callback_id = self.get_callback_id()
+        self.current_playback: Optional[ha.CurrentPlayback] = None
         self.menu = self.normalize_menu(menu) if menu else self.get_standard_menu()
         self.menu_map = self.create_menu_map(self.menu)
         Call.pretty_print_menu(self.menu)
@@ -138,6 +150,12 @@ class Call(pj.Call):
 
     def handle_events(self) -> None:
         if not self.connected and time.time() - self.last_seen > self.ring_timeout:
+            self.trigger_webhook({
+                'event': 'ring_timeout',
+                'caller': self.call_info['remote_uri'] if self.call_info else 'unknown',
+                'parsed_caller': self.call_info['parsed_caller'] if self.call_info else None,
+                'sip_account': self.account.config.index,
+            })
             log(self.account.config.index, 'Ring timeout of %s triggered' % self.ring_timeout)
             self.hangup_call()
             return
@@ -157,6 +175,13 @@ class Call(pj.Call):
         if time.time() - self.last_seen > self.menu['timeout']:
             log(self.account.config.index, 'Timeout of %s triggered' % self.menu['timeout'])
             self.handle_menu(self.menu['timeout_choice'])
+            self.trigger_webhook({
+                'event': 'timeout',
+                'caller': self.call_info['remote_uri'] if self.call_info else 'unknown',
+                'parsed_caller': self.call_info['parsed_caller'] if self.call_info else None,
+                'sip_account': self.account.config.index,
+                'menu_id': self.menu['id']
+            })
             return
         if self.playback_is_done and self.scheduled_post_action:
             post_action = self.scheduled_post_action
@@ -255,11 +280,7 @@ class Call(pj.Call):
                 self.audio_media = self.getAudioMedia(media_index)
 
     def onDtmfDigit(self, prm: pj.OnDtmfDigitParam) -> None:
-        if not self.playback_is_done:
-            log(self.account.config.index, 'Playback interrupted.')
-            if self.player:
-                self.player.stopTransmit(self.audio_media)
-            self.playback_is_done = True
+        self.stop_playback()
         self.reset_timeout()
         self.pressed_digit_list.append(prm.digit)
 
@@ -357,12 +378,20 @@ class Call(pj.Call):
     def play_message(self, message: str, language: str) -> None:
         log(self.account.config.index, 'Playing message: %s' % message)
         sound_file_name, must_be_deleted = ha.create_and_get_tts(self.ha_config, message, language)
+        self.set_current_playback({
+            'type': 'message',
+            'message': message,
+        })
         self.play_wav_file(sound_file_name, must_be_deleted)
 
     def play_audio_file(self, audio_file: str) -> None:
         log(self.account.config.index, 'Playing audio file: %s' % audio_file)
         sound_file_name = audio.convert_audio_to_wav(audio_file)
         if sound_file_name:
+            self.set_current_playback({
+                'type': 'audio_file',
+                'audio_file': sound_file_name,
+            })
             self.play_wav_file(sound_file_name, True)
 
     def play_wav_file(self, sound_file_name: str, must_be_deleted: bool) -> None:
@@ -377,7 +406,33 @@ class Call(pj.Call):
 
     def on_playback_done(self) -> None:
         log(self.account.config.index, 'Playback done.')
+        if self.current_playback and self.current_playback['type'] == 'audio_file':
+            self.trigger_webhook({
+                'event': 'playback_done',
+                'sip_account': self.account.config.index,
+                'caller': self.call_info['remote_uri'] if self.call_info else 'unknown',
+                'parsed_caller': self.call_info['parsed_caller'] if self.call_info else None,
+                'type': 'audio_file',
+                'audio_file': self.current_playback['audio_file']
+            })
+        elif self.current_playback and self.current_playback['type'] == 'message':
+            self.trigger_webhook({
+                'event': 'playback_done',
+                'sip_account': self.account.config.index,
+                'caller': self.call_info['remote_uri'] if self.call_info else 'unknown',
+                'parsed_caller': self.call_info['parsed_caller'] if self.call_info else None,
+                'type': 'message',
+                'message': self.current_playback['message']
+            })
+        self.current_playback = None
         self.playback_is_done = True
+
+    def stop_playback(self) -> None:
+        if not self.playback_is_done:
+            log(self.account.config.index, 'Playback interrupted.')
+            if self.player:
+                self.player.stopTransmit(self.audio_media)
+            self.playback_is_done = True
 
     def accept(self, answer_mode: CallHandling, answer_after: float) -> None:
         call_prm = pj.CallOpParam()
@@ -453,6 +508,9 @@ class Call(pj.Call):
 
     def reset_timeout(self):
         self.last_seen = time.time()
+
+    def set_current_playback(self, current_playback: ha.CurrentPlayback):
+        self.current_playback = current_playback
 
     def normalize_menu(self, menu: MenuFromStdin, parent_menu: Optional[Menu] = None, is_default_or_timeout_choice=False) -> Menu:
         def parse_post_action(action: Optional[str]) -> PostAction:
