@@ -1,5 +1,10 @@
 # Changelog
 
+## 3.5
+- Add command to `stop_playback`
+- Add command to play audio file or message
+- New webhooks for playback done, ring timeout, and menu timeout
+
 ## 3.4
 - Add additional data to home-assistant service calls (e.g. add variables to script calls)
 - Additional logging for troubleshooting

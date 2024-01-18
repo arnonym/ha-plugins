@@ -23,6 +23,9 @@ class Command(TypedDict):
         Literal['transfer'],
         Literal['bridge_audio'],
         Literal['send_dtmf'],
+        Literal['stop_playback'],
+        Literal['play_message'],
+        Literal['play_audio_file'],
         Literal['state'],
         Literal['quit'],
     ]
@@ -39,6 +42,9 @@ class Command(TypedDict):
     domain: Optional[str]
     service: Optional[str]
     entity_id: Optional[str]
+    audio_file: Optional[str]
+    message: Optional[str]
+    tts_language: Optional[str]
     service_data: Optional[Dict[str, Any]]
 
 

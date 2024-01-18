@@ -71,13 +71,17 @@ data_template:
     addon: c7744bff_ha-sip
     input:
         command: dial
-        number: sip:**620@fritz.box
+        number: sip:**620@fritz.box # number to call. Format depends on your SIP provider, 
+                                    # but might look like 'sip:+49123456789@fritz.box' for external calls
         webhook_to_call_after_call_was_established: another_webhook_id # web-hook id which you can listen on in your actions (deprecated)
         webhook_to_call: # web-hook IDs which you can listen on in your actions (additional to the global web-hook)
-            call_established: another_webhook_id # can be all the same, or different
+            ring_timeout: another_webhook_id # can be all the same, or different
+            call_established: another_webhook_id
             entered_menu: another_webhook_id
-            dtmf_digit: another_webhook_id
+            timeout: another_webhook_id  # is called after the given time-out on a menu is reached
+            dtmf_digit: another_webhook_id # is called when the calling party sends a DTMF tone
             call_disconnected: another_webhook_id
+            playback_done: another_webhook_id # is called after playback of message or audio file is done
         ring_timeout: 15 # time to ring in seconds (optional, defaults to 300)
         sip_account: 1 # number of configured sip account: 1 or 2 
                        # (optional, defaults to first enabled sip account)
@@ -139,6 +143,42 @@ data_template:
         command: bridge_audio
         number: sip:**620@fritz.box
         bridge_to: sip:**623@fritz.box
+```
+
+#### To play a message through TTS
+
+```yaml
+service: hassio.addon_stdin
+data_template:
+    addon: c7744bff_ha-sip
+    input:
+        command: play_message
+        number: sip:**620@fritz.box
+        message: hello!
+        tts_language: en
+```
+
+#### To play an audio file
+
+```yaml
+service: hassio.addon_stdin
+data_template:
+    addon: c7744bff_ha-sip
+    input:
+        command: play_audio_file
+        number: sip:**620@fritz.box
+        audio_file: '/config/audio/welcome.mp3'
+```
+
+#### To stop audio playback (both audio file and message):
+
+```yaml
+service: hassio.addon_stdin
+data_template:
+    addon: c7744bff_ha-sip
+    input:
+        command: stop_playback
+        number: sip:**620@fritz.box
 ```
 
 ### Incoming calls
@@ -326,6 +366,55 @@ For most events in ha-sip there's a web-hook triggered:
     "caller": "<sip:5551234456@fritz.box>",
     "parsed_caller": "5551234456",
     "sip_account": 1
+}
+```
+
+### `playback_done` for message (TTS)
+
+```json
+{
+    "event": "playback_done",
+    "caller": "<sip:5551234456@fritz.box>",
+    "parsed_caller": "5551234456",
+    "sip_account": 1,
+    "type": "message",
+    "message": "message that has been played"
+}
+```
+
+### `playback_done` for audio file
+
+```json
+{
+    "event": "playback_done",
+    "caller": "<sip:5551234456@fritz.box>",
+    "parsed_caller": "5551234456",
+    "sip_account": 1,
+    "type": "audio_file",
+    "audio_file": "/config/audio/welcome.mp3"
+}
+```
+
+### `ring_timeout`
+
+```json
+{
+    "event": "ring_timeout",
+    "caller": "<sip:5551234456@fritz.box>",
+    "parsed_caller": "5551234456",
+    "sip_account": 1
+}
+```
+
+### `timeout`
+
+```json
+{
+    "event": "timeout",
+    "caller": "<sip:5551234456@fritz.box>",
+    "parsed_caller": "5551234456",
+    "sip_account": 1,
+    "menu_id": "main"
 }
 ```
 

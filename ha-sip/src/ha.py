@@ -50,9 +50,61 @@ class DtmfDigitEvent(TypedDict):
 
 class Timeout(TypedDict):
     event: Literal['timeout']
+    caller: str
+    parsed_caller: Optional[str]
+    sip_account: int
+    menu_id: Optional[str]
 
 
-WebhookEvent = Union[IncomingCallEvent, CallEstablishedEvent, CallDisconnectedEvent, EnteredMenuEvent, DtmfDigitEvent, Timeout]
+class RingTimeout(TypedDict):
+    event: Literal['ring_timeout']
+    caller: str
+    parsed_caller: Optional[str]
+    sip_account: int
+
+
+class PlaybackDoneAudioFile(TypedDict):
+    event: Literal['playback_done']
+    type: Literal['audio_file']
+    caller: str
+    parsed_caller: Optional[str]
+    sip_account: int
+    audio_file: str
+
+
+class PlaybackDoneMessage(TypedDict):
+    event: Literal['playback_done']
+    type: Literal['message']
+    caller: str
+    parsed_caller: Optional[str]
+    sip_account: int
+    message: str
+
+
+WebhookEvent = Union[
+    IncomingCallEvent,
+    CallEstablishedEvent,
+    CallDisconnectedEvent,
+    EnteredMenuEvent,
+    DtmfDigitEvent,
+    Timeout,
+    RingTimeout,
+    PlaybackDoneAudioFile,
+    PlaybackDoneMessage
+]
+
+
+class CurrentPlaybackMessage(TypedDict):
+    type: Literal['message']
+    message: str
+
+
+class CurrentPlaybackAudioFile(TypedDict):
+    type: Literal['audio_file']
+    audio_file: str
+
+
+CurrentPlayback = Union[CurrentPlaybackMessage, CurrentPlaybackAudioFile]
 
 
 class HaConfig(object):
