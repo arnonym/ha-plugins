@@ -1,5 +1,8 @@
 # Changelog
 
+## 3.5.1
+- Add error handling for getting TTS messages
+
 ## 3.5
 - Add command to `stop_playback`
 - Add command to play audio file or message

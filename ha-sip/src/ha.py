@@ -139,6 +139,7 @@ def create_and_get_tts(ha_config: HaConfig, message: str, language: str) -> tupl
     :param language: language the message is in
     :return: the file name of the .wav-file and if it must be deleted afterwards
     """
+    error_file_name = os.path.join(constants.ROOT_PATH, 'sound/answer.wav')
     headers = ha_config.create_headers()
     create_response = requests.post(ha_config.get_tts_url(), json={'platform': ha_config.tts_engine, 'message': message, 'language': language}, headers=headers)
     if create_response.status_code != 200:
@@ -148,14 +149,17 @@ def create_and_get_tts(ha_config: HaConfig, message: str, language: str) -> tupl
     response_deserialized = create_response.json()
     tts_url = response_deserialized['url']
     log(None, 'Getting audio from "%s"' % tts_url)
-    tts_response = requests.get(tts_url, headers=headers)
+    try:
+        tts_response = requests.get(tts_url, headers=headers)
+    except Exception as e:
+        log(None, 'Error getting tts audio: %s' % e)
+        return error_file_name, False
     if tts_url.endswith('.mp3'):
         wav_file_name = audio.convert_mp3_stream_to_wav_file(tts_response.content)
     else:
         wav_file_name = audio.write_wav_stream_to_wav_file(tts_response.content)
     if not wav_file_name:
         log(None, 'Error converting to wav: %s' % wav_file_name)
-        error_file_name = os.path.join(constants.ROOT_PATH, 'sound/answer.wav')
         return error_file_name, False
     return wav_file_name, True
 
