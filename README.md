@@ -67,7 +67,7 @@ your automation:
 
 ```yaml
 service: hassio.addon_stdin
-data_template:
+data:
     addon: c7744bff_ha-sip
     input:
         command: dial
@@ -95,7 +95,7 @@ If there is already an outgoing call to the same number active, the request will
 
 ```yaml
 service: hassio.addon_stdin
-data_template:
+data:
     addon: c7744bff_ha-sip
     input:
         command: hangup
@@ -106,7 +106,7 @@ data_template:
 
 ```yaml
 service: hassio.addon_stdin
-data_template:
+data:
     addon: c7744bff_ha-sip
     input:
         command: send_dtmf
@@ -125,7 +125,7 @@ data_template:
 
 ```yaml
 service: hassio.addon_stdin
-data_template:
+data:
     addon: c7744bff_ha-sip
     input:
         command: transfer
@@ -137,7 +137,7 @@ data_template:
 
 ```yaml
 service: hassio.addon_stdin
-data_template:
+data:
     addon: c7744bff_ha-sip
     input:
         command: bridge_audio
@@ -149,7 +149,7 @@ data_template:
 
 ```yaml
 service: hassio.addon_stdin
-data_template:
+data:
     addon: c7744bff_ha-sip
     input:
         command: play_message
@@ -162,7 +162,7 @@ data_template:
 
 ```yaml
 service: hassio.addon_stdin
-data_template:
+data:
     addon: c7744bff_ha-sip
     input:
         command: play_audio_file
@@ -174,7 +174,7 @@ data_template:
 
 ```yaml
 service: hassio.addon_stdin
-data_template:
+data:
     addon: c7744bff_ha-sip
     input:
         command: stop_playback
@@ -206,7 +206,7 @@ You can also answer an incoming call from home assistant by using the `hassio.ad
 
 ```yaml
 service: hassio.addon_stdin
-data_template:
+data:
     addon: c7744bff_ha-sip
     input:
         command: answer
@@ -424,7 +424,7 @@ For most events in ha-sip there's a web-hook triggered:
 
 ```yaml
 service: hassio.addon_stdin
-data_template:
+data:
     addon: c7744bff_ha-sip
     input:
         command: dial
@@ -459,7 +459,7 @@ data_template:
 
 ```yaml
 service: hassio.addon_stdin
-data_template:
+data:
     addon: c7744bff_ha-sip
     input:
         command: dial
@@ -474,7 +474,7 @@ data_template:
 
 ```yaml
 service: hassio.addon_stdin
-data_template:
+data:
     addon: c7744bff_ha-sip
     input:
         command: dial
