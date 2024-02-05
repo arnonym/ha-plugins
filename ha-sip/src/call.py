@@ -92,6 +92,7 @@ class CallInfo(TypedDict):
     local_uri: str
     remote_uri: str
     parsed_caller: Optional[str]
+    call_id: str
 
 
 class CallHandling(Enum):
@@ -155,6 +156,7 @@ class Call(pj.Call):
                 'caller': self.call_info['remote_uri'] if self.call_info else 'unknown',
                 'parsed_caller': self.call_info['parsed_caller'] if self.call_info else None,
                 'sip_account': self.account.config.index,
+                'call_id': self.call_info['call_id']
             })
             log(self.account.config.index, 'Ring timeout of %s triggered' % self.ring_timeout)
             self.hangup_call()
@@ -180,7 +182,8 @@ class Call(pj.Call):
                 'caller': self.call_info['remote_uri'] if self.call_info else 'unknown',
                 'parsed_caller': self.call_info['parsed_caller'] if self.call_info else None,
                 'sip_account': self.account.config.index,
-                'menu_id': self.menu['id']
+                'menu_id': self.menu['id'],
+                'call_id': self.call_info['call_id']
             })
             return
         if self.playback_is_done and self.scheduled_post_action:
@@ -235,12 +238,14 @@ class Call(pj.Call):
                 'caller': self.call_info['remote_uri'] if self.call_info else 'unknown',
                 'parsed_caller': self.call_info['parsed_caller'] if self.call_info else None,
                 'sip_account': self.account.config.index,
+                'call_id': self.call_info['call_id']
             }, self.webhook_to_call)
         self.trigger_webhook({
             'event': 'call_established',
             'caller': self.call_info['remote_uri'] if self.call_info else 'unknown',
             'parsed_caller': self.call_info['parsed_caller'] if self.call_info else None,
             'sip_account': self.account.config.index,
+            'call_id': self.call_info['call_id']
         })
         self.handle_menu(self.menu)
 
@@ -264,6 +269,7 @@ class Call(pj.Call):
                 'caller': self.call_info['remote_uri'],
                 'parsed_caller': self.call_info['parsed_caller'],
                 'sip_account': self.account.config.index,
+                'call_id': self.call_info['call_id']
             })
             self.connected = False
             self.current_input = ''
@@ -292,6 +298,7 @@ class Call(pj.Call):
             'parsed_caller': self.call_info['parsed_caller'] if self.call_info else None,
             'digit': pressed_digit,
             'sip_account': self.account.config.index,
+            'call_id': self.call_info['call_id']
         })
         if not self.menu:
             return
@@ -353,6 +360,7 @@ class Call(pj.Call):
                 'parsed_caller': self.call_info['parsed_caller'] if self.call_info else None,
                 'menu_id': menu_id,
                 'sip_account': self.account.config.index,
+                'call_id': self.call_info['call_id']
             })
         if reset_input:
             self.current_input = ''
@@ -413,7 +421,8 @@ class Call(pj.Call):
                 'caller': self.call_info['remote_uri'] if self.call_info else 'unknown',
                 'parsed_caller': self.call_info['parsed_caller'] if self.call_info else None,
                 'type': 'audio_file',
-                'audio_file': self.current_playback['audio_file']
+                'audio_file': self.current_playback['audio_file'],
+                'call_id': self.call_info['call_id']
             })
         elif self.current_playback and self.current_playback['type'] == 'message':
             self.trigger_webhook({
@@ -422,7 +431,8 @@ class Call(pj.Call):
                 'caller': self.call_info['remote_uri'] if self.call_info else 'unknown',
                 'parsed_caller': self.call_info['parsed_caller'] if self.call_info else None,
                 'type': 'message',
-                'message': self.current_playback['message']
+                'message': self.current_playback['message'],
+                'call_id': self.call_info['call_id']
             })
         self.current_playback = None
         self.playback_is_done = True
@@ -504,6 +514,7 @@ class Call(pj.Call):
             'remote_uri': ci.remoteUri,
             'local_uri': ci.localUri,
             'parsed_caller': parsed_caller,
+            'call_id': ci.callIdString
         }
 
     def reset_timeout(self):
