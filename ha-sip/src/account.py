@@ -88,6 +88,7 @@ class Account(pj.Account):
             'caller': ci['remote_uri'],
             'parsed_caller': ci['parsed_caller'],
             'sip_account': self.config.index,
+            'call_id': ci['call_id'],
         })
 
     def get_sip_return_code(
