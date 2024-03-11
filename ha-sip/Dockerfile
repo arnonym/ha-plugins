@@ -8,7 +8,7 @@ RUN apk add build-base openssl-dev alsa-lib-dev gsm-dev opus-dev speex-dev speex
 
 RUN pip3 install pydub requests PyYAML typing_extensions
 
-RUN git clone --depth 1 --branch 2.14 https://github.com/pjsip/pjproject.git /tmp/pjproject
+RUN git clone --depth 1 --branch 2.14.1 https://github.com/pjsip/pjproject.git /tmp/pjproject
 
 COPY user.mak /tmp/pjproject
 
