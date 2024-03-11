@@ -1,5 +1,8 @@
 # Changelog
 
+## 3.6
+- update to the latest stable version of pjsip
+
 ## 3.5.1
 - Add error handling for getting TTS messages
 

@@ -85,7 +85,7 @@ case "$1" in
         pip3 install pydub requests PyYAML typing_extensions pyright
         mkdir "$SCRIPT_DIR"/deps
         cd "$SCRIPT_DIR"/deps || exit
-        git clone --depth 1 --branch 2.14 https://github.com/pjsip/pjproject.git
+        git clone --depth 1 --branch 2.14.1 https://github.com/pjsip/pjproject.git
         cd pjproject || exit
         ./configure --enable-shared --disable-libwebrtc --prefix "$SCRIPT_DIR"/venv
         make
