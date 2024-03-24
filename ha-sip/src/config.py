@@ -1,10 +1,7 @@
 import os
 
-<<<<<<< HEAD
 COMMAND_SOURCE = os.environ.get('COMMAND_SOURCE', 'stdin')
-=======
 HA_SIP_MODE = os.environ.get('HA_SIP_MODE', 'internal')
->>>>>>> 3a40313 (Use environment variables to configure ha-sip internally.)
 
 PORT = os.environ.get('PORT', '')
 LOG_LEVEL = os.environ.get('LOG_LEVEL', '')
