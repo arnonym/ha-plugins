@@ -1,0 +1,7 @@
+services:
+    ha-sip:
+        image: "agellhaus/amd64-ha-sip"
+        network_mode: host
+        env_file:
+            - path: ./.env
+              required: true

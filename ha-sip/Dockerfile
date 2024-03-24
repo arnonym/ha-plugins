@@ -6,7 +6,7 @@ RUN apk update
 RUN apk upgrade
 RUN apk add build-base openssl-dev alsa-lib-dev gsm-dev opus-dev speex-dev speexdsp-dev portaudio-dev libsrtp-dev libsamplerate-dev linux-headers python3-dev swig ffmpeg git
 
-RUN pip3 install pydub requests PyYAML typing_extensions
+RUN pip3 install pydub requests PyYAML typing_extensions python-dotenv
 
 RUN git clone --depth 1 --branch 2.14.1 https://github.com/pjsip/pjproject.git /tmp/pjproject
 
