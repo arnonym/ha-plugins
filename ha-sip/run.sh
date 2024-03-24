@@ -6,6 +6,7 @@ export PYTHONUNBUFFERED=1
 # and is getting configuration from there
 HOME_ASSISTANT_CONFIG_FILE=/data/options.json
 if test -f "$HOME_ASSISTANT_CONFIG_FILE"; then
+    echo "Getting config options from home-assistant OS."
     export PORT="$(bashio::config 'sip_global.port')"
     export LOG_LEVEL="$(bashio::config 'sip_global.log_level')"
     export NAME_SERVER="$(bashio::config 'sip_global.name_server')"
@@ -46,6 +47,8 @@ if test -f "$HOME_ASSISTANT_CONFIG_FILE"; then
 
     export HA_BASE_URL="http://supervisor/core/api"
     export HA_TOKEN="${SUPERVISOR_TOKEN}"
+else
+    echo "Running in stand-alone mode."
 fi
 
 python3 --version
