@@ -1,6 +1,6 @@
 services:
     ha-sip:
-        image: "agellhaus/amd64-ha-sip"
+        image: "agellhaus/amd64-ha-sip-next:3.7-beta2"
         network_mode: host
         env_file:
             - path: ./.env
