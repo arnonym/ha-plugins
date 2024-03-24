@@ -2,7 +2,10 @@
 
 export PYTHONUNBUFFERED=1
 
-if [[ "$HA_SIP_MODE" != "standalone" ]]; then
+# if the config file exists, the plugin is probably running inside home-assistant OS
+# and is getting configuration from there
+HOME_ASSISTANT_CONFIG_FILE=/data/options.json
+if test -f "$HOME_ASSISTANT_CONFIG_FILE"; then
     export PORT="$(bashio::config 'sip_global.port')"
     export LOG_LEVEL="$(bashio::config 'sip_global.log_level')"
     export NAME_SERVER="$(bashio::config 'sip_global.name_server')"
