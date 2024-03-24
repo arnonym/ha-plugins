@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 
 import faulthandler
-import sys
 from typing import Optional
 
+from dotenv import load_dotenv
 import yaml
 
 import account
@@ -39,10 +39,8 @@ def load_menu_from_file(file_name: Optional[str], sip_account_index: int) -> Opt
 
 
 def main():
-    if "local" in sys.argv:
-        import config_local as config
-    else:
-        import config
+    load_dotenv()
+    import config
     name_server = [ns.strip() for ns in config.NAME_SERVER.split(",")]
     name_server_without_empty = [ns for ns in name_server if ns]
     if name_server_without_empty:
@@ -97,9 +95,9 @@ def main():
     is_first_enabled_account = True
     command_client = CommandClient()
     command_handler = CommandHandler(end_point, sip_accounts, call_state, ha_config)
-    for key, config in account_configs.items():
-        if config.enabled:
-            sip_accounts[key] = account.create_account(end_point, config, command_handler, ha_config, is_first_enabled_account)
+    for key, account_config in account_configs.items():
+        if account_config.enabled:
+            sip_accounts[key] = account.create_account(end_point, account_config, command_handler, ha_config, is_first_enabled_account)
             is_first_enabled_account = False
     while True:
         end_point.libHandleEvents(20)
