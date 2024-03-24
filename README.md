@@ -520,7 +520,7 @@ I would like to hear from you in which scenario you are using ha-sip!
 
 1. Create a virtual environment with pjsip and dependencies installed running `./build.sh create-venv` from the root directory of the repo
 2. Activate virtual env with `source venv/bin/activate` (bash, might be different with other shells)
-3. Copy `ha-sip/src/config.py` to `ha-sip/src/config_local.py` and replace the variable place-holders with your real configuration.
+3. Copy `.env.example` to `.env` and replace the variable place-holders with your real configuration.
 
    `HA_BASE_URL` is something like "http://homeassistant.local:8123/api"
    
