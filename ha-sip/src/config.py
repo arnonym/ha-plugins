@@ -1,5 +1,7 @@
 import os
 
+HA_SIP_MODE = os.environ.get('HA_SIP_MODE', 'internal')
+
 PORT = os.environ.get('PORT', '')
 LOG_LEVEL = os.environ.get('LOG_LEVEL', '')
 NAME_SERVER = os.environ.get('NAME_SERVER', '')
