@@ -15,7 +15,7 @@
 This add-on is for the Home Assistant OS or supervised installation methods mentioned in
 https://www.home-assistant.io/installation/. With that in place you can install this third-party plug-in like described in
 https://www.home-assistant.io/common-tasks/os#installing-third-party-add-ons. The repository URL is
-`https://github.com/arnonym/ha-plugins-next`.
+`https://github.com/arnonym/ha-plugins`.
 Alternatively you can run ha-sip in a stand-alone mode (for Home Assistant Container installations). In that mode the communication to ha-sip will be handled by MQTT. You can find the installation steps at the end of this document.
 
 After that you need to configure your SIP account(s), TTS parameters and webhook ID. The default configuration looks like this:
