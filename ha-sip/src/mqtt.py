@@ -1,25 +1,32 @@
-# mqtt.py
-import paho.mqtt.client as mqtt
+import os
+import time
+
+import paho.mqtt.client as paho_mqtt
+from paho.mqtt.enums import CallbackAPIVersion
+
 from log import log
 from command_client import CommandClient
+from command_handler import CommandHandler
+import utils
 
-class MQTTClient:
-    def __init__(self,
-                 broker_address: str,
-                 port: int,
-                 username: str,
-                 password: str,
-                 topic: str,
-                 command_handler: CommandClient
-        ):
-        self.client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
+
+class MqttClient:
+    def __init__(
+        self,
+        broker_address: str,
+        port: int,
+        username: str,
+        password: str,
+        topic: str,
+        command_handler: CommandHandler
+    ):
+        self.client = paho_mqtt.Client(CallbackAPIVersion.VERSION2)
         self.broker_address = broker_address
         self.port = port
         self.username = username
         self.password = password
         self.topic = topic
         self.command_handler = command_handler
-
         self.client.on_connect = self.on_connect
         self.client.on_message = self.on_message
         self.client.on_disconnect = self.on_disconnect
@@ -55,3 +62,14 @@ class MQTTClient:
                 log(None, 'Reconnect to mqtt broker failed. Trying again....')
                 time.sleep(1)
         self.client.loop()
+
+
+def create_client_and_connect(command_handler: CommandHandler) -> MqttClient:
+    broker_address = os.environ.get('BROKER_ADDRESS', '')
+    port = utils.convert_to_int(os.environ.get('BROKER_PORT', '1833'))
+    mqtt_username = os.environ.get('BROKER_USERNAME', '')
+    mqtt_password = os.environ.get('BROKER_PASSWORD', '')
+    topic = os.environ.get('MQTT_TOPIC', 'hasip/execute')
+    client = MqttClient(broker_address, port, mqtt_username, mqtt_password, topic, command_handler)
+    client.connect()
+    return client

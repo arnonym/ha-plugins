@@ -5,8 +5,6 @@ from typing import Optional
 
 from dotenv import load_dotenv
 import yaml
-import os
-import time
 import account
 import call
 import ha
@@ -14,10 +12,9 @@ import incoming_call
 import sip
 import state
 import utils
-import paho.mqtt.client as mqtt
+import mqtt
 from command_client import CommandClient
 from command_handler import CommandHandler
-from mqtt import MQTTClient
 from log import log
 
 
@@ -44,9 +41,6 @@ def load_menu_from_file(file_name: Optional[str], sip_account_index: int) -> Opt
 def main():
     load_dotenv()
     import config
-
-    mqtt_mode = config.COMMAND_SOURCE.lower() == 'mqtt'
-
     name_server = [ns.strip() for ns in config.NAME_SERVER.split(",")]
     name_server_without_empty = [ns for ns in name_server if ns]
     if name_server_without_empty:
@@ -105,18 +99,10 @@ def main():
         if account_config.enabled:
             sip_accounts[key] = account.create_account(end_point, account_config, command_handler, ha_config, is_first_enabled_account)
             is_first_enabled_account = False
-
-    if mqtt_mode:
-        broker_address = os.environ.get('BROKER_ADDRESS','')
-        port = utils.convert_to_int(os.environ.get('BROKER_PORT','1833'))
-        mqtt_username = os.environ.get('BROKER_USERNAME','')
-        mqtt_password = os.environ.get('BROKER_PASSWORD','')
-        topic = os.environ.get('MQTT_TOPIC','hasip/execute')
-        mqtt_client = MQTTClient(broker_address, port, mqtt_username, mqtt_password, topic, command_handler)
-        mqtt_client.connect()
-
+    mqtt_mode = config.COMMAND_SOURCE.lower().strip() == 'mqtt'
+    mqtt_client = mqtt.create_client_and_connect(command_handler) if mqtt_mode else None
     while True:
-        if mqtt_mode:
+        if mqtt_client:
             mqtt_client.handle()
         end_point.libHandleEvents(20)
         handle_command_list(command_client, command_handler)
