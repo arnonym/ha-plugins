@@ -133,3 +133,4 @@ dmypy.json
 .idea
 /ha-sip/src/config_local.py
 /incoming.yaml
+deploy.sh

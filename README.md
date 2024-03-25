@@ -10,12 +10,13 @@
 
 ## Installation
 
-[![Open your Home Assistant instance and show the add add-on repository dialog with a specific repository URL pre-filled.](https://my.home-assistant.io/badges/supervisor_add_addon_repository.svg)](https://my.home-assistant.io/redirect/supervisor_add_addon_repository/?repository_url=https%3A%2F%2Fgithub.com%2Farnonym%2Fha-plugins)
+[![Open your Home Assistant instance and show the add add-on repository dialog with a specific repository URL pre-filled.](https://my.home-assistant.io/badges/supervisor_add_addon_repository.svg)](https://my.home-assistant.io/redirect/supervisor_add_addon_repository/?repository_url=https%3A%2F%2Fgithub.com%2Farnonym%2Fha-plugins-next)
 
 This add-on is for the Home Assistant OS or supervised installation methods mentioned in
 https://www.home-assistant.io/installation/. With that in place you can install this third-party plug-in like described in
 https://www.home-assistant.io/common-tasks/os#installing-third-party-add-ons. The repository URL is
-`https://github.com/arnonym/ha-plugins`.
+`https://github.com/arnonym/ha-plugins-next`.
+Alternatively you can run ha-sip in a stand-alone mode (for Home Assistant Container installations). In that mode the communication to ha-sip will be handled by MQTT. You can find the installation steps at the end of this document.
 
 After that you need to configure your SIP account(s), TTS parameters and webhook ID. The default configuration looks like this:
 
@@ -68,7 +69,7 @@ your automation:
 ```yaml
 service: hassio.addon_stdin
 data:
-    addon: c7744bff_ha-sip
+    addon: 8cd50eef_ha-sip-next
     input:
         command: dial
         number: sip:**620@fritz.box # number to call. Format depends on your SIP provider, 
@@ -96,7 +97,7 @@ If there is already an outgoing call to the same number active, the request will
 ```yaml
 service: hassio.addon_stdin
 data:
-    addon: c7744bff_ha-sip
+    addon: 8cd50eef_ha-sip-next
     input:
         command: hangup
         number: sip:**620@fritz.box
@@ -107,7 +108,7 @@ data:
 ```yaml
 service: hassio.addon_stdin
 data:
-    addon: c7744bff_ha-sip
+    addon: 8cd50eef_ha-sip-next
     input:
         command: send_dtmf
         number: sip:**620@fritz.box
@@ -126,7 +127,7 @@ data:
 ```yaml
 service: hassio.addon_stdin
 data:
-    addon: c7744bff_ha-sip
+    addon: 8cd50eef_ha-sip-next
     input:
         command: transfer
         number: sip:**620@fritz.box
@@ -138,7 +139,7 @@ data:
 ```yaml
 service: hassio.addon_stdin
 data:
-    addon: c7744bff_ha-sip
+    addon: 8cd50eef_ha-sip-next
     input:
         command: bridge_audio
         number: sip:**620@fritz.box
@@ -150,7 +151,7 @@ data:
 ```yaml
 service: hassio.addon_stdin
 data:
-    addon: c7744bff_ha-sip
+    addon: 8cd50eef_ha-sip-next
     input:
         command: play_message
         number: sip:**620@fritz.box
@@ -163,7 +164,7 @@ data:
 ```yaml
 service: hassio.addon_stdin
 data:
-    addon: c7744bff_ha-sip
+    addon: 8cd50eef_ha-sip-next
     input:
         command: play_audio_file
         number: sip:**620@fritz.box
@@ -175,7 +176,7 @@ data:
 ```yaml
 service: hassio.addon_stdin
 data:
-    addon: c7744bff_ha-sip
+    addon: 8cd50eef_ha-sip-next
     input:
         command: stop_playback
         number: sip:**620@fritz.box
@@ -207,7 +208,7 @@ You can also answer an incoming call from home assistant by using the `hassio.ad
 ```yaml
 service: hassio.addon_stdin
 data:
-    addon: c7744bff_ha-sip
+    addon: 8cd50eef_ha-sip-next
     input:
         command: answer
         number: "5551234456" # if this is unclear, you can look that up in the logs ("Registering call with id <number>")
@@ -425,7 +426,7 @@ For most events in ha-sip there's a web-hook triggered:
 ```yaml
 service: hassio.addon_stdin
 data:
-    addon: c7744bff_ha-sip
+    addon: 8cd50eef_ha-sip-next
     input:
         command: dial
         number: sip:**620@fritz.box
@@ -460,7 +461,7 @@ data:
 ```yaml
 service: hassio.addon_stdin
 data:
-    addon: c7744bff_ha-sip
+    addon: 8cd50eef_ha-sip-next
     input:
         command: dial
         number: sip:**620@fritz.box
@@ -475,7 +476,7 @@ data:
 ```yaml
 service: hassio.addon_stdin
 data:
-    addon: c7744bff_ha-sip
+    addon: 8cd50eef_ha-sip-next
     input:
         command: dial
         number: sip:**620@fritz.box
@@ -532,3 +533,29 @@ I would like to hear from you in which scenario you are using ha-sip!
    ```json
    { "command": "dial", "number": "sip:**620@fritz.box", "menu": { "message": "Hello from ha-sip.", "language": "en" } }
    ```
+
+## Stand-alone mode
+
+The stand-alone mode can be used if you run home assistant in a docker enviornment and you don't have access to the hassio.addon_stdin service. Instead of stdin - mqtt will be used for communication.
+
+1. Follow the instructions from home assistant to set up a working MQTT broker and install the MQTT integration [MQTT Broker](https://www.home-assistant.io/integrations/mqtt/)
+2. Copy `.env.example` to `.env` and replace the variable place-holders with your real configuration.
+3. Make sure you switched the COMMAND_SOURCE in your .env file from "stdin" to "mqtt" and set the BROKER_* variables to connect to your MQTT broker address
+4. Install [docker compose plugin](https://docs.docker.com/compose/install/linux/#install-using-the-repository)
+5. Run docker compose up -d in the main folder of the application to run the ha-sip service
+6. Now you can use the mqtt.publish service in home assistant to send commands as json to the hasip/execute topic from your automations
+
+   Example:
+   ```yaml
+        service: mqtt.publish
+        data:
+            payload: >-
+                { "command": "dial", "number": "sip:**620@fritz.box", "menu": { "message": "Hello from ha-sip.", "language": "en" } }
+            topic: hasip/execute
+    ```
+
+If you need to run the service on another architecture different from amd64, you need to change the BUILD_FROM variable in the docker-compose file. Available architectures are:
+- homeassistant/aarch64-base-python
+- homeassistant/armhf-base-python
+- homeassistant/armv7-base-python
+- homeassistant/i386-base-python
