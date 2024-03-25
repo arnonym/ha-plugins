@@ -1,5 +1,9 @@
 # Changelog
 
+## 3.7
+- Add stand-alone mode with MQTT support for running ha-sip outside  
+  of Home Assistant OS (thanks eporsche@github for implementing this!)
+
 ## 3.6
 - update to the latest stable version of pjsip
 
@@ -22,7 +26,8 @@
 - Updated pjsip to latest version
 
 ## 3.1
-- Reverted slug change because requirements where changed again in 2023.9.2 and created issues. If you already changed the slug in your automations you need to redo that. Sorry for any inconvenience.
+- Reverted slug change because requirements where changed again in 2023.9.2 and created issues. 
+  If you already changed the slug in your automations you need to redo that. Sorry for any inconvenience.
 
 ## 3.0
 - Changed slug to new requirements in home-assistant 2023.9
