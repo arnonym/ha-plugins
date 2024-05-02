@@ -10,12 +10,12 @@
 
 ## Installation
 
-[![Open your Home Assistant instance and show the add add-on repository dialog with a specific repository URL pre-filled.](https://my.home-assistant.io/badges/supervisor_add_addon_repository.svg)](https://my.home-assistant.io/redirect/supervisor_add_addon_repository/?repository_url=https%3A%2F%2Fgithub.com%2Farnonym%2Fha-plugins)
+[![Open your Home Assistant instance and show the add add-on repository dialog with a specific repository URL pre-filled.](https://my.home-assistant.io/badges/supervisor_add_addon_repository.svg)](https://my.home-assistant.io/redirect/supervisor_add_addon_repository/?repository_url=https%3A%2F%2Fgithub.com%2Fmarkelonate%2Fha-sip)
 
 This add-on is for the Home Assistant OS or supervised installation methods mentioned in
 https://www.home-assistant.io/installation/. With that in place you can install this third-party plug-in like described in
 https://www.home-assistant.io/common-tasks/os#installing-third-party-add-ons. The repository URL is
-`https://github.com/arnonym/ha-plugins`.
+`https://github.com/markelonate/ha-sip`.
 
 > **Note:**
 > Alternatively you can run ha-sip in a stand-alone mode (for Home Assistant Container installations). 
