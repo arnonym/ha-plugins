@@ -20,6 +20,7 @@ if test -f "$HOME_ASSISTANT_CONFIG_FILE"; then
     export SIP1_ANSWER_MODE="$(bashio::config 'sip.answer_mode')"
     export SIP1_SETTLE_TIME="$(bashio::config 'sip.settle_time')"
     export SIP1_INCOMING_CALL_FILE="$(bashio::config 'sip.incoming_call_file')"
+    export SIP1_OUTBOUND_PROXY="$(bashio::config 'sip.outbound_proxy')"
 
     export SIP2_ENABLED="$(bashio::config 'sip_2.enabled')"
     export SIP2_ID_URI="$(bashio::config 'sip_2.id_uri')"
@@ -30,6 +31,7 @@ if test -f "$HOME_ASSISTANT_CONFIG_FILE"; then
     export SIP2_ANSWER_MODE="$(bashio::config 'sip_2.answer_mode')"
     export SIP2_SETTLE_TIME="$(bashio::config 'sip_2.settle_time')"
     export SIP2_INCOMING_CALL_FILE="$(bashio::config 'sip_2.incoming_call_file')"
+    export SIP2_OUTBOUND_PROXY="$(bashio::config 'sip_2.outbound_proxy')"
 
     export SIP3_ENABLED="$(bashio::config 'sip_3.enabled')"
     export SIP3_ID_URI="$(bashio::config 'sip_3.id_uri')"
@@ -40,6 +42,7 @@ if test -f "$HOME_ASSISTANT_CONFIG_FILE"; then
     export SIP3_ANSWER_MODE="$(bashio::config 'sip_3.answer_mode')"
     export SIP3_SETTLE_TIME="$(bashio::config 'sip_3.settle_time')"
     export SIP3_INCOMING_CALL_FILE="$(bashio::config 'sip_3.incoming_call_file')"
+    export SIP3_OUTBOUND_PROXY="$(bashio::config 'sip_3.outbound_proxy')"
 
     export TTS_PLATFORM="$(bashio::config 'tts.platform')"
     export TTS_LANGUAGE="$(bashio::config 'tts.language')"

@@ -62,6 +62,7 @@ def main():
             mode=call.CallHandling.get_or_else(config.SIP1_ANSWER_MODE, call.CallHandling.LISTEN),
             settle_time=utils.convert_to_float(config.SIP1_SETTLE_TIME, 1),
             incoming_call_config=load_menu_from_file(config.SIP1_INCOMING_CALL_FILE, 1),
+            outbound_proxy=config.SIP1_OUTBOUND_PROXY,
         ),
         2: account.MyAccountConfig(
             enabled=config.SIP2_ENABLED.lower() == 'true',
@@ -74,6 +75,7 @@ def main():
             mode=call.CallHandling.get_or_else(config.SIP2_ANSWER_MODE, call.CallHandling.LISTEN),
             settle_time=utils.convert_to_float(config.SIP2_SETTLE_TIME, 1),
             incoming_call_config=load_menu_from_file(config.SIP2_INCOMING_CALL_FILE, 2),
+            outbound_proxy=config.SIP2_OUTBOUND_PROXY,
         ),
         3: account.MyAccountConfig(
             enabled=config.SIP3_ENABLED.lower() == 'true',
@@ -86,6 +88,7 @@ def main():
             mode=call.CallHandling.get_or_else(config.SIP3_ANSWER_MODE, call.CallHandling.LISTEN),
             settle_time=utils.convert_to_float(config.SIP3_SETTLE_TIME, 1),
             incoming_call_config=load_menu_from_file(config.SIP3_INCOMING_CALL_FILE, 3),
+            outbound_proxy=config.SIP3_OUTBOUND_PROXY,
         ),
     }
     ha_config = ha.HaConfig(config.HA_BASE_URL, config.HA_TOKEN, config.TTS_PLATFORM, config.TTS_LANGUAGE, config.HA_WEBHOOK_ID)

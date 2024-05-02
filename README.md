@@ -39,6 +39,7 @@ sip:
     answer_mode: listen  # "listen" or "accept", see below
     settle_time: 1 # time to wait for playing the message/actions/etc. after call was established
     incoming_call_file: "" # config and menu definition file for incoming calls, see below
+    outbound_proxy: "" # Specify outbound proxy if needed
 sip_2:
     enabled: false
     registrar_uri: sip:fritz.box
@@ -49,6 +50,7 @@ sip_2:
     answer_mode: listen
     settle_time: 1
     incoming_call_file: ""
+    outbound_proxy: "" # Specify outbound proxy if needed
 tts:
     platform: google_translate
     language: en # might also be in en-US format, depending on the platform
