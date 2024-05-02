@@ -30,7 +30,8 @@
             "password": "secure",
             "answer_mode": "listen",
             "settle_time": 1,
-            "incoming_call_file": ""
+            "incoming_call_file": "",
+            "outbound_proxy": ""
         },
         "sip_2": {
             "enabled": false,
@@ -41,7 +42,8 @@
             "password": "secret",
             "answer_mode": "listen",
             "settle_time": 1,
-            "incoming_call_file": ""
+            "incoming_call_file": "",
+            "outbound_proxy": ""
         },
         "sip_3": {
             "enabled": false,
@@ -52,7 +54,8 @@
             "password": "",
             "answer_mode": "listen",
             "settle_time": 1,
-            "incoming_call_file": ""
+            "incoming_call_file": "",
+            "outbound_proxy": ""
         },
         "tts": {
             "platform": "google_translate",
