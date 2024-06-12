@@ -29,6 +29,7 @@ sip_global:
     port: 5060
     log_level: 5 # log level of pjsip library
     name_server: '' # comma separated list of name servers, must be set if sip server must be resolved via SRV record
+    cache_dir: '/config/audio_cache' # directory to cache TTS messages or converted audio files. Must be inside /config and existing
 sip:
     enabled: true
     registrar_uri: sip:fritz.box
@@ -161,6 +162,9 @@ data:
         number: sip:**620@fritz.box
         message: hello!
         tts_language: en
+        cache_audio: true # If message should be cached in `cache_dir`. 
+                          # Defaults to false. `cache_dir` must be configured in ha-sip config.
+                          # Don't enable this for dynamic messages, you'll just fill your storage.
 ```
 
 #### To play an audio file
@@ -173,6 +177,8 @@ data:
         command: play_audio_file
         number: sip:**620@fritz.box
         audio_file: '/config/audio/welcome.mp3'
+        cache_audio: true # If converted file should be cached in `cache_dir`. 
+                          # Defaults to false. `cache_dir` must be configured in ha-sip config
 ```
 
 #### To stop audio playback (both audio file and message):
@@ -292,6 +298,9 @@ menu:
         '1234': # DTMF sequence, and definition of a sub-menu
             id: owner # same as above, also any other option from above can be used in this sub-menu
             message: Welcome beautiful.
+            cache_audio: true # If message should be cached in `cache_dir`. 
+                              # Defaults to false. `cache_dir` must be configured in ha-sip config.
+                              # Don't enable this for dynamic messages, you'll just fill your storage.
             post_action: hangup 
         '5432':
             id: maintenance

@@ -1,5 +1,9 @@
 # Changelog
 
+## 3.8
+- Add option to cache TTS messages and converted audio files
+- Stability fixes
+
 ## 3.7
 - Add stand-alone mode with MQTT support for running ha-sip outside  
   of Home Assistant OS (thanks eporsche@github for implementing this!)

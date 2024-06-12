@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import os
 import faulthandler
 from typing import Optional
 
@@ -38,17 +39,34 @@ def load_menu_from_file(file_name: Optional[str], sip_account_index: int) -> Opt
         return None
 
 
+def get_name_server(raw_name_server: str):
+    name_server = [ns.strip() for ns in raw_name_server.split(",")]
+    name_server_without_empty = [ns for ns in name_server if ns]
+    if name_server_without_empty:
+        log(None, 'Setting name server: %s' % name_server)
+    return name_server_without_empty
+
+
+def get_cache_dir(raw_cache_dir: str) -> Optional[str]:
+    if not raw_cache_dir:
+        log(None, 'No cache directory configured.')
+        return None
+    if not os.path.isdir(raw_cache_dir):
+        log(None, 'Error: Cache directory not found.')
+        return None
+    log(None, "Found cache directory '%s'" % raw_cache_dir)
+    return raw_cache_dir
+
+
 def main():
     load_dotenv()
     import config
-    name_server = [ns.strip() for ns in config.NAME_SERVER.split(",")]
-    name_server_without_empty = [ns for ns in name_server if ns]
-    if name_server_without_empty:
-        log(None, "Setting name server: %s" % name_server)
+    name_server = get_name_server(config.NAME_SERVER)
+    cache_dir = get_cache_dir(config.CACHE_DIR)
     endpoint_config = sip.MyEndpointConfig(
         port=utils.convert_to_int(config.PORT, 5060),
         log_level=utils.convert_to_int(config.LOG_LEVEL, 5),
-        name_server=name_server_without_empty
+        name_server=name_server
     )
     account_configs = {
         1: account.MyAccountConfig(
@@ -88,7 +106,7 @@ def main():
             incoming_call_config=load_menu_from_file(config.SIP3_INCOMING_CALL_FILE, 3),
         ),
     }
-    ha_config = ha.HaConfig(config.HA_BASE_URL, config.HA_TOKEN, config.TTS_PLATFORM, config.TTS_LANGUAGE, config.HA_WEBHOOK_ID)
+    ha_config = ha.HaConfig(config.HA_BASE_URL, config.HA_TOKEN, config.TTS_PLATFORM, config.TTS_LANGUAGE, config.HA_WEBHOOK_ID, cache_dir)
     call_state = state.create()
     end_point = sip.create_endpoint(endpoint_config)
     sip_accounts = {}

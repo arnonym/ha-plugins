@@ -12,6 +12,7 @@ from typing_extensions import TypedDict, Literal
 
 import account
 import audio
+import audio_cache
 import ha
 import player
 import utils
@@ -71,6 +72,7 @@ class MenuFromStdin(TypedDict):
     post_action: Optional[str]
     timeout: Optional[int]
     choices: Optional[dict[Any, MenuFromStdin]]
+    cache_audio: Optional[bool]
 
 
 class Menu(TypedDict):
@@ -86,6 +88,7 @@ class Menu(TypedDict):
     default_choice: Optional[Menu]
     timeout_choice: Optional[Menu]
     parent_menu: Optional[Menu]
+    cache_audio: bool
 
 
 class CallInfo(TypedDict):
@@ -267,6 +270,8 @@ class Call(pj.Call):
             })
             self.connected = False
             self.current_input = ''
+            self.player = None
+            self.audio_media = None
             self.command_handler.on_state_change(CallStateChange.HANGUP, self.callback_id, self)
         else:
             log(self.account.config.index, 'Unknown state: %s' % ci.state)
@@ -361,10 +366,11 @@ class Call(pj.Call):
         language = menu['language']
         action = menu['action']
         post_action = menu['post_action']
+        should_cache = menu['cache_audio']
         if message:
-            self.play_message(message, language)
+            self.play_message(message, language, should_cache)
         if audio_file:
-            self.play_audio_file(audio_file)
+            self.play_audio_file(audio_file, should_cache)
         if handle_action:
             self.handle_action(action)
         self.scheduled_post_action = post_action
@@ -375,23 +381,29 @@ class Call(pj.Call):
             return
         self.command_handler.handle_command(action, self)
 
-    def play_message(self, message: str, language: str) -> None:
+    def play_message(self, message: str, language: str, should_cache: bool) -> None:
         log(self.account.config.index, 'Playing message: %s' % message)
+        cached_file = audio_cache.get_cached_file(should_cache, self.ha_config.cache_dir, 'message', message)
+        if cached_file:
+            self.set_current_playback({'type': 'message', 'message': message})
+            self.play_wav_file(cached_file, False)
+            return
         sound_file_name, must_be_deleted = ha.create_and_get_tts(self.ha_config, message, language)
-        self.set_current_playback({
-            'type': 'message',
-            'message': message,
-        })
+        self.set_current_playback({'type': 'message', 'message': message})
+        audio_cache.cache_file(should_cache, self.ha_config.cache_dir, 'message', message, sound_file_name)
         self.play_wav_file(sound_file_name, must_be_deleted)
 
-    def play_audio_file(self, audio_file: str) -> None:
+    def play_audio_file(self, audio_file: str, should_cache: bool) -> None:
         log(self.account.config.index, 'Playing audio file: %s' % audio_file)
+        cached_file = audio_cache.get_cached_file(should_cache, self.ha_config.cache_dir, 'audio_file', audio_file)
+        if cached_file:
+            self.set_current_playback({'type': 'audio_file', 'audio_file': audio_file})
+            self.play_wav_file(cached_file, False)
+            return
         sound_file_name = audio.convert_audio_to_wav(audio_file)
         if sound_file_name:
-            self.set_current_playback({
-                'type': 'audio_file',
-                'audio_file': sound_file_name,
-            })
+            self.set_current_playback({'type': 'audio_file', 'audio_file': audio_file})
+            audio_cache.cache_file(should_cache, self.ha_config.cache_dir, 'audio_file', audio_file, sound_file_name)
             self.play_wav_file(sound_file_name, True)
 
     def play_wav_file(self, sound_file_name: str, must_be_deleted: bool) -> None:
@@ -426,12 +438,14 @@ class Call(pj.Call):
             })
         self.current_playback = None
         self.playback_is_done = True
+        self.player = None
 
     def stop_playback(self) -> None:
         if not self.playback_is_done:
             log(self.account.config.index, 'Playback interrupted.')
             if self.player:
                 self.player.stopTransmit(self.audio_media)
+                self.player = None
             self.playback_is_done = True
 
     def accept(self, answer_mode: CallHandling, answer_after: float) -> None:
@@ -563,6 +577,7 @@ class Call(pj.Call):
             'timeout': utils.convert_to_float(menu.get('timeout'), DEFAULT_RING_TIMEOUT),
             'post_action': parse_post_action(menu.get('post_action')),
             'parent_menu': parent_menu,
+            'cache_audio': menu.get('cache_audio') or False,
         }
         choices = menu.get('choices')
         normalized_choices = dict(map(lambda c: normalize_choice(c, normalized_menu), choices.items())) if choices else dict()
@@ -609,6 +624,7 @@ class Call(pj.Call):
             'post_action': PostActionReturn(action="return", level=1),
             'timeout': DEFAULT_RING_TIMEOUT,
             'parent_menu': parent_menu,
+            'cache_audio': False
         }
 
     @staticmethod
@@ -626,6 +642,7 @@ class Call(pj.Call):
             'post_action': PostActionHangup(action="hangup"),
             'timeout': DEFAULT_RING_TIMEOUT,
             'parent_menu': parent_menu,
+            'cache_audio': False
         }
 
     @staticmethod
@@ -643,6 +660,7 @@ class Call(pj.Call):
             'post_action': PostActionNoop(action="noop"),
             'timeout': DEFAULT_RING_TIMEOUT,
             'parent_menu': None,
+            'cache_audio': False
         }
         standard_menu['default_choice'] = Call.get_default_menu(standard_menu)
         standard_menu['timeout_choice'] = Call.get_timeout_menu(standard_menu)
