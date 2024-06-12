@@ -1,6 +1,6 @@
 {
     "name": "ha-sip",
-    "version": "3.7",
+    "version": "3.8",
     "slug": "ha-sip",
     "url": "https://github.com/arnonym/ha-plugins",
     "description": "Home-Assistant SIP Gateway",
@@ -19,7 +19,8 @@
         "sip_global": {
             "port": 5060,
             "log_level": 5,
-            "name_server": ""
+            "name_server": "",
+            "cache_dir": ""
         },
         "sip": {
             "enabled": true,
@@ -66,7 +67,8 @@
         "sip_global": {
             "port": "int",
             "log_level": "int",
-            "name_server": "str"
+            "name_server": "str",
+            "cache_dir": "str"
         },
         "sip": {
             "enabled": "bool",
@@ -114,6 +116,6 @@
     "hassio_api": false,
     "stdin": true,
     "map": [
-        "config"
+        "config:rw"
     ]
 }
