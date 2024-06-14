@@ -1,5 +1,8 @@
 # Changelog
 
+## 3.9
+- Add option to ignore DTMF tones until message/audio file has finished to play
+
 ## 3.8
 - Add option to cache TTS messages and converted audio files
 - Stability fixes

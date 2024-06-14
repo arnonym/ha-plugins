@@ -73,6 +73,7 @@ class MenuFromStdin(TypedDict):
     timeout: Optional[int]
     choices: Optional[dict[Any, MenuFromStdin]]
     cache_audio: Optional[bool]
+    wait_for_audio_to_finish: Optional[bool]
 
 
 class Menu(TypedDict):
@@ -89,6 +90,7 @@ class Menu(TypedDict):
     timeout_choice: Optional[Menu]
     parent_menu: Optional[Menu]
     cache_audio: bool
+    wait_for_audio_to_finish: bool
 
 
 class CallInfo(TypedDict):
@@ -137,6 +139,7 @@ class Call(pj.Call):
         self.command_handler = command_handler
         self.scheduled_post_action: Optional[PostAction] = None
         self.playback_is_done = True
+        self.wait_for_audio_to_finish = False
         self.last_seen = time.time()
         self.call_settled_at: Optional[float] = None
         self.answer_at: Optional[float] = None
@@ -285,6 +288,9 @@ class Call(pj.Call):
                 self.audio_media = self.getAudioMedia(media_index)
 
     def onDtmfDigit(self, prm: pj.OnDtmfDigitParam) -> None:
+        if not self.playback_is_done and self.wait_for_audio_to_finish:
+            self.reset_timeout()
+            return
         self.stop_playback()
         self.reset_timeout()
         self.pressed_digit_list.append(prm.digit)
@@ -367,10 +373,11 @@ class Call(pj.Call):
         action = menu['action']
         post_action = menu['post_action']
         should_cache = menu['cache_audio']
+        wait_for_audio_to_finish = menu['wait_for_audio_to_finish']
         if message:
-            self.play_message(message, language, should_cache)
+            self.play_message(message, language, should_cache, wait_for_audio_to_finish)
         if audio_file:
-            self.play_audio_file(audio_file, should_cache)
+            self.play_audio_file(audio_file, should_cache, wait_for_audio_to_finish)
         if handle_action:
             self.handle_action(action)
         self.scheduled_post_action = post_action
@@ -381,35 +388,36 @@ class Call(pj.Call):
             return
         self.command_handler.handle_command(action, self)
 
-    def play_message(self, message: str, language: str, should_cache: bool) -> None:
+    def play_message(self, message: str, language: str, should_cache: bool, wait_for_audio_to_finish: bool) -> None:
         log(self.account.config.index, 'Playing message: %s' % message)
         cached_file = audio_cache.get_cached_file(should_cache, self.ha_config.cache_dir, 'message', message)
         if cached_file:
             self.set_current_playback({'type': 'message', 'message': message})
-            self.play_wav_file(cached_file, False)
+            self.play_wav_file(cached_file, False, wait_for_audio_to_finish)
             return
         sound_file_name, must_be_deleted = ha.create_and_get_tts(self.ha_config, message, language)
         self.set_current_playback({'type': 'message', 'message': message})
         audio_cache.cache_file(should_cache, self.ha_config.cache_dir, 'message', message, sound_file_name)
-        self.play_wav_file(sound_file_name, must_be_deleted)
+        self.play_wav_file(sound_file_name, must_be_deleted, wait_for_audio_to_finish)
 
-    def play_audio_file(self, audio_file: str, should_cache: bool) -> None:
+    def play_audio_file(self, audio_file: str, should_cache: bool, wait_for_audio_to_finish: bool) -> None:
         log(self.account.config.index, 'Playing audio file: %s' % audio_file)
         cached_file = audio_cache.get_cached_file(should_cache, self.ha_config.cache_dir, 'audio_file', audio_file)
         if cached_file:
             self.set_current_playback({'type': 'audio_file', 'audio_file': audio_file})
-            self.play_wav_file(cached_file, False)
+            self.play_wav_file(cached_file, False, wait_for_audio_to_finish)
             return
         sound_file_name = audio.convert_audio_to_wav(audio_file)
         if sound_file_name:
             self.set_current_playback({'type': 'audio_file', 'audio_file': audio_file})
             audio_cache.cache_file(should_cache, self.ha_config.cache_dir, 'audio_file', audio_file, sound_file_name)
-            self.play_wav_file(sound_file_name, True)
+            self.play_wav_file(sound_file_name, True, wait_for_audio_to_finish)
 
-    def play_wav_file(self, sound_file_name: str, must_be_deleted: bool) -> None:
+    def play_wav_file(self, sound_file_name: str, must_be_deleted: bool, wait_for_audio_to_finish: bool) -> None:
         if self.audio_media:
-            self.player = player.Player(self.on_playback_done)
             self.playback_is_done = False
+            self.wait_for_audio_to_finish = wait_for_audio_to_finish
+            self.player = player.Player(self.on_playback_done)
             self.player.play_file(self.audio_media, sound_file_name)
         else:
             log(self.account.config.index, 'Audio media not connected. Cannot play audio stream!')
@@ -578,6 +586,7 @@ class Call(pj.Call):
             'post_action': parse_post_action(menu.get('post_action')),
             'parent_menu': parent_menu,
             'cache_audio': menu.get('cache_audio') or False,
+            'wait_for_audio_to_finish': menu.get('wait_for_audio_to_finish') or False,
         }
         choices = menu.get('choices')
         normalized_choices = dict(map(lambda c: normalize_choice(c, normalized_menu), choices.items())) if choices else dict()
@@ -624,7 +633,8 @@ class Call(pj.Call):
             'post_action': PostActionReturn(action="return", level=1),
             'timeout': DEFAULT_RING_TIMEOUT,
             'parent_menu': parent_menu,
-            'cache_audio': False
+            'cache_audio': False,
+            'wait_for_audio_to_finish': False
         }
 
     @staticmethod
@@ -642,7 +652,8 @@ class Call(pj.Call):
             'post_action': PostActionHangup(action="hangup"),
             'timeout': DEFAULT_RING_TIMEOUT,
             'parent_menu': parent_menu,
-            'cache_audio': False
+            'cache_audio': False,
+            'wait_for_audio_to_finish': False
         }
 
     @staticmethod
@@ -660,7 +671,8 @@ class Call(pj.Call):
             'post_action': PostActionNoop(action="noop"),
             'timeout': DEFAULT_RING_TIMEOUT,
             'parent_menu': None,
-            'cache_audio': False
+            'cache_audio': False,
+            'wait_for_audio_to_finish': False
         }
         standard_menu['default_choice'] = Call.get_default_menu(standard_menu)
         standard_menu['timeout_choice'] = Call.get_timeout_menu(standard_menu)
