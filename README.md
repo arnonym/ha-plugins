@@ -165,6 +165,7 @@ data:
         cache_audio: true # If message should be cached in `cache_dir`. 
                           # Defaults to false. `cache_dir` must be configured in ha-sip config.
                           # Don't enable this for dynamic messages, you'll just fill your storage.
+        wait_for_audio_to_finish: true # Do not accept DTMF tones until the message has been played
 ```
 
 #### To play an audio file
@@ -179,6 +180,7 @@ data:
         audio_file: '/config/audio/welcome.mp3'
         cache_audio: true # If converted file should be cached in `cache_dir`. 
                           # Defaults to false. `cache_dir` must be configured in ha-sip config
+        wait_for_audio_to_finish: true # Do not accept DTMF tones until the audio file has been played
 ```
 
 #### To stop audio playback (both audio file and message):
@@ -301,6 +303,7 @@ menu:
             cache_audio: true # If message should be cached in `cache_dir`. 
                               # Defaults to false. `cache_dir` must be configured in ha-sip config.
                               # Don't enable this for dynamic messages, you'll just fill your storage.
+            wait_for_audio_to_finish: true # Do not accept DTMF tones until the message/audio file has been played
             post_action: hangup 
         '5432':
             id: maintenance

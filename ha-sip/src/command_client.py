@@ -45,6 +45,7 @@ class Command(TypedDict):
     audio_file: Optional[str]
     message: Optional[str]
     cache_audio: Optional[bool]
+    wait_for_audio_to_finish: Optional[bool]
     tts_language: Optional[str]
     service_data: Optional[Dict[str, Any]]
 

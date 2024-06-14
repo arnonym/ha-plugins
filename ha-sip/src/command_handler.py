@@ -156,11 +156,12 @@ class CommandHandler(object):
                     return
                 current_call = self.get_call_from_state_unsafe(number)
                 audio_file = command.get('audio_file')
-                cache_audio = command.get('cache_audio') or False
                 if not audio_file:
                     log(None, 'Error: Missing parameter "audio_file" for command "play_audio_file"')
                     return
-                current_call.play_audio_file(audio_file, cache_audio)
+                cache_audio = command.get('cache_audio') or False
+                wait_for_audio_to_finish = command.get('wait_for_audio_to_finish') or False
+                current_call.play_audio_file(audio_file, cache_audio, wait_for_audio_to_finish)
             case 'play_message':
                 if not number:
                     log(None, 'Error: Missing number for command "play_message"')
@@ -175,7 +176,8 @@ class CommandHandler(object):
                     return
                 tts_language = command.get('tts_language') or self.ha_config.tts_language
                 cache_audio = command.get('cache_audio') or False
-                current_call.play_message(message, tts_language, cache_audio)
+                wait_for_audio_to_finish = command.get('wait_for_audio_to_finish') or False
+                current_call.play_message(message, tts_language, cache_audio, wait_for_audio_to_finish)
             case 'stop_playback':
                 if not number:
                     log(None, 'Error: Missing number for command "stop_playback"')
