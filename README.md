@@ -35,7 +35,7 @@ sip:
     registrar_uri: sip:fritz.box
     id_uri: sip:homeassistant@fritz.box
     realm: '*'
-    user_name: homeassistant
+    user_name: homeassistant #If your username is all numeric, utilize single quotes (' ') instead of the auto filled double quotes (" ") to avoid an authentication issue in Asterisk. 
     password: secure
     answer_mode: listen  # "listen" or "accept", see below
     settle_time: 1 # time to wait for playing the message/actions/etc. after call was established
