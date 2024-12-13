@@ -52,5 +52,6 @@ else
     echo "Running in stand-alone mode."
 fi
 
+export PYTHONFAULTHANDLER=1
 python3 --version
 python3 /ha-sip/main.py

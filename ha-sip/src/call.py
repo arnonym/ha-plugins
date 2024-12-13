@@ -275,6 +275,7 @@ class Call(pj.Call):
             self.current_input = ''
             self.player = None
             self.audio_media = None
+            self.tone_gen = None
             self.command_handler.on_state_change(CallStateChange.HANGUP, self.callback_id, self)
         else:
             log(self.account.config.index, 'Unknown state: %s' % ci.state)

@@ -1,0 +1,21 @@
+name: Build i386
+
+on:
+  push:
+    branches: [ next ]
+
+jobs:
+  build-amd64:
+    runs-on: ubuntu-latest
+    environment: next
+    strategy:
+      matrix:
+        architecture: [amd64]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+      - name: Run build.sh for AMD64
+        run: |
+          export REPO_URL=${{ vars.REPO_URL }}
+          export DOCKER_HUB_PASSWORD=${{ secrets.DOCKER_HUB_PASSWORD }}
+          ./build.sh build-i386

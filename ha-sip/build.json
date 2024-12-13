@@ -1,10 +1,10 @@
 {
     "build_from": {
-        "aarch64": "homeassistant/aarch64-base-python",
-        "amd64": "homeassistant/amd64-base-python",
-        "armhf": "homeassistant/armhf-base-python",
-        "armv7": "homeassistant/armv7-base-python",
-        "i386": "homeassistant/i386-base-python"
+        "aarch64": "ghcr.io/hassio-addons/debian-base/aarch64:stable",
+        "amd64": "ghcr.io/hassio-addons/debian-base/amd64:stable",
+        "armhf": "ghcr.io/hassio-addons/debian-base/armhf:stable",
+        "armv7": "ghcr.io/hassio-addons/debian-base/armv7:stable",
+        "i386": "ghcr.io/hassio-addons/debian-base/i386:stable"
     },
     "squash": false,
     "args": {
