@@ -122,7 +122,7 @@ def main():
     while True:
         if mqtt_client:
             mqtt_client.handle()
-        end_point.libHandleEvents(20)
+        end_point.libHandleEvents(10)
         handle_command_list(command_client, command_handler)
         for c in list(call_state.current_call_dict.values()):
             c.handle_events()

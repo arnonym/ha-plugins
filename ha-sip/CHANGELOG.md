@@ -1,5 +1,9 @@
 # Changelog
 
+## 4.1
+- Updated pjsip to latest version
+- Moved base image to debian
+
 ## 3.9
 - Add option to ignore DTMF tones until message/audio file has finished to play
 
