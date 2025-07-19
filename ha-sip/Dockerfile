@@ -24,9 +24,11 @@ RUN set -xe \
     && rm -rf /tmp/pjproject \
     && ldconfig
 
-COPY run.sh /
-RUN chmod a+x /run.sh
+COPY run.sh run-in-ha.sh run-standalone.sh /
+RUN chmod a+x /run.sh /run-in-ha.sh /run-standalone.sh
 
 COPY src/ /ha-sip/
+
+WORKDIR /
 
 CMD [ "/run.sh" ]
