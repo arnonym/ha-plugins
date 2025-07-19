@@ -16,6 +16,7 @@ import utils
 import mqtt
 from command_client import CommandClient
 from command_handler import CommandHandler
+from event_sender import EventSender
 from log import log
 
 
@@ -111,14 +112,22 @@ def main():
     end_point = sip.create_endpoint(endpoint_config)
     sip_accounts = {}
     is_first_enabled_account = True
+    event_sender = EventSender()
     command_client = CommandClient()
-    command_handler = CommandHandler(end_point, sip_accounts, call_state, ha_config)
+    command_handler = CommandHandler(end_point, sip_accounts, call_state, ha_config, event_sender)
     for key, account_config in account_configs.items():
         if account_config.enabled:
-            sip_accounts[key] = account.create_account(end_point, account_config, command_handler, ha_config, is_first_enabled_account)
+            sip_accounts[key] = account.create_account(end_point, account_config, command_handler, event_sender, ha_config, is_first_enabled_account)
             is_first_enabled_account = False
     mqtt_mode = config.COMMAND_SOURCE.lower().strip() == 'mqtt'
     mqtt_client = mqtt.create_client_and_connect(command_handler) if mqtt_mode else None
+    def trigger_webhook(event: ha.WebhookEvent, webhook_id: Optional[str] = None):
+        ha.trigger_webhook(ha_config, event, webhook_id)
+    def send_mqtt_event(event: ha.WebhookEvent, webhook_id: Optional[str] = None):
+        if mqtt_client:
+            mqtt_client.send_event(event)
+    event_sender.register_sender(trigger_webhook)
+    event_sender.register_sender(send_mqtt_event)
     while True:
         if mqtt_client:
             mqtt_client.handle()
