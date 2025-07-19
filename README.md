@@ -79,7 +79,6 @@ data:
         command: dial
         number: sip:**620@fritz.box # number to call. Format depends on your SIP provider, 
                                     # but might look like 'sip:+49123456789@fritz.box' for external calls
-        webhook_to_call_after_call_was_established: another_webhook_id # web-hook id which you can listen on in your actions (deprecated)
         webhook_to_call: # web-hook IDs which you can listen on in your actions (additional to the global web-hook)
             ring_timeout: another_webhook_id # can be all the same, or different
             call_established: another_webhook_id
@@ -89,7 +88,7 @@ data:
             call_disconnected: another_webhook_id
             playback_done: another_webhook_id # is called after playback of message or audio file is done
         ring_timeout: 15 # time to ring in seconds (optional, defaults to 300)
-        sip_account: 1 # number of configured sip account: 1 or 2 
+        sip_account: 1 # number of configured sip account: 1, 2, or 3 
                        # (optional, defaults to first enabled sip account)
         menu:
             message: There's a burglar in da house.
@@ -327,7 +326,8 @@ menu:
 
 ## Web-hooks
 
-For most events in ha-sip there's a web-hook triggered:
+For most events in ha-sip there's a web-hook triggered. The property `internal_id` is the number you can use 
+to identify the call in your automations.
 
 ### `incoming_call`
 
@@ -336,7 +336,8 @@ For most events in ha-sip there's a web-hook triggered:
     "event": "incoming_call",
     "caller": "<sip:5551234456@fritz.box>",
     "parsed_caller": "5551234456",
-    "sip_account": 1
+    "sip_account": 1,
+    "internal_id": "something-unique"
 }
 ```
 
@@ -347,7 +348,8 @@ For most events in ha-sip there's a web-hook triggered:
     "event": "call_established",
     "caller": "<sip:5551234456@fritz.box>",
     "parsed_caller": "5551234456",
-    "sip_account": 1
+    "sip_account": 1,
+    "internal_id": "something-unique"
 }
 ```
 
@@ -359,7 +361,8 @@ For most events in ha-sip there's a web-hook triggered:
     "caller": "<sip:5551234456@fritz.box>",
     "parsed_caller": "5551234456",
     "menu_id": "owner",
-    "sip_account": 1
+    "sip_account": 1,
+    "internal_id": "something-unique"
 }
 ```
 
@@ -371,7 +374,8 @@ For most events in ha-sip there's a web-hook triggered:
     "caller": "<sip:5551234456@fritz.box>",
     "parsed_caller": "5551234456",
     "digit": "1",
-    "sip_account": 1
+    "sip_account": 1,
+    "internal_id": "something-unique"
 }
 ```
 
@@ -382,7 +386,8 @@ For most events in ha-sip there's a web-hook triggered:
     "event": "call_disconnected",
     "caller": "<sip:5551234456@fritz.box>",
     "parsed_caller": "5551234456",
-    "sip_account": 1
+    "sip_account": 1,
+    "internal_id": "something-unique"
 }
 ```
 
@@ -395,7 +400,8 @@ For most events in ha-sip there's a web-hook triggered:
     "parsed_caller": "5551234456",
     "sip_account": 1,
     "type": "message",
-    "message": "message that has been played"
+    "message": "message that has been played",
+    "internal_id": "something-unique"
 }
 ```
 
@@ -408,7 +414,8 @@ For most events in ha-sip there's a web-hook triggered:
     "parsed_caller": "5551234456",
     "sip_account": 1,
     "type": "audio_file",
-    "audio_file": "/config/audio/welcome.mp3"
+    "audio_file": "/config/audio/welcome.mp3",
+    "internal_id": "something-unique"
 }
 ```
 
@@ -419,7 +426,8 @@ For most events in ha-sip there's a web-hook triggered:
     "event": "ring_timeout",
     "caller": "<sip:5551234456@fritz.box>",
     "parsed_caller": "5551234456",
-    "sip_account": 1
+    "sip_account": 1,
+    "internal_id": "something-unique"
 }
 ```
 
@@ -431,7 +439,8 @@ For most events in ha-sip there's a web-hook triggered:
     "caller": "<sip:5551234456@fritz.box>",
     "parsed_caller": "5551234456",
     "sip_account": 1,
-    "menu_id": "main"
+    "menu_id": "main",
+    "internal_id": "something-unique"
 }
 ```
 
@@ -572,10 +581,3 @@ Instead of stdin - MQTT will be used for communication.
     ```
    
 7. You can listen to call state event on the topic configured in `MQTT_STATE_TOPIC` (defaults to `hasip/state`).
-
-If you need to run the service on another architecture different from amd64, you need to change the `BUILD_FROM` variable in `docker-compose.yaml`. Available architectures are:
-- ghcr.io/hassio-addons/debian-base/amd64:stable
-- ghcr.io/hassio-addons/debian-base/i386:stable
-- ghcr.io/hassio-addons/debian-base/aarch64:stable
-- ghcr.io/hassio-addons/debian-base/armhf:stable
-- ghcr.io/hassio-addons/debian-base/armv7:stable
