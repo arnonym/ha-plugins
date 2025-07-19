@@ -100,6 +100,7 @@ class Account(pj.Account):
             'parsed_caller': ci['parsed_caller'],
             'sip_account': self.config.index,
             'call_id': ci['call_id'],
+            'internal_id': incoming_call_instance.callback_id
         })
 
     def get_sip_return_code(

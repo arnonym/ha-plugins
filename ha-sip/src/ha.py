@@ -16,7 +16,8 @@ class IncomingCallEvent(TypedDict):
     caller: str
     parsed_caller: Optional[str]
     sip_account: int
-    call_id: str
+    call_id: Optional[str]
+    internal_id: str
 
 
 class CallEstablishedEvent(TypedDict):
@@ -24,7 +25,8 @@ class CallEstablishedEvent(TypedDict):
     caller: str
     parsed_caller: Optional[str]
     sip_account: int
-    call_id: str
+    call_id: Optional[str]
+    internal_id: str
 
 
 class CallDisconnectedEvent(TypedDict):
@@ -32,7 +34,8 @@ class CallDisconnectedEvent(TypedDict):
     caller: str
     parsed_caller: Optional[str]
     sip_account: int
-    call_id: str
+    call_id: Optional[str]
+    internal_id: str
 
 
 class EnteredMenuEvent(TypedDict):
@@ -41,7 +44,8 @@ class EnteredMenuEvent(TypedDict):
     parsed_caller: Optional[str]
     menu_id: str
     sip_account: int
-    call_id: str
+    call_id: Optional[str]
+    internal_id: str
 
 
 class DtmfDigitEvent(TypedDict):
@@ -50,7 +54,8 @@ class DtmfDigitEvent(TypedDict):
     parsed_caller: Optional[str]
     digit: str
     sip_account: int
-    call_id: str
+    call_id: Optional[str]
+    internal_id: str
 
 
 class Timeout(TypedDict):
@@ -59,7 +64,8 @@ class Timeout(TypedDict):
     parsed_caller: Optional[str]
     sip_account: int
     menu_id: Optional[str]
-    call_id: str
+    call_id: Optional[str]
+    internal_id: str
 
 
 class RingTimeout(TypedDict):
@@ -67,7 +73,8 @@ class RingTimeout(TypedDict):
     caller: str
     parsed_caller: Optional[str]
     sip_account: int
-    call_id: str
+    call_id: Optional[str]
+    internal_id: str
 
 
 class PlaybackDoneAudioFile(TypedDict):
@@ -77,7 +84,8 @@ class PlaybackDoneAudioFile(TypedDict):
     parsed_caller: Optional[str]
     sip_account: int
     audio_file: str
-    call_id: str
+    call_id: Optional[str]
+    internal_id: str
 
 
 class PlaybackDoneMessage(TypedDict):
@@ -87,7 +95,8 @@ class PlaybackDoneMessage(TypedDict):
     parsed_caller: Optional[str]
     sip_account: int
     message: str
-    call_id: str
+    call_id: Optional[str]
+    internal_id: str
 
 
 WebhookEvent = Union[

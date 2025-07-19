@@ -327,7 +327,8 @@ menu:
 
 ## Web-hooks
 
-For most events in ha-sip there's a web-hook triggered:
+For most events in ha-sip there's a web-hook triggered. The property `internal_id` is the number you can use 
+to identify the call in your automations.
 
 ### `incoming_call`
 
@@ -336,7 +337,8 @@ For most events in ha-sip there's a web-hook triggered:
     "event": "incoming_call",
     "caller": "<sip:5551234456@fritz.box>",
     "parsed_caller": "5551234456",
-    "sip_account": 1
+    "sip_account": 1,
+    "internal_id": "something-unique"
 }
 ```
 
@@ -347,7 +349,8 @@ For most events in ha-sip there's a web-hook triggered:
     "event": "call_established",
     "caller": "<sip:5551234456@fritz.box>",
     "parsed_caller": "5551234456",
-    "sip_account": 1
+    "sip_account": 1,
+    "internal_id": "something-unique"
 }
 ```
 
@@ -359,7 +362,8 @@ For most events in ha-sip there's a web-hook triggered:
     "caller": "<sip:5551234456@fritz.box>",
     "parsed_caller": "5551234456",
     "menu_id": "owner",
-    "sip_account": 1
+    "sip_account": 1,
+    "internal_id": "something-unique"
 }
 ```
 
@@ -371,7 +375,8 @@ For most events in ha-sip there's a web-hook triggered:
     "caller": "<sip:5551234456@fritz.box>",
     "parsed_caller": "5551234456",
     "digit": "1",
-    "sip_account": 1
+    "sip_account": 1,
+    "internal_id": "something-unique"
 }
 ```
 
@@ -382,7 +387,8 @@ For most events in ha-sip there's a web-hook triggered:
     "event": "call_disconnected",
     "caller": "<sip:5551234456@fritz.box>",
     "parsed_caller": "5551234456",
-    "sip_account": 1
+    "sip_account": 1,
+    "internal_id": "something-unique"
 }
 ```
 
@@ -395,7 +401,8 @@ For most events in ha-sip there's a web-hook triggered:
     "parsed_caller": "5551234456",
     "sip_account": 1,
     "type": "message",
-    "message": "message that has been played"
+    "message": "message that has been played",
+    "internal_id": "something-unique"
 }
 ```
 
@@ -408,7 +415,8 @@ For most events in ha-sip there's a web-hook triggered:
     "parsed_caller": "5551234456",
     "sip_account": 1,
     "type": "audio_file",
-    "audio_file": "/config/audio/welcome.mp3"
+    "audio_file": "/config/audio/welcome.mp3",
+    "internal_id": "something-unique"
 }
 ```
 
@@ -419,7 +427,8 @@ For most events in ha-sip there's a web-hook triggered:
     "event": "ring_timeout",
     "caller": "<sip:5551234456@fritz.box>",
     "parsed_caller": "5551234456",
-    "sip_account": 1
+    "sip_account": 1,
+    "internal_id": "something-unique"
 }
 ```
 
@@ -431,7 +440,8 @@ For most events in ha-sip there's a web-hook triggered:
     "caller": "<sip:5551234456@fritz.box>",
     "parsed_caller": "5551234456",
     "sip_account": 1,
-    "menu_id": "main"
+    "menu_id": "main",
+    "internal_id": "something-unique"
 }
 ```
 

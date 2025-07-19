@@ -6,7 +6,7 @@
         "armv7": "ghcr.io/hassio-addons/debian-base/armv7:stable",
         "i386": "ghcr.io/hassio-addons/debian-base/i386:stable"
     },
-    "squash": false,
+    "squash": true,
     "args": {
     }
 }
