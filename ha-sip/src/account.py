@@ -10,6 +10,7 @@ import ha
 import incoming_call
 import utils
 from constants import DEFAULT_RING_TIMEOUT
+from event_sender import EventSender
 from log import log
 from command_handler import CommandHandler
 
@@ -42,11 +43,20 @@ class MyAccountConfig(object):
 
 
 class Account(pj.Account):
-    def __init__(self, end_point: pj.Endpoint, config: MyAccountConfig, command_handler: CommandHandler, ha_config: ha.HaConfig, make_default=False):
+    def __init__(
+        self,
+        end_point: pj.Endpoint,
+        config: MyAccountConfig,
+        command_handler: CommandHandler,
+        event_sender: EventSender,
+        ha_config: ha.HaConfig,
+        make_default=False
+    ):
         pj.Account.__init__(self)
         self.config = config
         self.end_point = end_point
         self.command_handler = command_handler
+        self.event_sender = event_sender
         self.ha_config = ha_config
         self.make_default = make_default
 
@@ -72,7 +82,8 @@ class Account(pj.Account):
         answer_after = float(utils.convert_to_int(self.config.incoming_call_config.get('answer_after'), 0)) if self.config.incoming_call_config else 0.0
         webhook_to_call = self.config.incoming_call_config.get('webhook_to_call') if self.config.incoming_call_config else None
         incoming_call_instance = call.Call(
-            self.end_point, self, prm.callId, None, menu, self.command_handler, self.ha_config, DEFAULT_RING_TIMEOUT, None, webhook_to_call,
+            self.end_point, self, prm.callId, None, menu, self.command_handler, self.event_sender,
+            self.ha_config, DEFAULT_RING_TIMEOUT, webhook_to_call,
         )
         ci = incoming_call_instance.get_call_info()
         answer_mode = self.get_sip_return_code(self.config.mode, allowed_numbers, blocked_numbers, ci['parsed_caller'])
@@ -83,7 +94,7 @@ class Account(pj.Account):
             log(self.config.index, 'Blocked numbers: %s' % blocked_numbers)
         log(self.config.index, 'Answer mode: %s' % answer_mode.name)
         incoming_call_instance.accept(answer_mode, answer_after)
-        ha.trigger_webhook(self.ha_config, {
+        self.event_sender.send_event({
             'event': 'incoming_call',
             'caller': ci['remote_uri'],
             'parsed_caller': ci['parsed_caller'],
@@ -127,7 +138,14 @@ class Account(pj.Account):
         return False
 
 
-def create_account(end_point: pj.Endpoint, config: MyAccountConfig, command_handler: CommandHandler, ha_config: ha.HaConfig, is_default: bool) -> Account:
-    account = Account(end_point, config, command_handler, ha_config, is_default)
+def create_account(
+    end_point: pj.Endpoint,
+    config: MyAccountConfig,
+    command_handler: CommandHandler,
+    event_sender: EventSender,
+    ha_config: ha.HaConfig,
+    is_default: bool
+) -> Account:
+    account = Account(end_point, config, command_handler, event_sender, ha_config, is_default)
     account.init()
     return account

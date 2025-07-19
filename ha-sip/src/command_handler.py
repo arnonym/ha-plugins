@@ -14,6 +14,7 @@ import state
 import utils
 from call_state_change import CallStateChange
 from constants import DEFAULT_RING_TIMEOUT
+from event_sender import EventSender
 from log import log
 
 
@@ -24,10 +25,12 @@ class CommandHandler(object):
         sip_accounts: dict[int, account.Account],
         call_state: state.State,
         ha_config: ha.HaConfig,
+        event_sender: EventSender,
     ):
         self.end_point = end_point
         self.sip_accounts = sip_accounts
         self.ha_config = ha_config
+        self.event_sender = event_sender
         self.call_state = call_state
 
     def get_call_from_state(self, caller_id: str) -> Optional[call.Call]:
@@ -74,10 +77,9 @@ class CommandHandler(object):
                 menu = command.get('menu')
                 ring_timeout = utils.convert_to_float(command.get('ring_timeout'), DEFAULT_RING_TIMEOUT)
                 sip_account_number = utils.convert_to_int(command.get('sip_account'), -1)
-                webhook_to_call = command.get('webhook_to_call_after_call_was_established')
                 webhooks = command.get('webhook_to_call')
                 sip_account = self.sip_accounts.get(sip_account_number, next(iter(self.sip_accounts.values())))
-                call.make_call(self.end_point, sip_account, number, menu, self, self.ha_config, ring_timeout, webhook_to_call, webhooks)
+                call.make_call(self.end_point, sip_account, number, menu, self, self.event_sender, self.ha_config, ring_timeout, webhooks)
             case 'hangup':
                 if not number:
                     log(None, 'Error: Missing number for command "hangup"')
@@ -159,7 +161,9 @@ class CommandHandler(object):
                 if not audio_file:
                     log(None, 'Error: Missing parameter "audio_file" for command "play_audio_file"')
                     return
-                current_call.play_audio_file(audio_file)
+                cache_audio = command.get('cache_audio') or False
+                wait_for_audio_to_finish = command.get('wait_for_audio_to_finish') or False
+                current_call.play_audio_file(audio_file, cache_audio, wait_for_audio_to_finish)
             case 'play_message':
                 if not number:
                     log(None, 'Error: Missing number for command "play_message"')
@@ -173,7 +177,9 @@ class CommandHandler(object):
                     log(None, 'Error: Missing parameter "message" for command "play_message"')
                     return
                 tts_language = command.get('tts_language') or self.ha_config.tts_language
-                current_call.play_message(message, tts_language)
+                cache_audio = command.get('cache_audio') or False
+                wait_for_audio_to_finish = command.get('wait_for_audio_to_finish') or False
+                current_call.play_message(message, tts_language, cache_audio, wait_for_audio_to_finish)
             case 'stop_playback':
                 if not number:
                     log(None, 'Error: Missing number for command "stop_playback"')

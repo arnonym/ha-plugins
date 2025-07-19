@@ -1,5 +1,28 @@
 # Changelog
 
+## 4.2
+- Add MQTT topic for call state events
+- Removed long deprecated `webhook_to_call_after_call_was_established` option.  
+  See version 2.6 for migration instructions.
+
+## 4.1
+- Updated pjsip to latest version
+- Moved base image to debian
+
+## 3.9
+- Add option to ignore DTMF tones until message/audio file has finished to play
+
+## 3.8
+- Add option to cache TTS messages and converted audio files
+- Stability fixes
+
+## 3.7
+- Add stand-alone mode with MQTT support for running ha-sip outside  
+  of Home Assistant OS (thanks eporsche@github for implementing this!)
+
+## 3.6
+- update to the latest stable version of pjsip
+
 ## 3.5.1
 - Add error handling for getting TTS messages
 
@@ -19,7 +42,8 @@
 - Updated pjsip to latest version
 
 ## 3.1
-- Reverted slug change because requirements where changed again in 2023.9.2 and created issues. If you already changed the slug in your automations you need to redo that. Sorry for any inconvenience.
+- Reverted slug change because requirements where changed again in 2023.9.2 and created issues. 
+  If you already changed the slug in your automations you need to redo that. Sorry for any inconvenience.
 
 ## 3.0
 - Changed slug to new requirements in home-assistant 2023.9

@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 
+import os
 import faulthandler
-import sys
 from typing import Optional
 
+from dotenv import load_dotenv
 import yaml
-
 import account
 import call
 import ha
@@ -13,8 +13,10 @@ import incoming_call
 import sip
 import state
 import utils
+import mqtt
 from command_client import CommandClient
 from command_handler import CommandHandler
+from event_sender import EventSender
 from log import log
 
 
@@ -38,19 +40,34 @@ def load_menu_from_file(file_name: Optional[str], sip_account_index: int) -> Opt
         return None
 
 
-def main():
-    if "local" in sys.argv:
-        import config_local as config
-    else:
-        import config
-    name_server = [ns.strip() for ns in config.NAME_SERVER.split(",")]
+def get_name_server(raw_name_server: str):
+    name_server = [ns.strip() for ns in raw_name_server.split(",")]
     name_server_without_empty = [ns for ns in name_server if ns]
     if name_server_without_empty:
-        log(None, "Setting name server: %s" % name_server)
+        log(None, 'Setting name server: %s' % name_server)
+    return name_server_without_empty
+
+
+def get_cache_dir(raw_cache_dir: str) -> Optional[str]:
+    if not raw_cache_dir:
+        log(None, 'No cache directory configured.')
+        return None
+    if not os.path.isdir(raw_cache_dir):
+        log(None, 'Error: Cache directory not found.')
+        return None
+    log(None, "Found cache directory '%s'" % raw_cache_dir)
+    return raw_cache_dir
+
+
+def main():
+    load_dotenv()
+    import config
+    name_server = get_name_server(config.NAME_SERVER)
+    cache_dir = get_cache_dir(config.CACHE_DIR)
     endpoint_config = sip.MyEndpointConfig(
         port=utils.convert_to_int(config.PORT, 5060),
         log_level=utils.convert_to_int(config.LOG_LEVEL, 5),
-        name_server=name_server_without_empty
+        name_server=name_server
     )
     account_configs = {
         1: account.MyAccountConfig(
@@ -90,19 +107,31 @@ def main():
             incoming_call_config=load_menu_from_file(config.SIP3_INCOMING_CALL_FILE, 3),
         ),
     }
-    ha_config = ha.HaConfig(config.HA_BASE_URL, config.HA_TOKEN, config.TTS_PLATFORM, config.TTS_LANGUAGE, config.HA_WEBHOOK_ID)
+    ha_config = ha.HaConfig(config.HA_BASE_URL, config.HA_TOKEN, config.TTS_PLATFORM, config.TTS_LANGUAGE, config.HA_WEBHOOK_ID, cache_dir)
     call_state = state.create()
     end_point = sip.create_endpoint(endpoint_config)
     sip_accounts = {}
     is_first_enabled_account = True
+    event_sender = EventSender()
     command_client = CommandClient()
-    command_handler = CommandHandler(end_point, sip_accounts, call_state, ha_config)
-    for key, config in account_configs.items():
-        if config.enabled:
-            sip_accounts[key] = account.create_account(end_point, config, command_handler, ha_config, is_first_enabled_account)
+    command_handler = CommandHandler(end_point, sip_accounts, call_state, ha_config, event_sender)
+    for key, account_config in account_configs.items():
+        if account_config.enabled:
+            sip_accounts[key] = account.create_account(end_point, account_config, command_handler, event_sender, ha_config, is_first_enabled_account)
             is_first_enabled_account = False
+    mqtt_mode = config.COMMAND_SOURCE.lower().strip() == 'mqtt'
+    mqtt_client = mqtt.create_client_and_connect(command_handler) if mqtt_mode else None
+    def trigger_webhook(event: ha.WebhookEvent, webhook_id: Optional[str] = None):
+        ha.trigger_webhook(ha_config, event, webhook_id)
+    def send_mqtt_event(event: ha.WebhookEvent, webhook_id: Optional[str] = None):
+        if mqtt_client:
+            mqtt_client.send_event(event)
+    event_sender.register_sender(trigger_webhook)
+    event_sender.register_sender(send_mqtt_event)
     while True:
-        end_point.libHandleEvents(20)
+        if mqtt_client:
+            mqtt_client.handle()
+        end_point.libHandleEvents(10)
         handle_command_list(command_client, command_handler)
         for c in list(call_state.current_call_dict.values()):
             c.handle_events()

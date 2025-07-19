@@ -17,6 +17,11 @@ https://www.home-assistant.io/installation/. With that in place you can install 
 https://www.home-assistant.io/common-tasks/os#installing-third-party-add-ons. The repository URL is
 `https://github.com/arnonym/ha-plugins`.
 
+> **Note:**
+> Alternatively you can run ha-sip in a stand-alone mode (for Home Assistant Container installations). 
+> In that mode the communication to ha-sip will be handled by MQTT. You can find the installation steps at 
+> the end of this document.
+
 After that you need to configure your SIP account(s), TTS parameters and webhook ID. The default configuration looks like this:
 
 ```yaml
@@ -24,6 +29,7 @@ sip_global:
     port: 5060
     log_level: 5 # log level of pjsip library
     name_server: '' # comma separated list of name servers, must be set if sip server must be resolved via SRV record
+    cache_dir: '/config/audio_cache' # directory to cache TTS messages or converted audio files. Must be inside /config and existing
 sip:
     enabled: true
     registrar_uri: sip:fritz.box
@@ -51,7 +57,7 @@ webhook:
     id: sip_call_webhook_id
 ```
 
-> **Note**
+> **Note:**
 > When your `user_name` or `password` starts with a number, you need to put it in quotes like `"1234"`.
 
 ## Usage
@@ -115,7 +121,7 @@ data:
         method: in_band # method can be "in_band" (default), "rfc2833" or "sip_info"
 ```
 
-> **Note**
+> **Note:**
 > When using a `#` digit, you need to put the whole sequence in quotes, eg. `"#5"`.
 
 > **Warning**
@@ -156,6 +162,10 @@ data:
         number: sip:**620@fritz.box
         message: hello!
         tts_language: en
+        cache_audio: true # If message should be cached in `cache_dir`. 
+                          # Defaults to false. `cache_dir` must be configured in ha-sip config.
+                          # Don't enable this for dynamic messages, you'll just fill your storage.
+        wait_for_audio_to_finish: true # Do not accept DTMF tones until the message has been played
 ```
 
 #### To play an audio file
@@ -168,6 +178,9 @@ data:
         command: play_audio_file
         number: sip:**620@fritz.box
         audio_file: '/config/audio/welcome.mp3'
+        cache_audio: true # If converted file should be cached in `cache_dir`. 
+                          # Defaults to false. `cache_dir` must be configured in ha-sip config
+        wait_for_audio_to_finish: true # Do not accept DTMF tones until the audio file has been played
 ```
 
 #### To stop audio playback (both audio file and message):
@@ -287,6 +300,10 @@ menu:
         '1234': # DTMF sequence, and definition of a sub-menu
             id: owner # same as above, also any other option from above can be used in this sub-menu
             message: Welcome beautiful.
+            cache_audio: true # If message should be cached in `cache_dir`. 
+                              # Defaults to false. `cache_dir` must be configured in ha-sip config.
+                              # Don't enable this for dynamic messages, you'll just fill your storage.
+            wait_for_audio_to_finish: true # Do not accept DTMF tones until the message/audio file has been played
             post_action: hangup 
         '5432':
             id: maintenance
@@ -305,7 +322,7 @@ menu:
             post_action: hangup
 ```
 
-> **Note** 
+> **Note:** 
 > The audio files need to reside in your home-assistant `config` directory, as this is the only directory accessible inside the add-on.
 
 ## Web-hooks
@@ -520,7 +537,7 @@ I would like to hear from you in which scenario you are using ha-sip!
 
 1. Create a virtual environment with pjsip and dependencies installed running `./build.sh create-venv` from the root directory of the repo
 2. Activate virtual env with `source venv/bin/activate` (bash, might be different with other shells)
-3. Copy `ha-sip/src/config.py` to `ha-sip/src/config_local.py` and replace the variable place-holders with your real configuration.
+3. Copy `.env.example` to `.env` and replace the variable place-holders with your real configuration.
 
    `HA_BASE_URL` is something like "http://homeassistant.local:8123/api"
    
@@ -532,3 +549,33 @@ I would like to hear from you in which scenario you are using ha-sip!
    ```json
    { "command": "dial", "number": "sip:**620@fritz.box", "menu": { "message": "Hello from ha-sip.", "language": "en" } }
    ```
+
+## Stand-alone mode
+
+The stand-alone mode can be used if you run home assistant in a docker environment and you don't have access to the hassio.addon_stdin service. 
+Instead of stdin - MQTT will be used for communication.
+
+1. Follow the instructions from home assistant to set up a working MQTT broker and install the MQTT integration [MQTT Broker](https://www.home-assistant.io/integrations/mqtt/)
+2. Copy `.env.example` to `.env` and replace the variable place-holders with your real configuration.
+3. Make sure you switched the `COMMAND_SOURCE` in your .env file from "stdin" to "mqtt" and set the `BROKER_*` variables to connect to your MQTT broker address
+4. Install [docker compose plugin](https://docs.docker.com/compose/install/linux/#install-using-the-repository)
+5. Run `docker compose up -d` in the main folder of the application to run the ha-sip service
+6. Now you can use the `mqtt.publish` service in home assistant to send commands as json to the `hasip/execute` topic from your automations
+
+   Example:
+   ```yaml
+    service: mqtt.publish
+    data:
+        payload: >-
+            { "command": "dial", "number": "sip:**620@fritz.box", "menu": { "message": "Hello from ha-sip.", "language": "en" } }
+        topic: hasip/execute
+    ```
+   
+7. You can listen to call state event on the topic configured in `MQTT_STATE_TOPIC` (defaults to `hasip/state`).
+
+If you need to run the service on another architecture different from amd64, you need to change the `BUILD_FROM` variable in `docker-compose.yaml`. Available architectures are:
+- ghcr.io/hassio-addons/debian-base/amd64:stable
+- ghcr.io/hassio-addons/debian-base/i386:stable
+- ghcr.io/hassio-addons/debian-base/aarch64:stable
+- ghcr.io/hassio-addons/debian-base/armhf:stable
+- ghcr.io/hassio-addons/debian-base/armv7:stable

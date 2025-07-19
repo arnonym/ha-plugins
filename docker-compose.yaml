@@ -1,0 +1,9 @@
+services:
+    ha-sip:
+        build:
+            context: ./ha-sip
+            dockerfile: Dockerfile
+            args:
+                BUILD_FROM: ghcr.io/hassio-addons/debian-base/amd64:stable
+        network_mode: host
+        env_file: ./.env

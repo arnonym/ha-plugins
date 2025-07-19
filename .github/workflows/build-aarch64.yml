@@ -1,0 +1,25 @@
+name: Build aarch64
+
+on:
+  push:
+    branches: [ next ]
+
+jobs:
+  build-arm:
+    runs-on: ubuntu-latest
+    environment: next
+    strategy:
+      matrix:
+        architecture: [arm64]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Run build.sh for ARM
+        run: |
+          export REPO_URL=${{ vars.REPO_URL }}
+          export DOCKER_HUB_PASSWORD=${{ secrets.DOCKER_HUB_PASSWORD }}
+          ./build.sh build-aarch64

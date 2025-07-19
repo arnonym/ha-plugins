@@ -117,12 +117,13 @@ CurrentPlayback = Union[CurrentPlaybackMessage, CurrentPlaybackAudioFile]
 
 
 class HaConfig(object):
-    def __init__(self, base_url: str, token: str, tts_engine: str, tts_language: str, webhook_id: str):
+    def __init__(self, base_url: str, token: str, tts_engine: str, tts_language: str, webhook_id: str, cache_dir: Optional[str]):
         self.base_url = base_url
         self.token = token
         self.tts_engine = tts_engine
         self.tts_language = tts_language or 'en'
         self.webhook_id = webhook_id
+        self.cache_dir = cache_dir
 
     def create_headers(self) -> Dict[str, str]:
         return {
