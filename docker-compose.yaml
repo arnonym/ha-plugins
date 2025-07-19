@@ -4,6 +4,6 @@ services:
             context: ./ha-sip
             dockerfile: Dockerfile
             args:
-                BUILD_FROM: ghcr.io/hassio-addons/debian-base/amd64:stable
+                BUILD_FROM: debian:bookworm
         network_mode: host
         env_file: ./.env
