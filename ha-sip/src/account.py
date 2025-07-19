@@ -27,6 +27,7 @@ class MyAccountConfig(object):
         mode: call.CallHandling,
         settle_time: float,
         incoming_call_config: Optional[incoming_call.IncomingCallConfig],
+        outbound_proxy: str,
     ):
         self.enabled = enabled
         self.index = index
@@ -39,6 +40,7 @@ class MyAccountConfig(object):
         self.mode = mode
         self.settle_time = settle_time
         self.incoming_call_config = incoming_call_config
+        self.outbound_proxy = outbound_proxy
 
 
 class Account(pj.Account):
@@ -57,6 +59,7 @@ class Account(pj.Account):
         credentials = pj.AuthCredInfo('digest', self.config.realm, self.config.user_name, 0, self.config.password)
         account_config.sipConfig.authCreds.append(credentials)
         account_config.natConfig.iceEnabled = self.config.ice_enabled
+        account_config.outbound_proxy = self.config.outbound_proxy
         return pj.Account.create(self, account_config, self.make_default)
 
     def onRegState(self, prm) -> None:
