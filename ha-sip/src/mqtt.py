@@ -1,3 +1,4 @@
+import json
 import os
 import time
 
@@ -8,6 +9,7 @@ from log import log
 from command_client import CommandClient
 from command_handler import CommandHandler
 import utils
+import ha
 
 
 class MqttClient:
@@ -18,6 +20,7 @@ class MqttClient:
         username: str,
         password: str,
         topic: str,
+        topic_state: str,
         command_handler: CommandHandler
     ):
         self.client = paho_mqtt.Client(CallbackAPIVersion.VERSION2)
@@ -26,6 +29,7 @@ class MqttClient:
         self.username = username
         self.password = password
         self.topic = topic
+        self.topic_state = topic_state
         self.command_handler = command_handler
         self.client.on_connect = self.on_connect
         self.client.on_message = self.on_message
@@ -63,6 +67,12 @@ class MqttClient:
                 time.sleep(1)
         self.client.loop()
 
+    def send_event(self, event: ha.WebhookEvent):
+        if not self.client.is_connected():
+            log(None, 'Cannot send message, mqtt client is not connected')
+            return
+        log(None, 'Sending mqtt message: %s to topic: %s' % (event, self.topic))
+        self.client.publish(self.topic_state, json.dumps(event))
 
 def create_client_and_connect(command_handler: CommandHandler) -> MqttClient:
     broker_address = os.environ.get('BROKER_ADDRESS', '')
@@ -70,6 +80,7 @@ def create_client_and_connect(command_handler: CommandHandler) -> MqttClient:
     mqtt_username = os.environ.get('BROKER_USERNAME', '')
     mqtt_password = os.environ.get('BROKER_PASSWORD', '')
     topic = os.environ.get('MQTT_TOPIC', 'hasip/execute')
-    client = MqttClient(broker_address, port, mqtt_username, mqtt_password, topic, command_handler)
+    topic_state = os.environ.get('MQTT_STATE_TOPIC', 'hasip/state')
+    client = MqttClient(broker_address, port, mqtt_username, mqtt_password, topic, topic_state, command_handler)
     client.connect()
     return client

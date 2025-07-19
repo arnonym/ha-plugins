@@ -21,7 +21,7 @@ from command_client import Command
 from command_handler import CommandHandler
 from constants import DEFAULT_RING_TIMEOUT, DEFAULT_DTMF_ON, DEFAULT_DTMF_OFF
 from log import log
-
+from event_sender import EventSender
 
 CallCallback = Callable[[CallStateChange, str, 'Call'], None]
 DtmfMethod = Union[Literal['in_band'], Literal['rfc2833'], Literal['sip_info']]
@@ -112,9 +112,19 @@ class CallHandling(Enum):
 
 
 class Call(pj.Call):
-    def __init__(self, end_point: pj.Endpoint, sip_account: account.Account, call_id: str, uri_to_call: Optional[str], menu: Optional[MenuFromStdin],
-                 command_handler: CommandHandler, ha_config: ha.HaConfig, ring_timeout: float, webhook_to_call: Optional[str],
-                 webhooks: Optional[WebhookToCall]):
+    def __init__(
+        self,
+        end_point: pj.Endpoint,
+        sip_account: account.Account,
+        call_id: str,
+        uri_to_call: Optional[str],
+        menu: Optional[MenuFromStdin],
+        command_handler: CommandHandler,
+        event_sender: EventSender,
+        ha_config: ha.HaConfig,
+        ring_timeout: float,
+        webhooks: Optional[WebhookToCall]
+    ):
         pj.Call.__init__(self, sip_account, call_id)
         self.player: Optional[player.Player] = None
         self.audio_media: Optional[pj.AudioMedia] = None
@@ -126,7 +136,6 @@ class Call(pj.Call):
         self.ha_config = ha_config
         self.ring_timeout = ring_timeout
         self.settle_time = sip_account.config.settle_time
-        self.webhook_to_call = webhook_to_call
         self.webhooks: WebhookToCall = webhooks or WebhookToCall(
             call_established=None,
             entered_menu=None,
@@ -137,6 +146,7 @@ class Call(pj.Call):
             playback_done=None,
         )
         self.command_handler = command_handler
+        self.event_sender = event_sender
         self.scheduled_post_action: Optional[PostAction] = None
         self.playback_is_done = True
         self.wait_for_audio_to_finish = False
@@ -228,20 +238,13 @@ class Call(pj.Call):
         additional_webhook = self.webhooks.get(event_id)
         if additional_webhook:
             log(self.account.config.index, 'Calling additional webhook %s for event %s' % (additional_webhook, event_id))
-            ha.trigger_webhook(self.ha_config, event, additional_webhook)
-        ha.trigger_webhook(self.ha_config, event)
+            self.event_sender.send_event(event, additional_webhook)
+        self.event_sender.send_event(event)
 
     def handle_connected_state(self):
         log(self.account.config.index, 'Call is established.')
         self.connected = True
         self.reset_timeout()
-        if self.webhook_to_call:
-            ha.trigger_webhook(self.ha_config, {
-                'event': 'call_established',
-                'caller': self.call_info['remote_uri'] if self.call_info else 'unknown',
-                'parsed_caller': self.call_info['parsed_caller'] if self.call_info else None,
-                'sip_account': self.account.config.index,
-            }, self.webhook_to_call)
         self.trigger_webhook({
             'event': 'call_established',
             'caller': self.call_info['remote_uri'] if self.call_info else 'unknown',
@@ -692,12 +695,12 @@ def make_call(
     uri_to_call: str,
     menu: Optional[MenuFromStdin],
     command_handler: CommandHandler,
+    event_sender: EventSender,
     ha_config: ha.HaConfig,
     ring_timeout: float,
-    webhook_to_call: Optional[str],
     webhooks: Optional[WebhookToCall],
 ) -> Call:
-    new_call = Call(ep, acc, pj.PJSUA_INVALID_ID, uri_to_call, menu, command_handler, ha_config, ring_timeout, webhook_to_call, webhooks)
+    new_call = Call(ep, acc, pj.PJSUA_INVALID_ID, uri_to_call, menu, command_handler, event_sender, ha_config, ring_timeout, webhooks)
     call_param = pj.CallOpParam(True)
     new_call.makeCall(uri_to_call, call_param)
     return new_call

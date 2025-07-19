@@ -570,9 +570,12 @@ Instead of stdin - MQTT will be used for communication.
             { "command": "dial", "number": "sip:**620@fritz.box", "menu": { "message": "Hello from ha-sip.", "language": "en" } }
         topic: hasip/execute
     ```
+   
+7. You can listen to call state event on the topic configured in `MQTT_STATE_TOPIC` (defaults to `hasip/state`).
 
 If you need to run the service on another architecture different from amd64, you need to change the `BUILD_FROM` variable in `docker-compose.yaml`. Available architectures are:
-- homeassistant/aarch64-base-python
-- homeassistant/armhf-base-python
-- homeassistant/armv7-base-python
-- homeassistant/i386-base-python
+- ghcr.io/hassio-addons/debian-base/amd64:stable
+- ghcr.io/hassio-addons/debian-base/i386:stable
+- ghcr.io/hassio-addons/debian-base/aarch64:stable
+- ghcr.io/hassio-addons/debian-base/armhf:stable
+- ghcr.io/hassio-addons/debian-base/armv7:stable

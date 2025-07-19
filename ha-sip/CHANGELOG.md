@@ -1,5 +1,10 @@
 # Changelog
 
+## 4.2
+- Add MQTT topic for call state events
+- Removed long deprecated `webhook_to_call_after_call_was_established` option.  
+  See version 2.6 for migration instructions.
+
 ## 4.1
 - Updated pjsip to latest version
 - Moved base image to debian
