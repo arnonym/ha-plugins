@@ -1,6 +1,6 @@
 {
     "name": "ha-sip",
-    "version": "4.2b2",
+    "version": "5.0",
     "slug": "ha-sip",
     "url": "https://github.com/arnonym/ha-plugins",
     "description": "Home-Assistant SIP Gateway",
@@ -20,7 +20,8 @@
             "port": 5060,
             "log_level": 5,
             "name_server": "",
-            "cache_dir": ""
+            "cache_dir": "",
+            "global_options": ""
         },
         "sip": {
             "enabled": true,
@@ -31,7 +32,8 @@
             "password": "secure",
             "answer_mode": "listen",
             "settle_time": 1,
-            "incoming_call_file": ""
+            "incoming_call_file": "",
+            "options": ""
         },
         "sip_2": {
             "enabled": false,
@@ -42,7 +44,8 @@
             "password": "secret",
             "answer_mode": "listen",
             "settle_time": 1,
-            "incoming_call_file": ""
+            "incoming_call_file": "",
+            "options": ""
         },
         "sip_3": {
             "enabled": false,
@@ -53,7 +56,8 @@
             "password": "",
             "answer_mode": "listen",
             "settle_time": 1,
-            "incoming_call_file": ""
+            "incoming_call_file": "",
+            "options": ""
         },
         "tts": {
             "platform": "google_translate",
@@ -68,7 +72,8 @@
             "port": "int",
             "log_level": "int",
             "name_server": "str",
-            "cache_dir": "str"
+            "cache_dir": "str",
+            "global_options": "str"
         },
         "sip": {
             "enabled": "bool",
@@ -79,7 +84,8 @@
             "password": "str",
             "answer_mode": "list(listen|accept)",
             "settle_time": "float",
-            "incoming_call_file": "str"
+            "incoming_call_file": "str",
+            "options": "str"
         },
         "sip_2": {
             "enabled": "bool",
@@ -90,7 +96,8 @@
             "password": "str",
             "answer_mode": "list(listen|accept)",
             "settle_time": "float",
-            "incoming_call_file": "str"
+            "incoming_call_file": "str",
+            "options": "str"
         },
         "sip_3": {
             "enabled": "bool",
@@ -101,7 +108,8 @@
             "password": "str",
             "answer_mode": "list(listen|accept)",
             "settle_time": "float",
-            "incoming_call_file": "str"
+            "incoming_call_file": "str",
+            "options": "str"
         },
         "tts": {
             "platform": "str",

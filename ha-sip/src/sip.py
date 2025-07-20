@@ -1,33 +1,50 @@
 import pjsua2 as pj
 
+from options_global import GlobalOptions
 from log import log
 
 
 class MyEndpointConfig(object):
-    def __init__(self, port: int, log_level: int, name_server: list[str]):
+    def __init__(self, port: int, log_level: int, name_server: list[str], global_options: GlobalOptions):
         self.port = port
         self.log_level = log_level
         self.name_server = name_server
+        self.global_options = global_options
 
 
-def create_endpoint(config: MyEndpointConfig) -> pj.Endpoint:
+def create_endpoint(ep_config: MyEndpointConfig) -> pj.Endpoint:
     ep_cfg = pj.EpConfig()
+    ep_cfg.logConfig.level = ep_config.log_level
     ep_cfg.uaConfig.threadCnt = 0
     ep_cfg.uaConfig.mainThreadOnly = True
-    if config.name_server:
+    if ep_config.name_server:
         nameserver = pj.StringVector()
-        for ns in config.name_server:
+        for ns in ep_config.name_server:
             nameserver.append(ns)
         ep_cfg.uaConfig.nameserver = nameserver
-    ep_cfg.logConfig.level = config.log_level
+    if ep_config.global_options.stun_server:
+        log(None, "STUN server enabled: %s" % ep_config.global_options.stun_server)
+        ep_cfg.uaConfig.stunServer.append(ep_config.global_options.stun_server)
     end_point = pj.Endpoint()
     end_point.libCreate()
     end_point.libInit(ep_cfg)
     codecs = end_point.codecEnum2()
     log(None, "Supported audio codecs: %s" % ", ".join(c.codecId for c in codecs))
     end_point.audDevManager().setNullDev()
-    sip_tp_config = pj.TransportConfig()
-    sip_tp_config.port = config.port
-    end_point.transportCreate(pj.PJSIP_TRANSPORT_UDP, sip_tp_config)
+    if ep_config.global_options.enable_udp:
+        log(None, "UDP transport enabled on port %d" % ep_config.port)
+        sip_tp_config_udp = pj.TransportConfig()
+        sip_tp_config_udp.port = ep_config.port
+        end_point.transportCreate(pj.PJSIP_TRANSPORT_UDP, sip_tp_config_udp)
+    if ep_config.global_options.enable_tcp:
+        log(None, "TCP transport enabled on port %d" % ep_config.port)
+        sip_tp_config_tcp = pj.TransportConfig()
+        sip_tp_config_tcp.port = ep_config.port
+        end_point.transportCreate(pj.PJSIP_TRANSPORT_TCP, sip_tp_config_tcp)
+    if ep_config.global_options.enable_tls:
+        log(None, "TLS transport enabled on port %d" % ep_config.global_options.tls_port)
+        sip_tp_config_tls = pj.TransportConfig()
+        sip_tp_config_tls.port = ep_config.global_options.tls_port
+        end_point.transportCreate(pj.PJSIP_TRANSPORT_TLS, sip_tp_config_tls)
     end_point.libStart()
     return end_point

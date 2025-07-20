@@ -13,6 +13,8 @@ from constants import DEFAULT_RING_TIMEOUT
 from event_sender import EventSender
 from log import log
 from command_handler import CommandHandler
+from options_global import GlobalOptions
+from options_sip import SipOptions
 
 
 class MyAccountConfig(object):
@@ -28,6 +30,8 @@ class MyAccountConfig(object):
         mode: call.CallHandling,
         settle_time: float,
         incoming_call_config: Optional[incoming_call.IncomingCallConfig],
+        options: SipOptions,
+        global_options: GlobalOptions,
     ):
         self.enabled = enabled
         self.index = index
@@ -36,10 +40,11 @@ class MyAccountConfig(object):
         self.realm = realm
         self.user_name = user_name
         self.password = password
-        self.ice_enabled = True
         self.mode = mode
         self.settle_time = settle_time
         self.incoming_call_config = incoming_call_config
+        self.options = options
+        self.global_options = global_options
 
 
 class Account(pj.Account):
@@ -66,7 +71,23 @@ class Account(pj.Account):
         account_config.regConfig.registrarUri = self.config.registrar_uri
         credentials = pj.AuthCredInfo('digest', self.config.realm, self.config.user_name, 0, self.config.password)
         account_config.sipConfig.authCreds.append(credentials)
-        account_config.natConfig.iceEnabled = self.config.ice_enabled
+        account_config.natConfig.iceEnabled = self.config.options.enable_ice
+        account_config.natConfig.contactRewriteUse = 1 if self.config.options.contact_rewrite_use else 0
+        account_config.natConfig.viaRewriteUse = 1 if self.config.options.via_rewrite_use else 0
+        account_config.natConfig.sdpNatRewriteUse = 1 if self.config.options.sdp_nat_rewrite_use else 0
+        account_config.natConfig.sipOutboundUse = 1 if self.config.options.sip_outbound_use else 0
+        if self.config.global_options.stun_server:
+            account_config.natConfig.sipStunUse = pj.PJSUA_STUN_USE_DEFAULT if self.config.options.sip_stun_use else pj.PJSUA_STUN_USE_DISABLED
+            account_config.natConfig.mediaStunUse = pj.PJSUA_STUN_USE_DEFAULT if self.config.options.media_stun_use else pj.PJSUA_STUN_USE_DISABLED
+        if self.config.options.turn_server:
+            account_config.natConfig.turnEnabled = True
+            account_config.natConfig.turnServer = self.config.options.turn_server.server
+            account_config.natConfig.turnConnType = self.config.options.turn_server.connection_type
+            account_config.natConfig.turnUserName = self.config.options.turn_server.user
+            account_config.natConfig.turnPasswordType = 0
+            account_config.natConfig.turnPassword = self.config.options.turn_server.password
+        if self.config.options.proxy:
+            account_config.sipConfig.proxies.append(self.config.options.proxy)
         return pj.Account.create(self, account_config, self.make_default)
 
     def onRegState(self, prm) -> None:
