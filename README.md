@@ -30,6 +30,7 @@ sip_global:
     log_level: 5 # log level of pjsip library
     name_server: '' # comma separated list of name servers, must be set if sip server must be resolved via SRV record
     cache_dir: '/config/audio_cache' # directory to cache TTS messages or converted audio files. Must be inside /config and existing
+    global_options: ''
 sip:
     enabled: true
     registrar_uri: sip:fritz.box
@@ -40,6 +41,7 @@ sip:
     answer_mode: listen  # "listen" or "accept", see below
     settle_time: 1 # time to wait for playing the message/actions/etc. after call was established
     incoming_call_file: "" # config and menu definition file for incoming calls, see below
+    options: ''
 sip_2:
     enabled: false
     registrar_uri: sip:fritz.box
@@ -50,6 +52,7 @@ sip_2:
     answer_mode: listen
     settle_time: 1
     incoming_call_file: ""
+    options: ''
 tts:
     platform: google_translate
     language: en # might also be in en-US format, depending on the platform
@@ -59,6 +62,48 @@ webhook:
 
 > **Note:**
 > When your `user_name` or `password` starts with a number, you need to put it in quotes like `"1234"`.
+
+#### For `global_options` you can specify the following options
+
+```
+  --stun-server STUN_SERVER
+                        STUN server to use for NAT traversal (default: None)
+  --udp {enabled,enable,true,yes,on,1,disabled,disable,false,no,off,0}
+                        Enable or disable UDP transport (default: enabled)
+  --tcp {enabled,enable,true,yes,on,1,disabled,disable,false,no,off,0}
+                        Enable or disable TCP transport (default: enabled)
+  --tls {enabled,enable,true,yes,on,1,disabled,disable,false,no,off,0}
+                        Enable or disable TLS transport (default: disabled)
+  --tls-port TLS_PORT   Port to use for TLS transport (default: 5061)
+```
+
+#### For `options` on each SIP account there are
+
+```
+  --proxy PROXY         Proxy server to use for SIP (default: None)
+  --ice {enabled,enable,true,yes,on,1,disabled,disable,false,no,off,0}
+                        Enable or disable ICE (default: true)
+  --use-stun-for-sip {enabled,enable,true,yes,on,1,disabled,disable,false,no,off,0}
+                        Enable or disable STUN for sip (default: true)
+  --use-stun-for-media {enabled,enable,true,yes,on,1,disabled,disable,false,no,off,0}
+                        Enable or disable STUN for media (default: true)
+  --use-contact-rewrite {enabled,enable,true,yes,on,1,disabled,disable,false,no,off,0}
+                        Enable or disable contact rewrite for SIP (default: true)
+  --use-via-rewrite {enabled,enable,true,yes,on,1,disabled,disable,false,no,off,0}
+                        Enable or disable via rewrite for SIP (default: true)
+  --use-sdp-nat-rewrite {enabled,enable,true,yes,on,1,disabled,disable,false,no,off,0}
+                        Enable or disable SDP NAT rewrite for SIP (default: true)
+  --use-sip-outbound {enabled,enable,true,yes,on,1,disabled,disable,false,no,off,0}
+                        Enable or disable SIP outbound (default: true)
+  --turn-server TURN_SERVER
+                        Set the TURN server to use for SIP (default: None)
+  --turn-connection-type {tcp,udp,tls}
+                        Set the TURN server connection protocol (default: udp)
+  --turn-user TURN_USER
+                        Set the TURN user (default: None)
+  --turn-password TURN_PASSWORD
+                        Set the TURN password (default: None)
+```
 
 ## Usage
 

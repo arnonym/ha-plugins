@@ -112,6 +112,11 @@ case "$1" in
         source "$SCRIPT_DIR"/venv/bin/activate
         "$SCRIPT_DIR"/ha-sip/src/main.py
         ;;
+    help)
+        export LD_LIBRARY_PATH="$SCRIPT_DIR"/venv/lib:$LD_LIBRARY_PATH
+        source "$SCRIPT_DIR"/venv/bin/activate
+        "$SCRIPT_DIR"/ha-sip/src/main.py --help
+        ;;
     create-venv)
         rm -rf "$SCRIPT_DIR"/venv "$SCRIPT_DIR"/deps
         python3 -m venv "$SCRIPT_DIR"/venv
@@ -121,7 +126,7 @@ case "$1" in
         cd "$SCRIPT_DIR"/deps || exit
         git clone --depth 1 --branch 2.15.1 https://github.com/pjsip/pjproject.git
         cd pjproject || exit
-        ./configure CFLAGS="-O3 -DNDEBUG -fPIC" --enable-shared --disable-libwebrtc --prefix "$SCRIPT_DIR"/venv
+        ./configure CFLAGS="-O3 -DNDEBUG -fPIC" --enable-shared --disable-libwebrtc --with-ssl --prefix "$SCRIPT_DIR"/venv
         make
         make dep
         make install

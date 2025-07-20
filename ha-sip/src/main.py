@@ -3,13 +3,15 @@
 import os
 import faulthandler
 from typing import Optional
+import sys
 
-from dotenv import load_dotenv
 import yaml
 import account
 import call
 import ha
 import incoming_call
+import options_global
+import options_sip
 import sip
 import state
 import utils
@@ -18,7 +20,7 @@ from command_client import CommandClient
 from command_handler import CommandHandler
 from event_sender import EventSender
 from log import log
-
+import config
 
 def handle_command_list(command_client: CommandClient, command_handler: CommandHandler) -> None:
     command_list = command_client.get_command_list()
@@ -60,14 +62,14 @@ def get_cache_dir(raw_cache_dir: str) -> Optional[str]:
 
 
 def main():
-    load_dotenv()
-    import config
+    global_options = options_global.parse_global_options(config.GLOBAL_OPTIONS)
     name_server = get_name_server(config.NAME_SERVER)
     cache_dir = get_cache_dir(config.CACHE_DIR)
     endpoint_config = sip.MyEndpointConfig(
         port=utils.convert_to_int(config.PORT, 5060),
         log_level=utils.convert_to_int(config.LOG_LEVEL, 5),
-        name_server=name_server
+        name_server=name_server,
+        global_options=global_options,
     )
     account_configs = {
         1: account.MyAccountConfig(
@@ -81,6 +83,8 @@ def main():
             mode=call.CallHandling.get_or_else(config.SIP1_ANSWER_MODE, call.CallHandling.LISTEN),
             settle_time=utils.convert_to_float(config.SIP1_SETTLE_TIME, 1),
             incoming_call_config=load_menu_from_file(config.SIP1_INCOMING_CALL_FILE, 1),
+            options=options_sip.parse_sip_options(config.SIP1_OPTIONS, 1),
+            global_options=global_options,
         ),
         2: account.MyAccountConfig(
             enabled=config.SIP2_ENABLED.lower() == 'true',
@@ -93,6 +97,8 @@ def main():
             mode=call.CallHandling.get_or_else(config.SIP2_ANSWER_MODE, call.CallHandling.LISTEN),
             settle_time=utils.convert_to_float(config.SIP2_SETTLE_TIME, 1),
             incoming_call_config=load_menu_from_file(config.SIP2_INCOMING_CALL_FILE, 2),
+            options=options_sip.parse_sip_options(config.SIP2_OPTIONS, 2),
+            global_options=global_options,
         ),
         3: account.MyAccountConfig(
             enabled=config.SIP3_ENABLED.lower() == 'true',
@@ -105,6 +111,8 @@ def main():
             mode=call.CallHandling.get_or_else(config.SIP3_ANSWER_MODE, call.CallHandling.LISTEN),
             settle_time=utils.convert_to_float(config.SIP3_SETTLE_TIME, 1),
             incoming_call_config=load_menu_from_file(config.SIP3_INCOMING_CALL_FILE, 3),
+            options=options_sip.parse_sip_options(config.SIP3_OPTIONS, 3),
+            global_options=global_options,
         ),
     }
     ha_config = ha.HaConfig(config.HA_BASE_URL, config.HA_TOKEN, config.TTS_PLATFORM, config.TTS_LANGUAGE, config.HA_WEBHOOK_ID, cache_dir)
@@ -138,5 +146,11 @@ def main():
 
 
 if __name__ == '__main__':
+    if len(sys.argv) >= 2 and sys.argv[1] == '--help':
+        global_parser = options_global.create_parser()
+        global_parser.print_help()
+        sip_parser = options_sip.create_parser()
+        sip_parser.print_help()
+        sys.exit(0)
     faulthandler.enable()
     main()

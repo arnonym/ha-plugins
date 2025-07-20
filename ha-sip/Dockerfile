@@ -4,7 +4,7 @@ ENV LANG=C.UTF-8
 
 RUN apt-get update
 RUN apt-get upgrade -y
-RUN apt-get install -y build-essential git swig python3 python3-dev python3-pip ffmpeg binutils
+RUN apt-get install -y build-essential git swig python3 python3-dev python3-pip ffmpeg binutils libssl-dev
 
 RUN pip3 install pydub requests PyYAML typing_extensions python-dotenv paho-mqtt setuptools --break-system-packages
 
@@ -13,7 +13,7 @@ RUN git clone --depth 1 --branch 2.15.1 https://github.com/pjsip/pjproject.git /
 WORKDIR /tmp/pjproject
 
 RUN set -xe \
-    && ./configure CFLAGS="-O3 -DNDEBUG -fPIC" --enable-shared --disable-libwebrtc \
+    && ./configure CFLAGS="-O3 -DNDEBUG -fPIC" --enable-shared --disable-libwebrtc --with-ssl \
     && make \
     && make dep \
     && make install \

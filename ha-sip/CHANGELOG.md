@@ -1,13 +1,15 @@
 # Changelog
 
-## 4.2
+## 5.0
 - Add MQTT topic for call state events
+- Add options for proxy, stun, and turn servers
+- Allow tls connections to SIP servers
 - Removed long deprecated `webhook_to_call_after_call_was_established` option.  
   See version 2.6 for migration instructions.
 
 ## 4.1
-- Updated pjsip to latest version
-- Moved base image to debian
+- Update pjsip to latest version
+- Move base image to debian
 
 ## 3.9
 - Add option to ignore DTMF tones until message/audio file has finished to play
