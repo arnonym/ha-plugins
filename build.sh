@@ -126,7 +126,7 @@ case "$1" in
         cd "$SCRIPT_DIR"/deps || exit
         git clone --depth 1 --branch 2.15.1 https://github.com/pjsip/pjproject.git
         cd pjproject || exit
-        ./configure CFLAGS="-O3 -DNDEBUG -fPIC" --enable-shared --disable-libwebrtc --with-ssl --prefix "$SCRIPT_DIR"/venv
+        ./configure CFLAGS="-O3 -DNDEBUG -fPIC" --enable-shared --disable-libwebrtc --with-ssl --with-opus=/usr --prefix "$SCRIPT_DIR"/venv
         make
         make dep
         make install
