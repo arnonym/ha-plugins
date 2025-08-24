@@ -1,5 +1,8 @@
 # Changelog
 
+## 5.1
+- Add opus codec support for home-assistant VoIP integration
+
 ## 5.0
 - Add MQTT topic for call state events
 - Add options for proxy, stun, and turn servers
