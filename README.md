@@ -587,30 +587,6 @@ All the examples are working also for incoming calls when you copy the `menu` pa
 The first place to look is the log of the ha-sip add-on. There you can see individual SIP messages and the logs of
 ha-sip itself (prefixed with "|").
 
-## Example use-cases
-
-One automation with the `dial` command when the doorbell was rung, and a second with `hangup` when the front door was opened, 
-so I do not need to answer the call when not necessary.
-
-I would like to hear from you in which scenario you are using ha-sip!
-
-## Development
-
-1. Create a virtual environment with pjsip and dependencies installed running `./build.sh create-venv` from the root directory of the repo
-2. Activate virtual env with `source venv/bin/activate` (bash, might be different with other shells)
-3. Copy `.env.example` to `.env` and replace the variable place-holders with your real configuration.
-
-   `HA_BASE_URL` is something like "http://homeassistant.local:8123/api"
-   
-   The access token is created from http://homeassistant.local:8123/profile 
-4. Run `./build.sh run-local` to run the add-on locally
-5. Paste commands as json (without line-breaks) into stdin of the running add-on:
-
-   Example: 
-   ```json
-   { "command": "dial", "number": "sip:**620@fritz.box", "menu": { "message": "Hello from ha-sip.", "language": "en" } }
-   ```
-
 ## Stand-alone mode
 
 The stand-alone mode can be used if you run home assistant in a docker environment and you don't have access to the hassio.addon_stdin service. 
@@ -633,3 +609,25 @@ Instead of stdin - MQTT will be used for communication.
     ```
    
 7. You can listen to call state event on the topic configured in `MQTT_STATE_TOPIC` (defaults to `hasip/state`).
+
+## Support
+
+If you find this project helpful, please consider giving it a star ⭐ on GitHub!
+Your support helps others discover the project and keeps me motivated.
+
+## Development
+
+1. Create a virtual environment with pjsip and dependencies installed running `./build.sh create-venv` from the root directory of the repo
+2. Activate virtual env with `source venv/bin/activate` (bash, might be different with other shells)
+3. Copy `.env.example` to `.env` and replace the variable place-holders with your real configuration.
+
+   `HA_BASE_URL` is something like "http://homeassistant.local:8123/api"
+
+   The access token is created from http://homeassistant.local:8123/profile
+4. Run `./build.sh run-local` to run the add-on locally
+5. Paste commands as json (without line-breaks) into stdin of the running add-on:
+
+   Example:
+   ```json
+   { "command": "dial", "number": "sip:**620@fritz.box", "menu": { "message": "Hello from ha-sip.", "language": "en" } }
+   ```
