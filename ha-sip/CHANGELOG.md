@@ -2,6 +2,7 @@
 
 ## 5.1
 - Add opus codec support for home-assistant VoIP integration
+- Add webhook overwrite option for 'answer' command
 
 ## 5.0
 - Add MQTT topic for call state events
