@@ -268,6 +268,13 @@ data:
     input:
         command: answer
         number: "5551234456" # if this is unclear, you can look that up in the logs ("Registering call with id <number>")
+        webhook_to_call: # optional web-hook IDs which you can listen on in your actions (additional to the global web-hook)
+            call_established: another_webhook_id
+            entered_menu: another_webhook_id
+            timeout: another_webhook_id  # is called after the given time-out on a menu is reached
+            dtmf_digit: another_webhook_id # is called when the calling party sends a DTMF tone
+            call_disconnected: another_webhook_id
+            playback_done: another_webhook_id # is called after playback of message or audio file is done
         menu:
           message: Bye
           post_action: hangup
