@@ -99,8 +99,9 @@ class CommandHandler(object):
                     self.call_not_in_progress_error(number)
                     return
                 menu = command.get('menu')
+                webhooks = command.get('webhook_to_call')
                 current_call = self.get_call_from_state_unsafe(number)
-                current_call.answer_call(menu)
+                current_call.answer_call(menu, webhooks)
             case 'transfer':
                 if not number:
                     log(None, 'Error: Missing number for command "transfer"')

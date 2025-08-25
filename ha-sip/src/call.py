@@ -489,11 +489,13 @@ class Call(pj.Call):
         call_prm = pj.CallOpParam(True)
         self.hangup(call_prm)
 
-    def answer_call(self, new_menu: Optional[MenuFromStdin]) -> None:
+    def answer_call(self, new_menu: Optional[MenuFromStdin], overwrite_webhooks: Optional[WebhookToCall]) -> None:
         log(self.account.config.index, 'Trigger answer of call (if not established already)')
         if new_menu:
             self.menu = self.normalize_menu(new_menu)
             self.pretty_print_menu(self.menu)
+        if overwrite_webhooks:
+            self.webhooks = overwrite_webhooks
         self.answer_at = time.time()
 
     def transfer(self, transfer_to):
