@@ -1,5 +1,7 @@
 # Changelog
 
+If you find ha-sip useful, consider starring ⭐ the [GitHub repo](https://github.com/arnonym/ha-plugins)!
+
 ## 5.1
 - Add opus codec support for home-assistant VoIP integration
 - Add webhook overwrite option for 'answer' command
