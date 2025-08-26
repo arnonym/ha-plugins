@@ -54,8 +54,11 @@ sip_2:
     incoming_call_file: ""
     options: ''
 tts:
-    platform: google_translate
+    engine_id: tts.google_translate_de_com # entity id of the TTS engine
+    platform: google_translate # deprecated, must not be set if engine_id is set
     language: en # might also be in en-US format, depending on the platform
+    debug_print: false # set to true, to output known engines and languages to the log at startup
+    voice: zephyr # voice if engine supports it
 webhook:
     id: sip_call_webhook_id
 ```

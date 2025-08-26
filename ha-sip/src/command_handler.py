@@ -177,7 +177,7 @@ class CommandHandler(object):
                 if not message:
                     log(None, 'Error: Missing parameter "message" for command "play_message"')
                     return
-                tts_language = command.get('tts_language') or self.ha_config.tts_language
+                tts_language = command.get('tts_language') or self.ha_config.tts_config['language']
                 cache_audio = command.get('cache_audio') or False
                 wait_for_audio_to_finish = command.get('wait_for_audio_to_finish') or False
                 current_call.play_message(message, tts_language, cache_audio, wait_for_audio_to_finish)
