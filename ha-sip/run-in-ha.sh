@@ -39,11 +39,16 @@ export SIP3_SETTLE_TIME="$(bashio::config 'sip_3.settle_time')"
 export SIP3_INCOMING_CALL_FILE="$(bashio::config 'sip_3.incoming_call_file')"
 export SIP3_OPTIONS="$(bashio::config 'sip_3.options')"
 
+export TTS_ENGINE_ID="$(bashio::config 'tts.engine_id')"
 export TTS_PLATFORM="$(bashio::config 'tts.platform')"
 export TTS_LANGUAGE="$(bashio::config 'tts.language')"
+export TTS_VOICE="$(bashio::config 'tts.voice')"
+export TTS_DEBUG_PRINT="$(bashio::config 'tts.debug_print')"
+
 export HA_WEBHOOK_ID="$(bashio::config 'webhook.id')"
 
 export HA_BASE_URL="http://supervisor/core/api"
+export HA_WEBSOCKET_URL="ws://supervisor/core/websocket"
 export HA_TOKEN="${SUPERVISOR_TOKEN}"
 
 python3 /ha-sip/main.py

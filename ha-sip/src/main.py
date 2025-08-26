@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-
+import asyncio
 import os
 import faulthandler
 from typing import Optional
@@ -19,6 +19,7 @@ import mqtt
 from command_client import CommandClient
 from command_handler import CommandHandler
 from event_sender import EventSender
+from ha import TtsConfigFromEnv
 from log import log
 import config
 
@@ -115,7 +116,16 @@ def main():
             global_options=global_options,
         ),
     }
-    ha_config = ha.HaConfig(config.HA_BASE_URL, config.HA_TOKEN, config.TTS_PLATFORM, config.TTS_LANGUAGE, config.HA_WEBHOOK_ID, cache_dir)
+    tts_config_from_env: TtsConfigFromEnv = {
+        'platform': config.TTS_PLATFORM,
+        'engine_id': config.TTS_ENGINE_ID,
+        'language': config.TTS_LANGUAGE,
+        'voice': config.TTS_VOICE,
+        'debug_print': config.TTS_DEBUG_PRINT,
+    }
+    ha_config = ha.HaConfig(config.HA_BASE_URL, config.HA_WEBSOCKET_URL, config.HA_TOKEN, tts_config_from_env, config.HA_WEBHOOK_ID, cache_dir)
+    if ha_config.tts_config['debug_print']:
+        asyncio.run(ha.print_tts_providers(ha_config))
     call_state = state.create()
     end_point = sip.create_endpoint(endpoint_config)
     sip_accounts = {}

@@ -601,7 +601,7 @@ class Call(pj.Call):
             'id': menu.get('id'),
             'message': menu.get('message'),
             'audio_file': menu.get('audio_file'),
-            'language': menu.get('language') or self.ha_config.tts_language,
+            'language': menu.get('language') or self.ha_config.tts_config['language'],
             'action': menu.get('action'),
             'choices_are_pin': menu.get('choices_are_pin') or False,
             'choices': None,

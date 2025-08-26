@@ -1,13 +1,15 @@
 # Changelog
 
 ## 5.1
+- Allow setting voice and other options for TTS messages
 - Add opus codec support for home-assistant VoIP integration
 - Add webhook overwrite option for 'answer' command
+#### Deprecation notice: `platform` in TTS options is replaced by `engine_id`
 
 ## 5.0
 - Add MQTT topic for call state events
 - Add options for proxy, stun, and turn servers
-- Allow tls connections to SIP servers
+- Allow TLS connections to SIP servers
 - Removed long deprecated `webhook_to_call_after_call_was_established` option.  
   See version 2.6 for migration instructions.
 

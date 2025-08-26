@@ -1,13 +1,17 @@
 from __future__ import annotations
 
 import os
+import json
+from urllib.parse import urlparse, urlunparse
 from typing import Union, Optional, Dict, Any
+from typing_extensions import TypedDict, Literal
 
 import requests
-from typing_extensions import TypedDict, Literal
+import websockets
 
 import constants
 import audio
+import utils
 from log import log
 
 
@@ -125,12 +129,42 @@ class CurrentPlaybackAudioFile(TypedDict):
 CurrentPlayback = Union[CurrentPlaybackMessage, CurrentPlaybackAudioFile]
 
 
+class TtsConfigFromEnv(TypedDict):
+    platform: Optional[str]
+    engine_id: Optional[str]
+    language: str
+    voice: Optional[str]
+    debug_print: Optional[str]
+
+
+class TtsConfig(TypedDict):
+    platform: Optional[str]
+    engine_id: Optional[str]
+    language: str
+    voice: Optional[str]
+    debug_print: bool
+
+
 class HaConfig(object):
-    def __init__(self, base_url: str, token: str, tts_engine: str, tts_language: str, webhook_id: str, cache_dir: Optional[str]):
+    def __init__(self, base_url: str, websocket_url: str, token: str, tts_config: TtsConfigFromEnv, webhook_id: str, cache_dir: Optional[str]):
         self.base_url = base_url
+        self.websocket_url = websocket_url
         self.token = token
-        self.tts_engine = tts_engine
-        self.tts_language = tts_language or 'en'
+        self.tts_config: TtsConfig = {
+            'platform': tts_config['platform'],
+            'engine_id': tts_config['engine_id'],
+            'language': tts_config['language'] or 'en',
+            'voice': tts_config['voice'] or None,
+            'debug_print': (tts_config['debug_print'] or '').lower() == 'true',
+        }
+        if not self.tts_config['engine_id'] and not self.tts_config['platform']:
+            log(None, 'Warning: No TTS engine defined. Must be either specify engine_id or platform.')
+        if self.tts_config['engine_id'] and self.tts_config['platform']:
+            log(None, 'Warning: Both engine_id and platform defined. Using engine_id.')
+        if self.tts_config['engine_id']:
+            log(None, f"TTS: Using engine {self.tts_config['engine_id']} with language {self.tts_config['language']} with voice {self.tts_config['voice']}")
+        elif self.tts_config['platform']:
+            log(None, f"TTS: Using platform {self.tts_config['platform']} with language {self.tts_config['language']} with voice {self.tts_config['voice']}")
         self.webhook_id = webhook_id
         self.cache_dir = cache_dir
 
@@ -160,7 +194,13 @@ def create_and_get_tts(ha_config: HaConfig, message: str, language: str) -> tupl
     """
     error_file_name = os.path.join(constants.ROOT_PATH, 'sound/answer.wav')
     headers = ha_config.create_headers()
-    create_response = requests.post(ha_config.get_tts_url(), json={'platform': ha_config.tts_engine, 'message': message, 'language': language}, headers=headers)
+    engine_or_platform = { 'engine_id': ha_config.tts_config['engine_id'] } if ha_config.tts_config['engine_id'] else { 'platform': ha_config.tts_config['platform']}
+    message_and_language = { 'message': message, 'language': language}
+    options = { 'options': { 'voice': ha_config.tts_config['voice'] } } if ha_config.tts_config['voice'] else {}
+    payload = options | message_and_language | engine_or_platform
+    if ha_config.tts_config['debug_print']:
+        log(None, 'TTS payload: %r' % payload)
+    create_response = requests.post(ha_config.get_tts_url(), json=payload, headers=headers)
     if create_response.status_code != 200:
         log(None, 'Error getting tts file %r %r' % (create_response.status_code, create_response.content))
         error_file_name = os.path.join(constants.ROOT_PATH, 'sound/answer.wav')
@@ -201,3 +241,56 @@ def trigger_webhook(ha_config: HaConfig, event: WebhookEvent, overwrite_webhook_
     headers = ha_config.create_headers()
     service_response = requests.post(ha_config.get_webhook_url(webhook_id), json=event, headers=headers)
     log(None, 'Webhook response %r %r' % (service_response.status_code, service_response.content))
+
+
+async def print_tts_providers(ha_config: HaConfig) -> None:
+    ws_url = ha_config.websocket_url
+    log(None, f"Connecting to websocket under URL '{ws_url}'")
+    async with websockets.connect(ws_url) as websocket:
+        await websocket.recv()
+        # Send auth
+        await websocket.send(json.dumps({
+            "type": "auth",
+            "access_token": ha_config.token
+        }))
+        auth_response = json.loads(await websocket.recv())
+        if auth_response.get("type") != "auth_ok":
+            raise Exception("Authentication failed!")
+        # Request TTS providers
+        await websocket.send(json.dumps({
+            "id": 1,
+            "type": "tts/engine/list"
+        }))
+        response = json.loads(await websocket.recv())
+        if not response.get("success", False):
+            raise Exception(f"tts/engine/list request failed: {response}")
+        providers = response["result"]['providers']
+        for provider in providers:
+            chunked_langs = utils.chunks(provider['supported_languages'], 10)
+            log(None, f"{provider['engine_id']}:")
+            log(None, "  Languages:")
+            for langs in chunked_langs:
+                log(None, f"    {', '.join(langs)}")
+        engine_from_config = ha_config.tts_config['engine_id'] or ha_config.tts_config['platform']
+        provider_for_config = next((provider for provider in providers if provider['engine_id'] == engine_from_config), None)
+        if not provider_for_config:
+            log(None, f"Warning: No TTS provider found for engine {engine_from_config}")
+            return
+        has_language = ha_config.tts_config['language'] in provider_for_config['supported_languages']
+        if not has_language:
+            log(None, f"Warning: Language {ha_config.tts_config['language']} not supported by TTS provider {engine_from_config}")
+            return
+        log(None, f"TTS provider {engine_from_config} was found and supports language {ha_config.tts_config['language']}")
+        await websocket.send(json.dumps({
+            "id": 2,
+            "type": "tts/engine/voices",
+            "engine_id": engine_from_config,
+            "language": ha_config.tts_config['language']
+        }))
+        response = json.loads(await websocket.recv())
+        if not response.get("success", False):
+            raise Exception(f"tts/engine/voices request failed: {response}")
+        voices = response["result"]["voices"]
+        log(None, "Voices for current engine and language:")
+        for voice in voices:
+            log(None, f"    {voice['voice_id']}: {voice['name']}")
