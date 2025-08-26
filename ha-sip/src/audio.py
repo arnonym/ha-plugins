@@ -6,6 +6,8 @@ from typing import Optional
 
 import pydub
 
+from log import log
+
 
 def convert_audio_to_wav(audio_file_name: str) -> Optional[str]:
     def get_audio_segment(file_name: str) -> Optional[pydub.AudioSegment]:
@@ -20,13 +22,17 @@ def convert_audio_to_wav(audio_file_name: str) -> Optional[str]:
     if not os.path.exists(audio_file_name):
         print('Error: could not find audio file:', audio_file_name)
         return None
-    wave_file_handler = tempfile.NamedTemporaryFile(suffix='.wav', delete=False)
-    audio_segment = get_audio_segment(audio_file_name)
-    if not audio_segment:
-        print('Error: could not figure out file format (.mp3, .ogg, .wav is supported):', audio_file_name)
+    try:
+        wave_file_handler = tempfile.NamedTemporaryFile(suffix='.wav', delete=False)
+        audio_segment = get_audio_segment(audio_file_name)
+        if not audio_segment:
+            log(None, f'Error: could not figure out file format (.mp3, .ogg, .wav is supported): {audio_file_name}')
+            return None
+        audio_segment.export(wave_file_handler.name, format='wav')
+        return wave_file_handler.name
+    except Exception as e:
+        log(None, f'Error converting audio file to wav: {e}')
         return None
-    audio_segment.export(wave_file_handler.name, format='wav')
-    return wave_file_handler.name
 
 
 def convert_mp3_stream_to_wav_file(stream: bytes) -> Optional[str]:

@@ -60,8 +60,11 @@
             "options": ""
         },
         "tts": {
-            "platform": "google_translate",
-            "language": "en"
+            "engine_id": "",
+            "platform": "",
+            "language": "",
+            "voice": "",
+            "debug_print": false
         },
         "webhook": {
             "id": "sip_call_webhook_id"
@@ -112,8 +115,11 @@
             "options": "str"
         },
         "tts": {
-            "platform": "str",
-            "language": "str"
+            "platform": "str?",
+            "engine_id": "str?",
+            "language": "str",
+            "voice": "str?",
+            "debug_print": "bool?"
         },
         "webhook": {
             "id": "str"

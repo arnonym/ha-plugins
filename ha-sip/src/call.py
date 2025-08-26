@@ -412,9 +412,9 @@ class Call(pj.Call):
             self.set_current_playback({'type': 'message', 'message': message})
             self.play_wav_file(cached_file, False, wait_for_audio_to_finish)
             return
-        sound_file_name, must_be_deleted = ha.create_and_get_tts(self.ha_config, message, language)
+        sound_file_name, must_be_deleted, was_successful = ha.create_and_get_tts(self.ha_config, message, language)
         self.set_current_playback({'type': 'message', 'message': message})
-        audio_cache.cache_file(should_cache, self.ha_config.cache_dir, 'message', message, sound_file_name)
+        audio_cache.cache_file(should_cache and was_successful, self.ha_config.cache_dir, 'message', message, sound_file_name)
         self.play_wav_file(sound_file_name, must_be_deleted, wait_for_audio_to_finish)
 
     def play_audio_file(self, audio_file: str, should_cache: bool, wait_for_audio_to_finish: bool) -> None:
@@ -601,7 +601,7 @@ class Call(pj.Call):
             'id': menu.get('id'),
             'message': menu.get('message'),
             'audio_file': menu.get('audio_file'),
-            'language': menu.get('language') or self.ha_config.tts_language,
+            'language': menu.get('language') or self.ha_config.tts_config['language'],
             'action': menu.get('action'),
             'choices_are_pin': menu.get('choices_are_pin') or False,
             'choices': None,

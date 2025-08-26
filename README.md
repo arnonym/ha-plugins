@@ -54,14 +54,23 @@ sip_2:
     incoming_call_file: ""
     options: ''
 tts:
-    platform: google_translate
+    engine_id: tts.google_translate_de_com # entity id of the TTS engine
+    platform: google_translate # deprecated, must not be set if engine_id is set
     language: en # might also be in en-US format, depending on the platform
+    debug_print: false # set to true, to output known engines and languages to the log at startup
+    voice: zephyr # voice if engine supports it
 webhook:
     id: sip_call_webhook_id
 ```
 
 > **Note:**
 > When your `user_name` or `password` starts with a number, you need to put it in quotes like `"1234"`.
+
+> **Note** 
+> For TTS you need to install one of the [TTS integrations](https://www.home-assistant.io/integrations/#text-to-speech). 
+> If you're unsure about the entity id used for `engine_id`, set `debug_print` to `true` and restart the add-on.
+> The add-on will output a list of all available engines and languages into the log. If the configured engine and language
+> is valid, it will also log the available voices (if the engine supports it).
 
 #### For `global_options` you can specify the following options
 
