@@ -7,6 +7,7 @@
 - accepting calls (optionally filtered by number)
 - handle PIN input before triggering actions
 - send DTMF digits to an established call (incoming or outgoing)
+- [speak to Home Assistant Voice Assist without special hardware](VOICE-ASSISTANT.md)
 
 ## Installation
 
