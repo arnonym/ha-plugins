@@ -1,21 +1,20 @@
 # Use ha-sip to talk to your Home Assistant AI
 
-This guide shows you how to set up ha-sip to enable voice conversations with your Home Assistant AI assistant through phone calls. Essentially dropping the Grandstream HT801 / HT802 requirement.
+This guide shows you how to set up ha-sip to enable voice conversations with your Home Assistant AI voice assistant through phone calls.
 
 ## Overview
 
 By combining ha-sip's phone capabilities with Home Assistant's AI conversation features, you can:
-- Call your home phone and talk directly to your Home Assistant AI
-- Be called by Home Assistant if an automation is being triggered
+- Call your voice assistant and talk directly to your Home Assistant AI
+- Be called by Home Assistant if triggered by an automation
 - Ask questions and get spoken responses
 - Control your smart home devices using natural voice commands
-- Be called by home assistant
 
 ## Prerequisites
 
 ### 1. ha-sip add-on installed and configured with at least one working SIP account
 
- see [README.md](README.md)
+ see [README.md](README.md). We are using the SIP Account in "Listen Mode" for our examples.
 
 ### 2. Home Assistant voice assistant pipeline with speech to text, conversation agent and text to speech.
 
@@ -25,7 +24,7 @@ By combining ha-sip's phone capabilities with Home Assistant's AI conversation f
 
 [![Open your Home Assistant instance and start setting up a new integration.](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start/?domain=voip)
 
-- In the configuration of the integration name a SIP username and a SIP port which is different from ha-sip, for example 5070
+- In the configuration of the integration name a SIP username and a SIP port which is different from ha-sip, for example 5070.
 
 
 ## Basic Setup
@@ -52,7 +51,7 @@ Example:
   alias: Initialize Voip
   description: ""
 ```
-After you executed the script a new device becomes visible in the voice over ip integration. There you need to enable the swtich to allow "incoming calls".
+After you executed the script a new device becomes visible in the voice over ip integration. There you need to enable the switch to allow "incoming calls".
 
 ### 1. Configure Incoming Calls for AI Conversations
 
@@ -140,7 +139,6 @@ Example:
           number: "{{ ha_assistant_sip_url }}"
   variables:
     ha_sip_slug: "c7744bff_ha-sip"
-    answer_for: "012346789"
     ha_assistant_sip_url: sip:[Your SIP username]@[Your home assistant ip address]:[Your SIP port]
   mode: single
 
