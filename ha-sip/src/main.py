@@ -22,6 +22,8 @@ from event_sender import EventSender
 from ha import TtsConfigFromEnv
 from log import log
 import config
+from esp32_config import get_esp32_config
+from esp32_sip_bridge import create_esp32_sip_bridge
 
 def handle_command_list(command_client: CommandClient, command_handler: CommandHandler) -> None:
     command_list = command_client.get_command_list()
@@ -146,6 +148,28 @@ def main():
             mqtt_client.send_event(event)
     event_sender.register_sender(trigger_webhook)
     event_sender.register_sender(send_mqtt_event)
+    
+    # Initialize ESP32 SIP bridge if configuration is present
+    esp32_bridge = None
+    if config.ESP32_ENABLED.lower() == 'true':
+        log(None, "Initializing ESP32 SIP bridge...")
+        # Use the first available SIP account for the ESP32 bridge
+        first_sip_account = next(iter(sip_accounts.values()), None)
+        if first_sip_account:
+            esp32_bridge = asyncio.run(
+                create_esp32_sip_bridge(
+                    config.ESP32_HOST,
+                    int(config.ESP32_PORT),
+                    config.ESP32_PASSWORD,
+                    config.ESP32_SIP_TARGET_URI,
+                    first_sip_account
+                )
+            )
+            # Start the ESP32 bridge in a separate task
+            asyncio.create_task(esp32_bridge.start_bridge())
+        else:
+            log(None, "No SIP accounts available for ESP32 bridge")
+    
     while True:
         if mqtt_client:
             mqtt_client.handle()

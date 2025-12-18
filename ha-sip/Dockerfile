@@ -8,6 +8,10 @@ RUN apt-get install -y build-essential git swig python3 python3-dev python3-pip 
 
 RUN pip3 install pydub requests PyYAML typing_extensions python-dotenv paho-mqtt setuptools --break-system-packages websockets
 
+# Install ESP32 dependencies
+COPY requirements-esp32.txt /tmp/requirements-esp32.txt
+RUN pip3 install -r /tmp/requirements-esp32.txt --break-system-packages
+
 RUN git clone --depth 1 --branch 2.15.1 https://github.com/pjsip/pjproject.git /tmp/pjproject
 
 WORKDIR /tmp/pjproject

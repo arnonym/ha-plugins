@@ -63,3 +63,12 @@ MQTT_USERNAME = os.environ.get('BROKER_USERNAME', '')
 MQTT_PASSWORD = os.environ.get('BROKER_PASSWORD', '')
 MQTT_TOPIC = os.environ.get('MQTT_TOPIC', 'hasip/execute')
 MQTT_TOPIC_STATE = os.environ.get('MQTT_STATE_TOPIC', 'hasip/state')
+
+# ESP32 configuration
+ESP32_ENABLED = os.environ.get('ESP32_ENABLED', 'false')
+ESP32_HOST = os.environ.get('ESP32_HOST', '192.168.0.103')
+ESP32_PORT = os.environ.get('ESP32_PORT', '6053')
+ESP32_PASSWORD = os.environ.get('ESP32_PASSWORD', '')
+ESP32_SIP_TARGET_URI = os.environ.get('ESP32_SIP_TARGET_URI', 'sip:539@192.168.128.22:5061')
+ESP32_CLOCK_RATE = os.environ.get('ESP32_CLOCK_RATE', '16000')
+ESP32_STREAM_PORT = os.environ.get('ESP32_STREAM_PORT', '8991')

@@ -1,9 +1,9 @@
 {
     "name": "ha-sip",
-    "version": "5.1",
+    "version": "5.2",
     "slug": "ha-sip",
     "url": "https://github.com/arnonym/ha-plugins",
-    "description": "Home-Assistant SIP Gateway",
+    "description": "Home-Assistant SIP Gateway with ESP32 support",
     "arch": [
         "aarch64",
         "amd64",
@@ -68,6 +68,15 @@
         },
         "webhook": {
             "id": "sip_call_webhook_id"
+        },
+        "esp32": {
+            "enabled": false,
+            "host": "192.168.0.103",
+            "port": 6053,
+            "password": "",
+            "sip_target_uri": "sip:539@192.168.128.22:5061",
+            "clock_rate": 16000,
+            "stream_port": 8991
         }
     },
     "schema": {
@@ -123,6 +132,15 @@
         },
         "webhook": {
             "id": "str"
+        },
+        "esp32": {
+            "enabled": "bool",
+            "host": "str",
+            "port": "int",
+            "password": "str",
+            "sip_target_uri": "str",
+            "clock_rate": "int",
+            "stream_port": "int"
         }
     },
     "host_network": true,
