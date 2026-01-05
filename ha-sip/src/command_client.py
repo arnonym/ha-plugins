@@ -24,6 +24,8 @@ class Command(TypedDict):
         Literal['bridge_audio'],
         Literal['send_dtmf'],
         Literal['stop_playback'],
+        Literal['start_recording'],
+        Literal['stop_recording'],
         Literal['play_message'],
         Literal['play_audio_file'],
         Literal['state'],
@@ -43,6 +45,7 @@ class Command(TypedDict):
     service: Optional[str]
     entity_id: Optional[str]
     audio_file: Optional[str]
+    recording_file: Optional[str]
     message: Optional[str]
     cache_audio: Optional[bool]
     wait_for_audio_to_finish: Optional[bool]

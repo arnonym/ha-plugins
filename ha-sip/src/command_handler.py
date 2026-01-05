@@ -190,6 +190,25 @@ class CommandHandler(object):
                     return
                 current_call = self.get_call_from_state_unsafe(number)
                 current_call.stop_playback()
+            case 'start_recording':
+                if not number:
+                    log(None, 'Error: Missing number for command "start_recording"')
+                    return
+                if not self.is_active(number):
+                    self.call_not_in_progress_error(number)
+                    return
+                current_call = self.get_call_from_state_unsafe(number)
+                recording_file = command.get('recording_file')
+                current_call.start_recording(recording_file)
+            case 'stop_recording':
+                if not number:
+                    log(None, 'Error: Missing number for command "stop_recording"')
+                    return
+                if not self.is_active(number):
+                    self.call_not_in_progress_error(number)
+                    return
+                current_call = self.get_call_from_state_unsafe(number)
+                current_call.stop_recording()
             case 'state':
                 self.call_state.output()
             case 'quit':
