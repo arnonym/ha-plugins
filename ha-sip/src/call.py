@@ -129,6 +129,10 @@ class Call(pj.Call):
         pj.Call.__init__(self, sip_account, call_id)
         self.player: Optional[player.Player] = None
         self.audio_media: Optional[pj.AudioMedia] = None
+        self.recorder: Optional[pj.AudioMediaRecorder] = None
+        self.recording_file: Optional[str] = None
+        self.recording_requested = False
+        self.requested_recording_filename: Optional[str] = None
         self.connected = False
         self.current_input = ''
         self.end_point = end_point
@@ -275,6 +279,7 @@ class Call(pj.Call):
             self.call_settled_at = time.time() + self.settle_time
         elif ci.state == pj.PJSIP_INV_STATE_DISCONNECTED:
             log(self.account.config.index, 'Call disconnected')
+            self.stop_recording()
             self.trigger_webhook({
                 'event': 'call_disconnected',
                 'caller': self.call_info['remote_uri'],
@@ -299,6 +304,8 @@ class Call(pj.Call):
             if media.type == pj.PJMEDIA_TYPE_AUDIO and (media.status == pj.PJSUA_CALL_MEDIA_ACTIVE or media.status == pj.PJSUA_CALL_MEDIA_REMOTE_HOLD):
                 log(self.account.config.index, 'Connected media %s' % media.status)
                 self.audio_media = self.getAudioMedia(media_index)
+                if self.recording_requested and not self.recorder:
+                    self.start_recording(self.requested_recording_filename)
 
     def onDtmfDigit(self, prm: pj.OnDtmfDigitParam) -> None:
         if not self.playback_is_done and self.wait_for_audio_to_finish:
@@ -476,6 +483,80 @@ class Call(pj.Call):
                 self.player.stopTransmit(self.audio_media)
                 self.player = None
             self.playback_is_done = True
+
+    def start_recording(self, record_filename: Optional[str]) -> None:
+        if self.recorder:
+            log(self.account.config.index, 'Recording already running -> reattaching')
+            try:
+                self.audio_media.stopTransmit(self.recorder)
+            except Exception:
+                pass
+            try:
+                self.audio_media.startTransmit(self.recorder)
+            except Exception as e:
+                log(self.account.config.index, f'Error: Could not reattach recorder: {e}')
+            return
+        if not record_filename:
+            log(self.account.config.index, 'Error: recording_file must be provided and absolute')
+            return
+        if not os.path.isabs(record_filename):
+            log(self.account.config.index, 'Error: recording_file must be an absolute path')
+            return
+        if not self.audio_media:
+            log(self.account.config.index, 'Audio media not connected yet. Recording will start once media is available')
+            self.recording_requested = True
+            self.requested_recording_filename = record_filename
+            return
+        self.recording_requested = False
+        self.requested_recording_filename = None
+        target_file = record_filename
+        target_dir = os.path.dirname(target_file)
+        if not os.path.isdir(target_dir):
+            log(self.account.config.index, 'Error: Call recordings directory not found: %s' % target_dir)
+            return
+        self.recorder = pj.AudioMediaRecorder()
+        try:
+            self.recorder.createRecorder(target_file)
+            self.audio_media.startTransmit(self.recorder)
+        except Exception as e:
+            log(self.account.config.index, 'Error: Failed to start call recording: %s' % e)
+            self.stop_recording()
+            return
+        self.recording_file = target_file
+        log(self.account.config.index, 'Call recording started: %s' % target_file)
+        self.trigger_webhook({
+            'event': 'recording_started',
+            'caller': self.call_info['remote_uri'],
+            'parsed_caller': self.call_info['parsed_caller'],
+            'sip_account': self.account.config.index,
+            'call_id': self.call_info['call_id'],
+            'recording_file': self.recording_file,
+            'internal_id': self.callback_id,
+        })
+
+    def stop_recording(self) -> None:
+        self.recording_requested = False
+        self.requested_recording_filename = None
+        if not self.recorder:
+            return
+        try:
+            if self.audio_media:
+                self.audio_media.stopTransmit(self.recorder)
+        except Exception as e:
+            log(self.account.config.index, 'Error: Failed to stop call recording: %s' % e)
+        if self.recording_file:
+            log(self.account.config.index, 'Call recording stopped: %s' % self.recording_file)
+            self.trigger_webhook({
+                'event': 'recording_stopped',
+                'caller': self.call_info['remote_uri'],
+                'parsed_caller': self.call_info['parsed_caller'],
+                'sip_account': self.account.config.index,
+                'call_id': self.call_info['call_id'],
+                'recording_file': self.recording_file,
+                'internal_id': self.callback_id,
+            })
+        self.recorder = None
+        self.recording_file = None
 
     def accept(self, answer_mode: CallHandling, answer_after: float) -> None:
         call_prm = pj.CallOpParam()
