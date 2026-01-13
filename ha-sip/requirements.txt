@@ -1,0 +1,10 @@
+pydub
+requests
+PyYAML
+typing_extensions
+pyright
+python-dotenv
+paho-mqtt
+setuptools
+websockets
+audioop-lts; python_version>='3.13'
