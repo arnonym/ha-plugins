@@ -2,6 +2,11 @@
 
 If you find ha-sip useful, consider starring ⭐ the [GitHub repo](https://github.com/arnonym/ha-plugins)!
 
+## 5.2
+- Add recording support for calls (thanks dirtyharryiv@github for implementing this!)
+- Bugfix for Python 3.13
+- Update pjsip to latest version
+
 ## 5.1
 - Allow setting voice and other options for TTS messages
 - Add opus codec support for home-assistant VoIP integration
@@ -52,8 +57,8 @@ If you find ha-sip useful, consider starring ⭐ the [GitHub repo](https://githu
 - Updated pjsip to latest version
 
 ## 3.1
-- Reverted slug change because requirements where changed again in 2023.9.2 and created issues. 
-  If you already changed the slug in your automations you need to redo that. Sorry for any inconvenience.
+- Reverted slug change because requirements where changed again in 2023.9.2 and created issues.
+  If you already changed the slug in your automations you need to redo that. Sorry for any inconvenience
 
 ## 3.0
 - Changed slug to new requirements in home-assistant 2023.9
