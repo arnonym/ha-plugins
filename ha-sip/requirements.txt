@@ -1,4 +1,3 @@
-pydub
 requests
 PyYAML
 typing_extensions
@@ -7,4 +6,3 @@ python-dotenv
 paho-mqtt
 setuptools
 websockets
-audioop-lts; python_version>='3.13'

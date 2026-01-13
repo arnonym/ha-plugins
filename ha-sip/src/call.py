@@ -430,11 +430,19 @@ class Call(pj.Call):
             self.set_current_playback({'type': 'audio_file', 'audio_file': audio_file})
             self.play_wav_file(cached_file, False, wait_for_audio_to_finish)
             return
-        sound_file_name = audio.convert_audio_to_wav(audio_file)
-        if sound_file_name:
-            self.set_current_playback({'type': 'audio_file', 'audio_file': audio_file})
-            audio_cache.cache_file(should_cache, self.ha_config.cache_dir, 'audio_file', audio_file, sound_file_name)
-            self.play_wav_file(sound_file_name, True, wait_for_audio_to_finish)
+        file_format = audio.audio_format_from_filename(audio_file)
+        if not file_format:
+            log(None, 'Error getting audio format from filename: %s' % audio_file)
+            return
+        with open(audio_file, 'rb') as f:
+            audio_file_content = f.read()
+            sound_file_name = audio.convert_audio_stream_to_wav_file(audio_file_content, file_format)
+        if not sound_file_name:
+            log(None, 'Could not convert to wav: %s' % audio_file)
+            return
+        self.set_current_playback({'type': 'audio_file', 'audio_file': audio_file})
+        audio_cache.cache_file(should_cache, self.ha_config.cache_dir, 'audio_file', audio_file, sound_file_name)
+        self.play_wav_file(sound_file_name, True, wait_for_audio_to_finish)
 
     def play_wav_file(self, sound_file_name: str, must_be_deleted: bool, wait_for_audio_to_finish: bool) -> None:
         if self.audio_media:
