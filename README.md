@@ -15,7 +15,7 @@
 
 This add-on is for the Home Assistant OS or supervised installation methods mentioned in
 https://www.home-assistant.io/installation/. With that in place you can install this third-party plug-in like described in
-https://www.home-assistant.io/common-tasks/os#installing-third-party-add-ons. The repository URL is
+https://www.home-assistant.io/common-tasks/os#installing-a-third-party-add-on-repository. The repository URL is
 `https://github.com/arnonym/ha-plugins`.
 
 > **Note:**
