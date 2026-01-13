@@ -233,10 +233,11 @@ def create_and_get_tts(ha_config: HaConfig, message: str, language: str) -> tupl
     except Exception as e:
         log(None, 'Error getting tts audio: %s' % e)
         return error_file_name, False, False
-    if tts_url.endswith('.mp3'):
-        wav_file_name = audio.convert_mp3_stream_to_wav_file(tts_response.content)
-    else:
-        wav_file_name = audio.write_wav_stream_to_wav_file(tts_response.content)
+    file_format = audio.audio_format_from_filename(tts_url)
+    if not file_format:
+        log(None, 'Error getting audio format from filename: %s' % tts_url)
+        return error_file_name, False, False
+    wav_file_name = audio.convert_audio_stream_to_wav_file(tts_response.content, file_format)
     if not wav_file_name:
         log(None, 'Error converting to wav: %s' % wav_file_name)
         return error_file_name, False, False
