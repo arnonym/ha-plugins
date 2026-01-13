@@ -6,7 +6,8 @@ RUN apt-get update
 RUN apt-get upgrade -y
 RUN apt-get install -y build-essential git swig python3 python3-dev python3-pip ffmpeg binutils libssl-dev libopus-dev
 
-RUN pip3 install pydub requests PyYAML typing_extensions python-dotenv paho-mqtt setuptools --break-system-packages websockets
+COPY requirements.txt /tmp/requirements.txt
+RUN pip3 install -r /tmp/requirements.txt --break-system-packages
 
 RUN git clone --depth 1 --branch 2.15.1 https://github.com/pjsip/pjproject.git /tmp/pjproject
 
