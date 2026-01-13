@@ -655,8 +655,10 @@ class Call(pj.Call):
                 return PostActionReturn(action='return', level=level)
             elif action.startswith('jump'):
                 _, *params = action.split(None)
-                menu_id = utils.safe_list_get(params, 0, None)
-                return PostActionJump(action='jump', menu_id=menu_id)
+                jump_to = utils.safe_list_get(params, 0, '')
+                if not jump_to:
+                    log(self.account.config.index, 'Error: jump action requires a menu id as parameter')
+                return PostActionJump(action='jump', menu_id=jump_to.strip())
             else:
                 log(self.account.config.index, 'Unknown post_action: %s' % action)
                 return PostActionNoop(action='noop')
@@ -678,8 +680,9 @@ class Call(pj.Call):
                 else:
                     return Call.get_timeout_menu(parent_menu_for_choice)
 
+        menu_id = menu.get('id')
         normalized_menu: Menu = {
-            'id': menu.get('id'),
+            'id': menu_id.strip() if menu_id else None,
             'message': menu.get('message'),
             'audio_file': menu.get('audio_file'),
             'language': menu.get('language') or self.ha_config.tts_config['language'],
