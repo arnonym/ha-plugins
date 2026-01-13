@@ -124,7 +124,7 @@ case "$1" in
         pip3 install -r "$SCRIPT_DIR"/ha-sip/requirements.txt
         mkdir "$SCRIPT_DIR"/deps
         cd "$SCRIPT_DIR"/deps || exit
-        git clone --depth 1 --branch 2.15.1 https://github.com/pjsip/pjproject.git
+        git clone --depth 1 --branch 2.16 https://github.com/pjsip/pjproject.git
         cd pjproject || exit
         ./configure CFLAGS="-O3 -DNDEBUG -fPIC" --enable-shared --disable-libwebrtc --with-ssl --with-opus=/usr --prefix "$SCRIPT_DIR"/venv
         make
