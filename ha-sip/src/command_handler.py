@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import collections.abc
 import sys
+import os
 from typing import Optional
 
 import pjsua2 as pj
@@ -199,6 +200,9 @@ class CommandHandler(object):
                     return
                 current_call = self.get_call_from_state_unsafe(number)
                 recording_file = command.get('recording_file')
+                if not recording_file or not os.path.isabs(recording_file):
+                    log(None, 'Error: Missing recording_file or path not absolute for command "start_recording"')
+                    return
                 current_call.start_recording(recording_file)
             case 'stop_recording':
                 if not number:
