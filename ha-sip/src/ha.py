@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import os
 import json
-from urllib.parse import urlparse, urlunparse
 from typing import Union, Optional, Dict, Any
 from typing_extensions import TypedDict, Literal
 
@@ -103,6 +102,25 @@ class PlaybackDoneMessage(TypedDict):
     internal_id: str
 
 
+class RecordingStarted(TypedDict):
+    event: Literal['recording_started']
+    caller: str
+    parsed_caller: Optional[str]
+    sip_account: int
+    recording_file: str
+    call_id: Optional[str]
+    internal_id: str
+
+
+class RecordingStopped(TypedDict):
+    event: Literal['recording_stopped']
+    caller: str
+    parsed_caller: Optional[str]
+    sip_account: int
+    recording_file: str
+    call_id: Optional[str]
+    internal_id: str
+
 WebhookEvent = Union[
     IncomingCallEvent,
     CallEstablishedEvent,
@@ -112,7 +130,9 @@ WebhookEvent = Union[
     Timeout,
     RingTimeout,
     PlaybackDoneAudioFile,
-    PlaybackDoneMessage
+    PlaybackDoneMessage,
+    RecordingStarted,
+    RecordingStopped
 ]
 
 

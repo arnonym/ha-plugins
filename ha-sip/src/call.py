@@ -131,7 +131,6 @@ class Call(pj.Call):
         self.audio_media: Optional[pj.AudioMedia] = None
         self.recorder: Optional[pj.AudioMediaRecorder] = None
         self.recording_file: Optional[str] = None
-        self.recording_requested = False
         self.requested_recording_filename: Optional[str] = None
         self.connected = False
         self.current_input = ''
@@ -304,7 +303,7 @@ class Call(pj.Call):
             if media.type == pj.PJMEDIA_TYPE_AUDIO and (media.status == pj.PJSUA_CALL_MEDIA_ACTIVE or media.status == pj.PJSUA_CALL_MEDIA_REMOTE_HOLD):
                 log(self.account.config.index, 'Connected media %s' % media.status)
                 self.audio_media = self.getAudioMedia(media_index)
-                if self.recording_requested and not self.recorder:
+                if self.requested_recording_filename and not self.recorder:
                     self.start_recording(self.requested_recording_filename)
 
     def onDtmfDigit(self, prm: pj.OnDtmfDigitParam) -> None:
@@ -484,8 +483,10 @@ class Call(pj.Call):
                 self.player = None
             self.playback_is_done = True
 
-    def start_recording(self, record_filename: Optional[str]) -> None:
+    def start_recording(self, record_filename: str) -> None:
         if self.recorder:
+            assert self.audio_media is not None
+            assert self.call_info is not None
             log(self.account.config.index, 'Recording already running -> reattaching')
             try:
                 self.audio_media.stopTransmit(self.recorder)
@@ -496,18 +497,10 @@ class Call(pj.Call):
             except Exception as e:
                 log(self.account.config.index, f'Error: Could not reattach recorder: {e}')
             return
-        if not record_filename:
-            log(self.account.config.index, 'Error: recording_file must be provided and absolute')
-            return
-        if not os.path.isabs(record_filename):
-            log(self.account.config.index, 'Error: recording_file must be an absolute path')
-            return
         if not self.audio_media:
             log(self.account.config.index, 'Audio media not connected yet. Recording will start once media is available')
-            self.recording_requested = True
             self.requested_recording_filename = record_filename
             return
-        self.recording_requested = False
         self.requested_recording_filename = None
         target_file = record_filename
         target_dir = os.path.dirname(target_file)
@@ -524,6 +517,7 @@ class Call(pj.Call):
             return
         self.recording_file = target_file
         log(self.account.config.index, 'Call recording started: %s' % target_file)
+        assert self.call_info is not None
         self.trigger_webhook({
             'event': 'recording_started',
             'caller': self.call_info['remote_uri'],
@@ -535,7 +529,6 @@ class Call(pj.Call):
         })
 
     def stop_recording(self) -> None:
-        self.recording_requested = False
         self.requested_recording_filename = None
         if not self.recorder:
             return
@@ -546,6 +539,7 @@ class Call(pj.Call):
             log(self.account.config.index, 'Error: Failed to stop call recording: %s' % e)
         if self.recording_file:
             log(self.account.config.index, 'Call recording stopped: %s' % self.recording_file)
+            assert self.call_info is not None
             self.trigger_webhook({
                 'event': 'recording_stopped',
                 'caller': self.call_info['remote_uri'],
