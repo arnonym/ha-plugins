@@ -9,7 +9,7 @@ RUN apt-get install -y build-essential git swig python3 python3-dev python3-pip 
 COPY requirements.txt /tmp/requirements.txt
 RUN pip3 install -r /tmp/requirements.txt --break-system-packages
 
-RUN git clone --depth 1 --branch 2.15.1 https://github.com/pjsip/pjproject.git /tmp/pjproject
+RUN git clone --depth 1 --branch 2.16 https://github.com/pjsip/pjproject.git /tmp/pjproject
 
 WORKDIR /tmp/pjproject
 
