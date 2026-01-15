@@ -599,6 +599,9 @@ class Call(pj.Call):
         self.reset_timeout()
         log(self.account.config.index, 'Sending DTMF %s' % digits)
         if method == 'in_band':
+            if not self.audio_media:
+                log(self.account.config.index, 'Audio media not connected. Cannot send DTMF in-band!')
+                return
             if not self.tone_gen:
                 self.tone_gen = pj.ToneGenerator()
                 self.tone_gen.createToneGenerator()
