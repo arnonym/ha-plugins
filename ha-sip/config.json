@@ -1,6 +1,6 @@
 {
     "name": "ha-sip",
-    "version": "5.2",
+    "version": "5.3",
     "slug": "ha-sip",
     "url": "https://github.com/arnonym/ha-plugins",
     "description": "Home-Assistant SIP Gateway",

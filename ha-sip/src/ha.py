@@ -244,9 +244,11 @@ def create_and_get_tts(ha_config: HaConfig, message: str, language: str) -> tupl
     return wav_file_name, True, True
 
 
-def call_service(ha_config: HaConfig, domain: str, service: str, entity_id: str, service_data: Optional[Dict[str, Any]]) -> None:
+def call_service(ha_config: HaConfig, domain: str, service: str, entity_id: Optional[str], service_data: Optional[Dict[str, Any]]) -> None:
     headers = ha_config.create_headers()
-    payload: Dict[str, Any] = {'entity_id': entity_id}
+    payload: Dict[str, Any] = {}
+    if entity_id:
+        payload.update({'entity_id': entity_id})
     if service_data:
         payload.update(service_data)
     service_response = requests.post(ha_config.get_service_url(domain, service), json=payload, headers=headers)
