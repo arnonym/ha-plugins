@@ -385,7 +385,7 @@ menu:
         # For details visit https://developers.home-assistant.io/docs/api/rest/, POST on /api/services/<domain>/<service>
         domain: switch # home-assistant domain
         service: turn_on # home-assistant service
-        entity_id: switch.open_front_door # home assistant entity
+        entity_id: switch.open_front_door # home assistant entity (optional)
     choices: # the list of actions available through DTMF (optional)
         '1234': # DTMF sequence, and definition of a sub-menu
             id: owner # same as above, also any other option from above can be used in this sub-menu
