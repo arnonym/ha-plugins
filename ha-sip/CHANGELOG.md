@@ -4,6 +4,7 @@ If you find ha-sip useful, consider starring ⭐ the [GitHub repo](https://githu
 
 ## 5.2
 - Add recording support for calls (thanks dirtyharryiv@github for implementing this!)
+- Allow /media to be used inside add-on
 - Bugfix for Python 3.13
 - Update pjsip to latest version
 

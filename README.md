@@ -30,7 +30,7 @@ sip_global:
     port: 5060
     log_level: 5 # log level of pjsip library
     name_server: '' # comma separated list of name servers, must be set if sip server must be resolved via SRV record
-    cache_dir: '/config/audio_cache' # directory to cache TTS messages or converted audio files. Must be inside /config and existing
+    cache_dir: '/config/audio_cache' # directory to cache TTS messages or converted audio files. Must be inside /config or /media and existing
     global_options: ''
 sip:
     enabled: true
@@ -72,6 +72,9 @@ webhook:
 > If you're unsure about the entity id used for `engine_id`, set `debug_print` to `true` and restart the add-on.
 > The add-on will output a list of all available engines and languages into the log. If the configured engine and language
 > is valid, it will also log the available voices (if the engine supports it).
+
+> **Note** 
+> You are able to access the /config and /media directory inside the add-on for config files, audio files, cache and recordings. 
 
 #### For `global_options` you can specify the following options
 
@@ -397,7 +400,7 @@ menu:
             message: Your entrance has been logged.
             post_action: hangup
         '7777':
-            audio_file: '/config/audio/welcome.mp3' # audio file to be played (.wav or .mp3).
+            audio_file: '/media/audio/welcome.mp3' # audio file to be played (.wav or .mp3).
             post_action: jump owner # jump to menu id 'owner'
         'default': # this will be triggered if the input does not match any specified choice
             id: wrong_code
@@ -502,7 +505,7 @@ to identify the call in your automations.
     "parsed_caller": "5551234456",
     "sip_account": 1,
     "type": "audio_file",
-    "audio_file": "/config/audio/welcome.mp3",
+    "audio_file": "/media/audio/welcome.mp3",
     "internal_id": "something-unique"
 }
 ```
@@ -541,7 +544,7 @@ to identify the call in your automations.
     "parsed_caller": "5551234456",
     "sip_account": 1,
     "call_id": "5a42f2-54c5ba548-c545b54-554d55216",
-    "recording_file": "/config/www/call_12345.wav",
+    "recording_file": "/media/www/call_12345.wav",
     "internal_id": "something-unique"
 }
 ```
