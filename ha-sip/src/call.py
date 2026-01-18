@@ -235,7 +235,7 @@ class Call(pj.Call):
             if new_menu:
                 self.handle_menu(new_menu)
             else:
-                log(self.account.config.index, 'Could not find menu id: %s' % post_action["menu_id"])
+                log(self.account.config.index, 'Could not find menu_id: "%s". Valid IDs are %s' % (post_action["menu_id"], self.menu_map.keys()))
         elif post_action["action"] == 'hangup':
             self.hangup_call()
         elif post_action["action"] == 'repeat_message':
@@ -576,6 +576,7 @@ class Call(pj.Call):
         log(self.account.config.index, 'Trigger answer of call (if not established already)')
         if new_menu:
             self.menu = self.normalize_menu(new_menu)
+            self.menu_map = self.create_menu_map(self.menu)
             self.pretty_print_menu(self.menu)
         if overwrite_webhooks:
             self.webhooks = overwrite_webhooks

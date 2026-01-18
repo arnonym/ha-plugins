@@ -36,7 +36,7 @@ def load_menu_from_file(file_name: Optional[str], sip_account_index: int) -> Opt
     try:
         with open(file_name) as stream:
             content = yaml.safe_load(stream)
-            log(sip_account_index, 'Loaded menu for incoming call.')
+            log(sip_account_index, 'Loaded menu for incoming call from "%s".' % file_name)
             return content
     except BaseException as e:
         log(sip_account_index, 'Error loading menu for incoming call: %s' % e)
