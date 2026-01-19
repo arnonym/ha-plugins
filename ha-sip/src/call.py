@@ -160,13 +160,13 @@ class Call(pj.Call):
         self.tone_gen: Optional[pj.ToneGenerator] = None
         self.call_info: Optional[CallInfo] = None
         self.pressed_digit_list: List[str] = []
-        self.callback_id = self.get_callback_id()
+        self.callback_id, other_ids = self.get_callback_ids()
         self.current_playback: Optional[ha.CurrentPlayback] = None
         self.menu = self.normalize_menu(menu) if menu else self.get_standard_menu()
         self.menu_map = self.create_menu_map(self.menu)
         Call.pretty_print_menu(self.menu)
         log(self.account.config.index, 'Registering call with id %s' % self.callback_id)
-        self.command_handler.on_state_change(CallStateChange.CALL, self.callback_id, self)
+        self.command_handler.register_call(self.callback_id, self, other_ids)
 
     def handle_events(self) -> None:
         if not self.connected and time.time() - self.last_seen > self.ring_timeout:
@@ -292,7 +292,7 @@ class Call(pj.Call):
             self.player = None
             self.audio_media = None
             self.tone_gen = None
-            self.command_handler.on_state_change(CallStateChange.HANGUP, self.callback_id, self)
+            self.command_handler.forget_call(self.callback_id)
         else:
             log(self.account.config.index, 'Unknown state: %s' % ci.state)
 
@@ -589,7 +589,7 @@ class Call(pj.Call):
 
     def bridge_audio(self, call_two: Call):
         if self.audio_media and call_two.audio_media:
-            log(self.account.config.index, 'Connect audio stream of "%s" and "%s"' % (self.get_callback_id(), call_two.get_callback_id()))
+            log(self.account.config.index, 'Connect audio stream of "%s" and "%s"' % (self.callback_id, call_two.callback_id))
             self.audio_media.startTransmit(call_two.audio_media)
             call_two.audio_media.startTransmit(self.audio_media)
             log(self.account.config.index, 'Audio streams connected.')
@@ -622,13 +622,13 @@ class Call(pj.Call):
             dtmf_prm.digits = digits
             self.sendDtmf(dtmf_prm)
 
-    def get_callback_id(self) -> str:
+    def get_callback_ids(self) -> tuple[str, List[str]]:
         if self.uri_to_call:
-            return self.uri_to_call
+            # On outgoing calls we use the uri_to_call, as other info is not available yet
+            parsed_caller = self.parse_caller(self.uri_to_call)
+            return self.uri_to_call, [x for x in [parsed_caller] if x is not None]
         call_info = self.get_call_info()
-        if call_info['parsed_caller']:
-            return call_info['parsed_caller']
-        return call_info['remote_uri']
+        return call_info['remote_uri'], [x for x in [call_info['parsed_caller']] if x is not None]
 
     def get_call_info(self) -> CallInfo:
         ci = self.getInfo()
