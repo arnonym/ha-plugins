@@ -7,6 +7,7 @@
 - accepting calls (optionally filtered by number)
 - handle PIN input before triggering actions
 - send DTMF digits to an established call (incoming or outgoing)
+- record calls into .wav files
 - [speak to Home Assistant Voice Assist without special hardware](VOICE-ASSISTANT.md)
 
 ## Installation
@@ -285,7 +286,8 @@ In `listen` mode no call will be answered (picked up) but you can trigger an aut
 The webhook ID must match the ID set in the configuration.
 
 You can get the caller from `{{trigger.json.caller}}` or `{{trigger.json.parsed_caller}}` for usage in e.g. the action of your automation. 
-If you also use the menu ID webhook you also need to check for `{{ trigger.json.event == "incoming_call" }}` e.g. in a "Choose" action type.
+If you want to react on a webhook message with another command you should use `{{ trigger.json.internal_id }}` as the number.
+If you also use the menu ID webhook you need to check for `{{ trigger.json.event == "incoming_call" }}` e.g. in a "Choose" action type.
 
 Example of "incoming call" webhook message:
 
@@ -294,7 +296,8 @@ Example of "incoming call" webhook message:
     "event": "incoming_call",
     "caller": "<sip:5551234456@fritz.box>",
     "parsed_caller": "5551234456",
-    "sip_account": 1
+    "sip_account": 1,
+    "internal_id": "something-unique"
 }
 ```
 
@@ -306,7 +309,7 @@ data:
     addon: c7744bff_ha-sip
     input:
         command: answer
-        number: "5551234456" # if this is unclear, you can look that up in the logs ("Registering call with id <number>")
+        number: "{{ trigger.json.internal_id }}" # if this is unclear, you can look that up in the logs ("Registering call with id <number>")
         webhook_to_call: # optional web-hook IDs which you can listen on in your actions (additional to the global web-hook)
             call_established: another_webhook_id
             entered_menu: another_webhook_id

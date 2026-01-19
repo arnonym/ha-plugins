@@ -3,7 +3,7 @@ from __future__ import annotations
 import collections.abc
 import sys
 import os
-from typing import Optional
+from typing import Optional, List
 
 import pjsua2 as pj
 
@@ -13,7 +13,6 @@ import command_client
 import ha
 import state
 import utils
-from call_state_change import CallStateChange
 from constants import DEFAULT_RING_TIMEOUT
 from event_sender import EventSender
 from log import log
@@ -43,8 +42,11 @@ class CommandHandler(object):
     def is_active(self, caller_id: str) -> bool:
         return self.call_state.is_active(caller_id)
 
-    def on_state_change(self, state_change: CallStateChange, caller_id: str, new_call: call.Call) -> None:
-        self.call_state.on_state_change(state_change, caller_id, new_call)
+    def register_call(self, callback_id: str, new_call: call.Call, additional_ids: List[str]) -> None:
+        self.call_state.register_call(callback_id, new_call, additional_ids)
+
+    def forget_call(self, callback_id: str) -> None:
+        self.call_state.forget_call(callback_id)
 
     def handle_command(self, command: command_client.Command, from_call: Optional[call.Call]) -> None:
         if not isinstance(command, collections.abc.Mapping):
