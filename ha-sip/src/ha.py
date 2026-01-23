@@ -197,6 +197,9 @@ class HaConfig(object):
     def get_tts_url(self) -> str:
         return self.base_url + '/tts_get_url'
 
+    def get_template_url(self) -> str:
+        return self.base_url + '/template'
+
     def get_service_url(self, domain: str, service: str) -> str:
         return self.base_url + '/services/' + domain + '/' + service
 
@@ -242,6 +245,13 @@ def create_and_get_tts(ha_config: HaConfig, message: str, language: str) -> tupl
         log(None, 'Error converting to wav: %s' % wav_file_name)
         return error_file_name, False, False
     return wav_file_name, True, True
+
+
+def render_template(ha_config: HaConfig, text: str) -> str:
+    headers = ha_config.create_headers()
+    template_response = requests.post(ha_config.get_template_url(), json={'template': text}, headers=headers)
+    log(None, 'Template response %r %r' % (template_response.status_code, template_response.content))
+    return template_response.text if template_response.ok else text
 
 
 def call_service(ha_config: HaConfig, domain: str, service: str, entity_id: Optional[str], service_data: Optional[Dict[str, Any]]) -> None:

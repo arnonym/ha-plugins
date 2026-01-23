@@ -1,3 +1,4 @@
+import re
 from typing import Any, Generator, Sequence
 
 from typing_extensions import TypeVar
@@ -30,3 +31,12 @@ T = TypeVar('T')
 def chunks(lst: list[T], n) -> Generator[list[T], Any, None]:
     for i in range(0, len(lst), n):
         yield lst[i:i + n]
+
+
+def is_jinja_template(text: str) -> bool:
+    template_patterns = [
+        r"\{\{.*?\}\}",
+        r"\{%.*?%\}",
+        r"\{#.*?#\}"
+    ]
+    return any(re.search(pattern, text) for pattern in template_patterns)

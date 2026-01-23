@@ -412,6 +412,9 @@ class Call(pj.Call):
         self.command_handler.handle_command(action, self)
 
     def play_message(self, message: str, language: str, should_cache: bool, wait_for_audio_to_finish: bool) -> None:
+        if utils.is_jinja_template(message):
+            log(self.account.config.index, 'Rendering message template: %s' % message)
+            message = ha.render_template(self.ha_config, message)
         log(self.account.config.index, 'Playing message: %s' % message)
         cached_file = audio_cache.get_cached_file(should_cache, self.ha_config.cache_dir, 'message', message)
         if cached_file:
