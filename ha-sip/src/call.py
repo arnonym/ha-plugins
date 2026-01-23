@@ -79,6 +79,7 @@ class MenuFromStdin(TypedDict):
 class Menu(TypedDict):
     id: Optional[str]
     message: Optional[str]
+    handle_as_template: Optional[bool]
     audio_file: Optional[str]
     language: str
     action: Optional[Command]
@@ -391,6 +392,7 @@ class Call(pj.Call):
         if reset_input:
             self.current_input = ''
         message = menu['message']
+        handle_as_template = menu['handle_as_template']
         audio_file = menu['audio_file']
         language = menu['language']
         action = menu['action']
@@ -398,6 +400,8 @@ class Call(pj.Call):
         should_cache = menu['cache_audio']
         wait_for_audio_to_finish = menu['wait_for_audio_to_finish']
         if message:
+            if handle_as_template:
+                message = ha.render_template(self.ha_config, message)
             self.play_message(message, language, should_cache, wait_for_audio_to_finish)
         if audio_file:
             self.play_audio_file(audio_file, should_cache, wait_for_audio_to_finish)
@@ -690,6 +694,7 @@ class Call(pj.Call):
         normalized_menu: Menu = {
             'id': menu_id.strip() if menu_id else None,
             'message': menu.get('message'),
+            'handle_as_template': menu.get('handle_as_template'),
             'audio_file': menu.get('audio_file'),
             'language': menu.get('language') or self.ha_config.tts_config['language'],
             'action': menu.get('action'),
@@ -738,6 +743,7 @@ class Call(pj.Call):
         return {
             'id': None,
             'message': 'Unknown option',
+            'handle_as_template': False,
             'audio_file': None,
             'language': 'en',
             'action': None,
@@ -757,6 +763,7 @@ class Call(pj.Call):
         return {
             'id': None,
             'message': None,
+            'handle_as_template': False,
             'audio_file': None,
             'language': 'en',
             'action': None,
@@ -776,6 +783,7 @@ class Call(pj.Call):
         standard_menu: Menu = {
             'id': None,
             'message': None,
+            'handle_as_template': False,
             'audio_file': None,
             'language': 'en',
             'action': None,
