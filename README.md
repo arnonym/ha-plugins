@@ -389,7 +389,7 @@ menu:
     choices: # the list of actions available through DTMF (optional)
         '1234': # DTMF sequence, and definition of a sub-menu
             id: owner # same as above, also any other option from above can be used in this sub-menu
-            message: > # messages can be dynamic by using Home Assistant templates
+            message_template: > # when using 'message_template' instead of 'message', dynamic content can be created
                 Welcome beautiful.
                 {% set temp = state_attr("climate.my_room", "current_temperature")|round(1) %}
                 There are {{ states.zone.home.state }} people home.

@@ -248,6 +248,7 @@ def create_and_get_tts(ha_config: HaConfig, message: str, language: str) -> tupl
 
 
 def render_template(ha_config: HaConfig, text: str) -> str:
+    log(None, 'Rendering template: %s' % text)
     headers = ha_config.create_headers()
     template_response = requests.post(ha_config.get_template_url(), json={'template': text}, headers=headers)
     log(None, 'Template response %r %r' % (template_response.status_code, template_response.content))

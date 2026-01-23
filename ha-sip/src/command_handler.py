@@ -175,8 +175,14 @@ class CommandHandler(object):
                     return
                 current_call = self.get_call_from_state_unsafe(number)
                 message = command.get('message')
-                if not message:
-                    log(None, 'Error: Missing parameter "message" for command "play_message"')
+                message_template = command.get('message_template')
+                if message_template:
+                    if message:
+                        log(None, 'Warning: Both "message" and "message_template" defined for command "play_message"; "message" will be used')
+                    else:
+                        message = ha.render_template(current_call.ha_config, message_template)
+                elif not message:
+                    log(None, 'Error: Missing parameter "message" or "message_template" for command "play_message"')
                     return
                 tts_language = command.get('tts_language') or self.ha_config.tts_config['language']
                 cache_audio = command.get('cache_audio') or False

@@ -79,6 +79,7 @@ class MenuFromStdin(TypedDict):
 class Menu(TypedDict):
     id: Optional[str]
     message: Optional[str]
+    message_template: Optional[str]
     audio_file: Optional[str]
     language: str
     action: Optional[Command]
@@ -391,12 +392,18 @@ class Call(pj.Call):
         if reset_input:
             self.current_input = ''
         message = menu['message']
+        message_template = menu['message_template']
         audio_file = menu['audio_file']
         language = menu['language']
         action = menu['action']
         post_action = menu['post_action']
         should_cache = menu['cache_audio']
         wait_for_audio_to_finish = menu['wait_for_audio_to_finish']
+        if message_template:
+            if message:
+                log(self.account.config.index, 'Warning: Both "message" and "message_template" are defined in call menu; "message" will be used')
+            else:
+                message = ha.render_template(self.ha_config, message_template)
         if message:
             self.play_message(message, language, should_cache, wait_for_audio_to_finish)
         if audio_file:
@@ -412,9 +419,6 @@ class Call(pj.Call):
         self.command_handler.handle_command(action, self)
 
     def play_message(self, message: str, language: str, should_cache: bool, wait_for_audio_to_finish: bool) -> None:
-        if utils.is_jinja_template(message):
-            log(self.account.config.index, 'Rendering message template: %s' % message)
-            message = ha.render_template(self.ha_config, message)
         log(self.account.config.index, 'Playing message: %s' % message)
         cached_file = audio_cache.get_cached_file(should_cache, self.ha_config.cache_dir, 'message', message)
         if cached_file:
@@ -693,6 +697,7 @@ class Call(pj.Call):
         normalized_menu: Menu = {
             'id': menu_id.strip() if menu_id else None,
             'message': menu.get('message'),
+            'message_template': menu.get('message_template'),
             'audio_file': menu.get('audio_file'),
             'language': menu.get('language') or self.ha_config.tts_config['language'],
             'action': menu.get('action'),
@@ -741,6 +746,7 @@ class Call(pj.Call):
         return {
             'id': None,
             'message': 'Unknown option',
+            'message_template': None,
             'audio_file': None,
             'language': 'en',
             'action': None,
@@ -760,6 +766,7 @@ class Call(pj.Call):
         return {
             'id': None,
             'message': None,
+            'message_template': None,
             'audio_file': None,
             'language': 'en',
             'action': None,
@@ -779,6 +786,7 @@ class Call(pj.Call):
         standard_menu: Menu = {
             'id': None,
             'message': None,
+            'message_template': None,
             'audio_file': None,
             'language': 'en',
             'action': None,
