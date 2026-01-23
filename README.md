@@ -389,7 +389,12 @@ menu:
     choices: # the list of actions available through DTMF (optional)
         '1234': # DTMF sequence, and definition of a sub-menu
             id: owner # same as above, also any other option from above can be used in this sub-menu
-            message: Welcome beautiful.
+            message: > # messages can be dynamic by using Home Assistant templates
+                Welcome beautiful.
+                {% set temp = state_attr("climate.my_room", "current_temperature")|round(1) %}
+                There are {{ states.zone.home.state }} people home.
+                Current temperature is {{ temp }} degrees.
+                {% if temp >= 20 %}Come in, it's cozy!{% endif %}
             cache_audio: true # If message should be cached in `cache_dir`. 
                               # Defaults to false. `cache_dir` must be configured in ha-sip config.
                               # Don't enable this for dynamic messages, you'll just fill your storage.
