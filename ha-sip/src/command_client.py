@@ -47,7 +47,7 @@ class Command(TypedDict):
     audio_file: Optional[str]
     recording_file: Optional[str]
     message: Optional[str]
-    message_template: Optional[str]
+    handle_as_template: Optional[bool]
     cache_audio: Optional[bool]
     wait_for_audio_to_finish: Optional[bool]
     tts_language: Optional[str]

@@ -389,7 +389,8 @@ menu:
     choices: # the list of actions available through DTMF (optional)
         '1234': # DTMF sequence, and definition of a sub-menu
             id: owner # same as above, also any other option from above can be used in this sub-menu
-            message_template: > # when using 'message_template' instead of 'message', dynamic content can be created
+            handle_as_template: true # if set, the message will be rendered as template and dynamic content can be generated (default: false)
+            message: > 
                 Welcome beautiful.
                 {% set temp = state_attr("climate.my_room", "current_temperature")|round(1) %}
                 There are {{ states.zone.home.state }} people home.

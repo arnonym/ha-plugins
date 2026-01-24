@@ -79,7 +79,7 @@ class MenuFromStdin(TypedDict):
 class Menu(TypedDict):
     id: Optional[str]
     message: Optional[str]
-    message_template: Optional[str]
+    handle_as_template: Optional[bool]
     audio_file: Optional[str]
     language: str
     action: Optional[Command]
@@ -392,19 +392,16 @@ class Call(pj.Call):
         if reset_input:
             self.current_input = ''
         message = menu['message']
-        message_template = menu['message_template']
+        handle_as_template = menu['handle_as_template']
         audio_file = menu['audio_file']
         language = menu['language']
         action = menu['action']
         post_action = menu['post_action']
         should_cache = menu['cache_audio']
         wait_for_audio_to_finish = menu['wait_for_audio_to_finish']
-        if message_template:
-            if message:
-                log(self.account.config.index, 'Warning: Both "message" and "message_template" are defined in call menu; "message" will be used')
-            else:
-                message = ha.render_template(self.ha_config, message_template)
         if message:
+            if handle_as_template:
+                message = ha.render_template(self.ha_config, message)
             self.play_message(message, language, should_cache, wait_for_audio_to_finish)
         if audio_file:
             self.play_audio_file(audio_file, should_cache, wait_for_audio_to_finish)
@@ -697,7 +694,7 @@ class Call(pj.Call):
         normalized_menu: Menu = {
             'id': menu_id.strip() if menu_id else None,
             'message': menu.get('message'),
-            'message_template': menu.get('message_template'),
+            'handle_as_template': menu.get('handle_as_template'),
             'audio_file': menu.get('audio_file'),
             'language': menu.get('language') or self.ha_config.tts_config['language'],
             'action': menu.get('action'),
@@ -746,7 +743,7 @@ class Call(pj.Call):
         return {
             'id': None,
             'message': 'Unknown option',
-            'message_template': None,
+            'handle_as_template': False,
             'audio_file': None,
             'language': 'en',
             'action': None,
@@ -766,7 +763,7 @@ class Call(pj.Call):
         return {
             'id': None,
             'message': None,
-            'message_template': None,
+            'handle_as_template': False,
             'audio_file': None,
             'language': 'en',
             'action': None,
@@ -786,7 +783,7 @@ class Call(pj.Call):
         standard_menu: Menu = {
             'id': None,
             'message': None,
-            'message_template': None,
+            'handle_as_template': False,
             'audio_file': None,
             'language': 'en',
             'action': None,
