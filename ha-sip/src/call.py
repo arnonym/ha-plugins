@@ -41,6 +41,7 @@ class WebhookToCall(TypedDict):
 class MenuFromStdin(TypedDict):
     id: Optional[str]
     message: Optional[str]
+    handle_as_template: Optional[bool]
     audio_file: Optional[str]
     language: Optional[str]
     action: Optional[Command]
@@ -55,7 +56,7 @@ class MenuFromStdin(TypedDict):
 class Menu(TypedDict):
     id: Optional[str]
     message: Optional[str]
-    handle_as_template: Optional[bool]
+    handle_as_template: bool
     audio_file: Optional[str]
     language: str
     action: Optional[Command]
@@ -670,7 +671,7 @@ class Call(pj.Call):
         normalized_menu: Menu = {
             'id': menu_id.strip() if menu_id else None,
             'message': menu.get('message'),
-            'handle_as_template': menu.get('handle_as_template'),
+            'handle_as_template': menu.get('handle_as_template') or False,
             'audio_file': menu.get('audio_file'),
             'language': menu.get('language') or self.ha_config.tts_config['language'],
             'action': menu.get('action'),

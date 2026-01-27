@@ -392,7 +392,9 @@ menu:
     choices: # the list of actions available through DTMF (optional)
         '1234': # DTMF sequence, and definition of a sub-menu
             id: owner # same as above, also any other option from above can be used in this sub-menu
-            handle_as_template: true # if set, the message will be rendered as template and dynamic content can be generated (default: false)
+            handle_as_template: true # if true, the message will be rendered as a template and dynamic content can be 
+                                     # used. Useful for messages in incoming_call_file or from MQTT. 
+                                     # (optional, defaults to false)
             message: > 
                 Welcome beautiful.
                 {% set temp = state_attr("climate.my_room", "current_temperature")|round(1) %}
