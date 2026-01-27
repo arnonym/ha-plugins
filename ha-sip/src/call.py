@@ -97,6 +97,7 @@ class CallInfo(TypedDict):
     local_uri: str
     remote_uri: str
     parsed_caller: Optional[str]
+    parsed_called: Optional[str]
     call_id: str
 
 
@@ -633,10 +634,12 @@ class Call(pj.Call):
     def get_call_info(self) -> CallInfo:
         ci = self.getInfo()
         parsed_caller = self.parse_caller(ci.remoteUri)
+        parsed_called = self.parse_caller(ci.localUri)
         return {
             'remote_uri': ci.remoteUri,
             'local_uri': ci.localUri,
             'parsed_caller': parsed_caller,
+            'parsed_called': parsed_called,
             'call_id': ci.callIdString,
         }
 
