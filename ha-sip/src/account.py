@@ -119,6 +119,7 @@ class Account(pj.Account):
             'event': 'incoming_call',
             'caller': ci['remote_uri'],
             'parsed_caller': ci['parsed_caller'],
+            'called_number': ci['parsed_called'],
             'sip_account': self.config.index,
             'call_id': ci['call_id'],
             'internal_id': incoming_call_instance.callback_id
