@@ -9,12 +9,6 @@ fi
 export NEXT_REPO_URL=https://github.com/arnonym/ha-plugins-next
 export NEXT_REPO_SSH=git@github.com:arnonym/ha-plugins-next.git
 
-if [ -z "$DOCKER_HUB_PASSWORD" ]
-  then
-    echo "\$DOCKER_HUB_PASSWORD must be set"
-    exit 1
-fi
-
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd)
 
 case "$1" in
@@ -51,6 +45,11 @@ case "$1" in
         git push --force
         ;;
     build-amd64)
+        if [ -z "$DOCKER_HUB_PASSWORD" ]
+          then
+            echo "\$DOCKER_HUB_PASSWORD must be set"
+            exit 1
+        fi
         echo "Building prod (all archs)..."
         docker run \
             --rm --privileged -v /var/run/docker.sock:/var/run/docker.sock:ro \
@@ -60,6 +59,11 @@ case "$1" in
             --docker-user agellhaus --docker-password "$DOCKER_HUB_PASSWORD"
         ;;
     build-i386)
+        if [ -z "$DOCKER_HUB_PASSWORD" ]
+          then
+            echo "\$DOCKER_HUB_PASSWORD must be set"
+            exit 1
+        fi
         echo "Building prod (all archs)..."
         docker run \
             --rm --privileged -v /var/run/docker.sock:/var/run/docker.sock:ro \
@@ -69,6 +73,11 @@ case "$1" in
             --docker-user agellhaus --docker-password "$DOCKER_HUB_PASSWORD"
         ;;
     build-aarch64)
+        if [ -z "$DOCKER_HUB_PASSWORD" ]
+          then
+            echo "\$DOCKER_HUB_PASSWORD must be set"
+            exit 1
+        fi
         echo "Building prod (all archs)..."
         docker run \
             --rm --privileged -v /var/run/docker.sock:/var/run/docker.sock:ro \
@@ -78,6 +87,11 @@ case "$1" in
             --docker-user agellhaus --docker-password "$DOCKER_HUB_PASSWORD"
         ;;
     build-armv7)
+        if [ -z "$DOCKER_HUB_PASSWORD" ]
+          then
+            echo "\$DOCKER_HUB_PASSWORD must be set"
+            exit 1
+        fi
         echo "Building prod (all archs)..."
         docker run \
             --rm --privileged -v /var/run/docker.sock:/var/run/docker.sock:ro \
@@ -87,6 +101,11 @@ case "$1" in
             --docker-user agellhaus --docker-password "$DOCKER_HUB_PASSWORD"
         ;;
     build-armhf)
+        if [ -z "$DOCKER_HUB_PASSWORD" ]
+          then
+            echo "\$DOCKER_HUB_PASSWORD must be set"
+            exit 1
+        fi
         echo "Building prod (all archs)..."
         docker run \
             --rm --privileged -v /var/run/docker.sock:/var/run/docker.sock:ro \

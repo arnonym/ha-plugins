@@ -68,7 +68,7 @@ class MqttClient:
                 time.sleep(1)
         self.client.loop()
 
-    def send_event(self, event: ha.WebhookEvent):
+    def send_event(self, event: ha.CompleteWebhookEvent):
         if not self.topic_state:
             return
         if not self.client.is_connected():
