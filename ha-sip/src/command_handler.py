@@ -16,6 +16,7 @@ import utils
 from constants import DEFAULT_RING_TIMEOUT
 from event_sender import EventSender
 from log import log
+from post_action import PostActionHangup
 
 
 class CommandHandler(object):
@@ -167,6 +168,13 @@ class CommandHandler(object):
                     return
                 cache_audio = command.get('cache_audio') or False
                 wait_for_audio_to_finish = command.get('wait_for_audio_to_finish') or False
+                match command.get('post_action'):
+                    case 'hangup':
+                        current_call.scheduled_post_action = PostActionHangup(action="hangup")
+                    case 'noop':
+                        pass
+                    case _:
+                        log(None, 'Only post_action "hangup" is supported. Assuming noop.')
                 current_call.play_audio_file(audio_file, cache_audio, wait_for_audio_to_finish)
             case 'play_message':
                 if not number:
@@ -186,6 +194,13 @@ class CommandHandler(object):
                 tts_language = command.get('tts_language') or self.ha_config.tts_config['language']
                 cache_audio = command.get('cache_audio') or False
                 wait_for_audio_to_finish = command.get('wait_for_audio_to_finish') or False
+                match command.get('post_action'):
+                    case 'hangup':
+                        current_call.scheduled_post_action = PostActionHangup(action="hangup")
+                    case 'noop':
+                        pass
+                    case _:
+                        log(None, 'Only post_action "hangup" is supported. Assuming noop.')
                 current_call.play_message(message, tts_language, cache_audio, wait_for_audio_to_finish)
             case 'stop_playback':
                 if not number:

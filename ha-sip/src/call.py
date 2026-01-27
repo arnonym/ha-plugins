@@ -22,6 +22,7 @@ from command_handler import CommandHandler
 from constants import DEFAULT_RING_TIMEOUT, DEFAULT_DTMF_ON, DEFAULT_DTMF_OFF
 from log import log
 from event_sender import EventSender
+from post_action import PostAction, PostActionNoop, PostActionHangup, PostActionRepeatMessage, PostActionReturn, PostActionJump
 
 CallCallback = Callable[[CallStateChange, str, 'Call'], None]
 DtmfMethod = Union[Literal['in_band'], Literal['rfc2833'], Literal['sip_info']]
@@ -35,31 +36,6 @@ class WebhookToCall(TypedDict):
     timeout: Optional[str]
     ring_timeout: Optional[str]
     playback_done: Optional[str]
-
-
-class PostActionReturn(TypedDict):
-    action: Literal['return']
-    level: int
-
-
-class PostActionJump(TypedDict):
-    action: Literal['jump']
-    menu_id: str
-
-
-class PostActionHangup(TypedDict):
-    action: Literal['hangup']
-
-
-class PostActionNoop(TypedDict):
-    action: Literal['noop']
-
-
-class PostActionRepeatMessage(TypedDict):
-    action: Literal['repeat_message']
-
-
-PostAction = Union[PostActionReturn, PostActionJump, PostActionHangup, PostActionNoop, PostActionRepeatMessage]
 
 
 class MenuFromStdin(TypedDict):
