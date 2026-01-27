@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING
 
 from typing_extensions import TypedDict
 
+import webhook
 from post_action import PostActionHangup
 
 if TYPE_CHECKING:
@@ -30,7 +31,7 @@ class CommandDial(TypedDict):
     ring_timeout: Optional[str]
     sip_account: Optional[str]
     webhook_to_call_after_call_was_established: Optional[str]
-    webhook_to_call: Optional[call.WebhookToCall]
+    webhook_to_call: Optional[webhook.WebhookToCall]
 
 
 class CommandHangup(TypedDict):
@@ -42,7 +43,7 @@ class CommandAnswer(TypedDict):
     command: Literal['answer']
     number: str
     menu: Optional[call.MenuFromStdin]
-    webhook_to_call: Optional[call.WebhookToCall]
+    webhook_to_call: Optional[webhook.WebhookToCall]
 
 
 class CommandTransfer(TypedDict):
