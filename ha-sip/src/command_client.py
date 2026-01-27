@@ -9,49 +9,121 @@ from typing import TYPE_CHECKING
 
 from typing_extensions import TypedDict
 
+from post_action import PostActionHangup
+
 if TYPE_CHECKING:
     import call
 
 
-class Command(TypedDict):
-    command: Union[
-        None,
-        Literal['call_service'],
-        Literal['dial'],
-        Literal['hangup'],
-        Literal['answer'],
-        Literal['transfer'],
-        Literal['bridge_audio'],
-        Literal['send_dtmf'],
-        Literal['stop_playback'],
-        Literal['start_recording'],
-        Literal['stop_recording'],
-        Literal['play_message'],
-        Literal['play_audio_file'],
-        Literal['state'],
-        Literal['quit'],
-    ]
-    number: Optional[str]
+class CommandCallService(TypedDict):
+    command: Optional[Literal['call_service']]
+    domain: str
+    service: str
+    entity_id: Optional[str]
+    service_data: Optional[Dict[str, Any]]
+
+
+class CommandDial(TypedDict):
+    command: Literal['dial']
+    number: str
     menu: Optional[call.MenuFromStdin]
     ring_timeout: Optional[str]
     sip_account: Optional[str]
     webhook_to_call_after_call_was_established: Optional[str]
     webhook_to_call: Optional[call.WebhookToCall]
-    digits: Optional[str]
+
+
+class CommandHangup(TypedDict):
+    command: Literal['hangup']
+    number: str
+
+
+class CommandAnswer(TypedDict):
+    command: Literal['answer']
+    number: str
+    menu: Optional[call.MenuFromStdin]
+    webhook_to_call: Optional[call.WebhookToCall]
+
+
+class CommandTransfer(TypedDict):
+    command: Literal['transfer']
+    number: str
+    transfer_to: str
+
+
+class CommandBridgeAudio(TypedDict):
+    command: Literal['bridge_audio']
+    number: str
+    bridge_to: str
+
+
+class CommandSendDtmf(TypedDict):
+    command: Literal['send_dtmf']
+    number: str
+    digits: str
     method: Optional[call.DtmfMethod]
-    bridge_to: Optional[str]
-    transfer_to: Optional[str]
-    domain: Optional[str]
-    service: Optional[str]
-    entity_id: Optional[str]
-    audio_file: Optional[str]
-    recording_file: Optional[str]
-    message: Optional[str]
+
+
+class CommandStopPlayback(TypedDict):
+    command: Literal['stop_playback']
+    number: str
+
+
+class CommandStartRecording(TypedDict):
+    command: Literal['start_recording']
+    number: str
+    recording_file: str
+
+
+class CommandStopRecording(TypedDict):
+    command: Literal['stop_recording']
+    number: str
+
+
+class CommandPlayMessage(TypedDict):
+    command: Literal['play_message']
+    number: str
+    message: str
+    tts_language: Optional[str]
     handle_as_template: Optional[bool]
     cache_audio: Optional[bool]
     wait_for_audio_to_finish: Optional[bool]
-    tts_language: Optional[str]
-    service_data: Optional[Dict[str, Any]]
+    post_action: Optional[PostActionHangup]
+
+
+class CommandPlayAudioFile(TypedDict):
+    command: Literal['play_audio_file']
+    number: str
+    audio_file: str
+    cache_audio: Optional[bool]
+    wait_for_audio_to_finish: Optional[bool]
+    post_action: Optional[PostActionHangup]
+
+
+class CommandState(TypedDict):
+    command: Literal['state']
+
+
+class CommandQuit(TypedDict):
+    command: Literal['quit']
+
+
+Command = Union[
+    CommandCallService,
+    CommandDial,
+    CommandHangup,
+    CommandAnswer,
+    CommandTransfer,
+    CommandBridgeAudio,
+    CommandSendDtmf,
+    CommandStopPlayback,
+    CommandStartRecording,
+    CommandStopRecording,
+    CommandPlayMessage,
+    CommandPlayAudioFile,
+    CommandState,
+    CommandQuit,
+]
 
 
 class CommandClient(object):
