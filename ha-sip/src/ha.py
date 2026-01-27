@@ -14,113 +14,67 @@ import utils
 from log import log
 
 
-class IncomingCallEvent(TypedDict):
-    event: Literal['incoming_call']
+class WebhookBaseFields(TypedDict):
     caller: str
     parsed_caller: Optional[str]
-    called_number: Optional[str]
+    parsed_called: Optional[str]
     sip_account: int
     call_id: Optional[str]
     internal_id: str
+
+
+class IncomingCallEvent(TypedDict):
+    event: Literal['incoming_call']
 
 
 class CallEstablishedEvent(TypedDict):
     event: Literal['call_established']
-    caller: str
-    parsed_caller: Optional[str]
-    sip_account: int
-    call_id: Optional[str]
-    internal_id: str
 
 
 class CallDisconnectedEvent(TypedDict):
     event: Literal['call_disconnected']
-    caller: str
-    parsed_caller: Optional[str]
-    sip_account: int
-    call_id: Optional[str]
-    internal_id: str
 
 
 class EnteredMenuEvent(TypedDict):
     event: Literal['entered_menu']
-    caller: str
-    parsed_caller: Optional[str]
     menu_id: str
-    sip_account: int
-    call_id: Optional[str]
-    internal_id: str
 
 
 class DtmfDigitEvent(TypedDict):
     event: Literal['dtmf_digit']
-    caller: str
-    parsed_caller: Optional[str]
     digit: str
-    sip_account: int
-    call_id: Optional[str]
-    internal_id: str
 
 
 class Timeout(TypedDict):
     event: Literal['timeout']
-    caller: str
-    parsed_caller: Optional[str]
-    sip_account: int
     menu_id: Optional[str]
-    call_id: Optional[str]
-    internal_id: str
 
 
 class RingTimeout(TypedDict):
     event: Literal['ring_timeout']
-    caller: str
-    parsed_caller: Optional[str]
-    sip_account: int
-    call_id: Optional[str]
-    internal_id: str
 
 
 class PlaybackDoneAudioFile(TypedDict):
     event: Literal['playback_done']
     type: Literal['audio_file']
-    caller: str
-    parsed_caller: Optional[str]
-    sip_account: int
     audio_file: str
-    call_id: Optional[str]
-    internal_id: str
 
 
 class PlaybackDoneMessage(TypedDict):
     event: Literal['playback_done']
     type: Literal['message']
-    caller: str
-    parsed_caller: Optional[str]
-    sip_account: int
     message: str
-    call_id: Optional[str]
-    internal_id: str
 
 
 class RecordingStarted(TypedDict):
     event: Literal['recording_started']
-    caller: str
-    parsed_caller: Optional[str]
-    sip_account: int
     recording_file: str
-    call_id: Optional[str]
-    internal_id: str
 
 
 class RecordingStopped(TypedDict):
     event: Literal['recording_stopped']
-    caller: str
-    parsed_caller: Optional[str]
-    sip_account: int
     recording_file: str
-    call_id: Optional[str]
-    internal_id: str
+
 
 WebhookEvent = Union[
     IncomingCallEvent,
@@ -135,6 +89,9 @@ WebhookEvent = Union[
     RecordingStarted,
     RecordingStopped
 ]
+
+
+CompleteWebhookEvent = Any
 
 
 class CurrentPlaybackMessage(TypedDict):
@@ -267,7 +224,7 @@ def call_service(ha_config: HaConfig, domain: str, service: str, entity_id: Opti
     log(None, 'Service response %r %r' % (service_response.status_code, service_response.content))
 
 
-def trigger_webhook(ha_config: HaConfig, event: WebhookEvent, overwrite_webhook_id: Optional[str] = None) -> None:
+def trigger_webhook(ha_config: HaConfig, event: CompleteWebhookEvent, overwrite_webhook_id: Optional[str] = None) -> None:
     webhook_id = overwrite_webhook_id or ha_config.webhook_id
     if not webhook_id:
         log(None, 'Warning: No webhook defined.')

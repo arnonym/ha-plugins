@@ -9,6 +9,7 @@ import call
 import ha
 import incoming_call
 import utils
+import webhook
 from constants import DEFAULT_RING_TIMEOUT
 from event_sender import EventSender
 from log import log
@@ -115,15 +116,13 @@ class Account(pj.Account):
             log(self.config.index, 'Blocked numbers: %s' % blocked_numbers)
         log(self.config.index, 'Answer mode: %s' % answer_mode.name)
         incoming_call_instance.accept(answer_mode, answer_after)
-        self.event_sender.send_event({
-            'event': 'incoming_call',
-            'caller': ci['remote_uri'],
-            'parsed_caller': ci['parsed_caller'],
-            'called_number': ci['parsed_called'],
-            'sip_account': self.config.index,
-            'call_id': ci['call_id'],
-            'internal_id': incoming_call_instance.callback_id
-        })
+        webhook.trigger_webhook(
+            {'event': 'incoming_call'},
+            ci,
+            self.config.index,
+            incoming_call_instance.callback_id,
+            self.event_sender,
+        )
 
     def get_sip_return_code(
         self,
