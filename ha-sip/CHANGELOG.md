@@ -4,6 +4,9 @@ If you find ha-sip useful, consider starring ⭐ the [GitHub repo](https://githu
 
 ## 5.4
 - Improve identification of calls from commands
+- Allow templating of messages in `incoming_call_file` or from MQTT
+- Allow post_action `hangup` for direct messages or audio file playback
+- Add incoming number to webhook payload
 
 ## 5.3
 - Make entity_id optional for home-assistant service calls
