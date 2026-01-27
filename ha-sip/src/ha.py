@@ -18,6 +18,7 @@ class IncomingCallEvent(TypedDict):
     event: Literal['incoming_call']
     caller: str
     parsed_caller: Optional[str]
+    called_number: Optional[str]
     sip_account: int
     call_id: Optional[str]
     internal_id: str
