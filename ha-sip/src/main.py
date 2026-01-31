@@ -1,27 +1,29 @@
 #!/usr/bin/env python3
 import asyncio
-import os
 import faulthandler
-from typing import Optional
+import os
 import sys
+from typing import Optional, Any
 
 import yaml
+
 import account
 import call
+import config
 import ha
 import incoming_call
+import mqtt
 import options_global
 import options_sip
 import sip
 import state
 import utils
-import mqtt
 from command_client import CommandClient
 from command_handler import CommandHandler
 from event_sender import EventSender
 from ha import TtsConfigFromEnv
 from log import log
-import config
+
 
 def handle_command_list(command_client: CommandClient, command_handler: CommandHandler) -> None:
     command_list = command_client.get_command_list()
@@ -139,9 +141,9 @@ def main():
             is_first_enabled_account = False
     mqtt_mode = config.COMMAND_SOURCE.lower().strip() == 'mqtt'
     mqtt_client = mqtt.create_client_and_connect(command_handler) if mqtt_mode else None
-    def trigger_webhook(event: ha.CompleteWebhookEvent, webhook_id: Optional[str] = None):
+    def trigger_webhook(event: Any, webhook_id: Optional[str] = None):
         ha.trigger_webhook(ha_config, event, webhook_id)
-    def send_mqtt_event(event: ha.CompleteWebhookEvent, webhook_id: Optional[str] = None):
+    def send_mqtt_event(event: Any, webhook_id: Optional[str] = None):
         if mqtt_client:
             mqtt_client.send_event(event)
     event_sender.register_sender(trigger_webhook)
