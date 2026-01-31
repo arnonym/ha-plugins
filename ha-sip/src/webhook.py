@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Optional
+from typing import Dict, Optional
 
 from typing_extensions import TypedDict
 
@@ -25,6 +25,7 @@ class CallInfo(TypedDict):
     parsed_caller: Optional[str]
     parsed_called: Optional[str]
     call_id: str
+    headers: Dict[str, Optional[str]]
 
 
 def trigger_webhook(
@@ -44,6 +45,7 @@ def trigger_webhook(
         'sip_account': sip_account,
         'call_id': call_info['call_id'] if call_info else None,
         'internal_id': internal_id,
+        'headers': call_info['headers'] if call_info else {},
     }
     event_id = event.get('event')
     if webhooks and (additional_webhook := webhooks.get(event_id)):

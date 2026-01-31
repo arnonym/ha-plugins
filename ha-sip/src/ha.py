@@ -21,6 +21,7 @@ class WebhookBaseFields(TypedDict):
     sip_account: int
     call_id: Optional[str]
     internal_id: str
+    headers: Dict[str, Optional[str]]
 
 
 class IncomingCallEvent(TypedDict):

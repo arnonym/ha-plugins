@@ -38,3 +38,15 @@ class GlobalOptionsTest(unittest.TestCase):
     def test_parse_stun_server(self):
         options = parse_global_options('--stun-server stun.example.com')
         self.assertEqual(options.stun_server, 'stun.example.com')
+
+    def test_parse_debug_headers_default(self):
+        options = parse_global_options('')
+        self.assertEqual(options.debug_headers, False)
+
+    def test_parse_debug_headers_enabled(self):
+        options = parse_global_options('--debug-headers enabled')
+        self.assertEqual(options.debug_headers, True)
+
+    def test_parse_debug_headers_disabled(self):
+        options = parse_global_options('--debug-headers disabled')
+        self.assertEqual(options.debug_headers, False)
