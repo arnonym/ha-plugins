@@ -11,13 +11,15 @@ class GlobalOptions:
     enable_tcp: bool = True
     enable_tls: bool = False
     tls_port: int = 5061
+    debug_headers: bool = False
 
-    def __init__(self, stun_server: Optional[str], enable_udp: bool, enable_tcp: bool, enable_tls: bool, tls_port: int = 5061):
+    def __init__(self, stun_server: Optional[str], enable_udp: bool, enable_tcp: bool, enable_tls: bool, tls_port: int, debug_headers: bool):
         self.stun_server = stun_server
         self.enable_udp = enable_udp
         self.enable_tcp = enable_tcp
         self.enable_tls = enable_tls
         self.tls_port = tls_port
+        self.debug_headers = debug_headers
         log(None, f'STUN Server: {self.stun_server}')
         log(None, f'UDP Enabled: {self.enable_udp}')
         log(None, f'TCP Enabled: {self.enable_tcp}')
@@ -56,6 +58,12 @@ def create_parser() -> argparse.ArgumentParser:
         default=5061,
         help='Port to use for TLS transport (default: 5061)'
     )
+    parser.add_argument(
+        '--debug-headers',
+        choices=ALL_BOOL_VALUES,
+        default='disabled',
+        help='Enable debug printing of extracted SIP headers (default: disabled)'
+    )
     return parser
 
 def parse_global_options(raw: Optional[str]) -> GlobalOptions:
@@ -67,5 +75,6 @@ def parse_global_options(raw: Optional[str]) -> GlobalOptions:
         enable_udp=is_true(args.udp),
         enable_tcp=is_true(args.tcp),
         enable_tls=is_true(args.tls),
-        tls_port=args.tls_port
+        tls_port=args.tls_port,
+        debug_headers=is_true(args.debug_headers),
     )

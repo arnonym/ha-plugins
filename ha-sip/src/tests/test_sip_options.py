@@ -75,3 +75,15 @@ class SipOptionsTest(unittest.TestCase):
             self.fail('Turn server not set')
         self.assertEqual(options.turn_server.connection_type, PJ_TURN_TP_TLS)
 
+    def test_parse_extract_headers_default(self):
+        options = parse_sip_options('')
+        self.assertEqual(options.extract_headers, [])
+
+    def test_parse_extract_headers_single(self):
+        options = parse_sip_options('--extract-headers X-Custom-Header')
+        self.assertEqual(options.extract_headers, ['X-Custom-Header'])
+
+    def test_parse_extract_headers_multiple(self):
+        options = parse_sip_options('--extract-headers X-Custom-Header,P-Asserted-Identity,X-Another')
+        self.assertEqual(options.extract_headers, ['X-Custom-Header', 'P-Asserted-Identity', 'X-Another'])
+

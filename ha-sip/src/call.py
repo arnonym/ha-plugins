@@ -4,7 +4,7 @@ import os
 import re
 import time
 from enum import Enum
-from typing import Optional, Callable, Union, Any, List
+from typing import Dict, Optional, Callable, Union, Any, List
 
 import pjsua2 as pj
 import yaml
@@ -86,7 +86,8 @@ class Call(pj.Call):
         event_sender: EventSender,
         ha_config: ha.HaConfig,
         ring_timeout: float,
-        webhooks: Optional[webhook.WebhookToCall]
+        webhooks: Optional[webhook.WebhookToCall],
+        sip_headers: Optional[Dict[str, Optional[str]]] = None,
     ):
         pj.Call.__init__(self, sip_account, call_id)
         self.player: Optional[player.Player] = None
@@ -114,8 +115,9 @@ class Call(pj.Call):
         self.tone_gen: Optional[pj.ToneGenerator] = None
         self.call_info: Optional[webhook.CallInfo] = None
         self.pressed_digit_list: List[str] = []
-        self.callback_id, other_ids = self.get_callback_ids()
         self.current_playback: Optional[ha.CurrentPlayback] = None
+        self.sip_headers: Dict[str, Optional[str]] = sip_headers if sip_headers is not None else {}
+        self.callback_id, other_ids = self.get_callback_ids()
         self.menu = self.normalize_menu(menu) if menu else self.get_standard_menu()
         self.menu_map = self.create_menu_map(self.menu)
         Call.pretty_print_menu(self.menu)
@@ -209,6 +211,7 @@ class Call(pj.Call):
             log(self.account.config.index, 'Call connecting...')
         elif ci.state == pj.PJSIP_INV_STATE_CONFIRMED:
             log(self.account.config.index, 'Call connected')
+            self.extract_headers_from_response(prm)
             self.call_settled_at = time.time() + self.settle_time
         elif ci.state == pj.PJSIP_INV_STATE_DISCONNECTED:
             log(self.account.config.index, 'Call disconnected')
@@ -520,7 +523,26 @@ class Call(pj.Call):
             'parsed_caller': parsed_caller,
             'parsed_called': parsed_called,
             'call_id': ci.callIdString,
+            'headers': self.sip_headers,
         }
+
+    def extract_headers_from_response(self, prm) -> None:
+        extract_headers = self.account.config.options.extract_headers
+        debug_headers = self.account.config.global_options.debug_headers
+        if not extract_headers and not debug_headers:
+            return
+        if self.sip_headers:
+            return
+        try:
+            whole_msg = prm.e.body.tsx_state.src.rdata.wholeMsg
+            if debug_headers:
+                account.Account.log_all_sip_headers(self.account.config.index, whole_msg)
+            if extract_headers:
+                self.sip_headers = account.Account.parse_sip_headers(whole_msg, extract_headers)
+                if self.call_info:
+                    self.call_info['headers'] = self.sip_headers
+        except (AttributeError, TypeError):
+            pass
 
     def reset_timeout(self):
         self.last_seen = time.time()
@@ -697,7 +719,7 @@ def make_call(
     ring_timeout: float,
     webhooks: Optional[webhook.WebhookToCall],
 ) -> Call:
-    new_call = Call(ep, acc, pj.PJSUA_INVALID_ID, uri_to_call, menu, command_handler, event_sender, ha_config, ring_timeout, webhooks)
+    new_call = Call(ep, acc, pj.PJSUA_INVALID_ID, uri_to_call, menu, command_handler, event_sender, ha_config, ring_timeout, webhooks, {})
     call_param = pj.CallOpParam(True)
     new_call.makeCall(uri_to_call, call_param)
     return new_call

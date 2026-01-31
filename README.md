@@ -89,6 +89,8 @@ webhook:
   --tls {enabled,enable,true,yes,on,1,disabled,disable,false,no,off,0}
                         Enable or disable TLS transport (default: disabled)
   --tls-port TLS_PORT   Port to use for TLS transport (default: 5061)
+  --debug-headers {enabled,enable,true,yes,on,1,disabled,disable,false,no,off,0}
+                        Enable debug printing of all available SIP headers (default: disabled)
 ```
 
 #### For `options` on each SIP account there are
@@ -117,6 +119,8 @@ webhook:
                         Set the TURN user (default: None)
   --turn-password TURN_PASSWORD
                         Set the TURN password (default: None)
+  --extract-headers EXTRACT_HEADERS
+                        Comma-separated list of SIP headers to extract and include in webhooks (default: None)
 ```
 
 ## Usage
@@ -439,9 +443,12 @@ to identify the call in your automations.
     "caller": "<sip:5551234456@fritz.box>",
     "parsed_caller": "5551234456",
     "sip_account": 1,
-    "internal_id": "something-unique"
+    "internal_id": "something-unique",
+    "headers": {}
 }
 ```
+
+> **Note:** The `headers` field contains extracted SIP headers if `--extract-headers` is configured on the SIP account, otherwise it's an empty object.
 
 ### `call_established`
 
@@ -451,7 +458,8 @@ to identify the call in your automations.
     "caller": "<sip:5551234456@fritz.box>",
     "parsed_caller": "5551234456",
     "sip_account": 1,
-    "internal_id": "something-unique"
+    "internal_id": "something-unique",
+    "headers": {}
 }
 ```
 
@@ -464,7 +472,8 @@ to identify the call in your automations.
     "parsed_caller": "5551234456",
     "menu_id": "owner",
     "sip_account": 1,
-    "internal_id": "something-unique"
+    "internal_id": "something-unique",
+    "headers": {}
 }
 ```
 
@@ -477,7 +486,8 @@ to identify the call in your automations.
     "parsed_caller": "5551234456",
     "digit": "1",
     "sip_account": 1,
-    "internal_id": "something-unique"
+    "internal_id": "something-unique",
+    "headers": {}
 }
 ```
 
@@ -489,7 +499,8 @@ to identify the call in your automations.
     "caller": "<sip:5551234456@fritz.box>",
     "parsed_caller": "5551234456",
     "sip_account": 1,
-    "internal_id": "something-unique"
+    "internal_id": "something-unique",
+    "headers": {}
 }
 ```
 
@@ -503,7 +514,8 @@ to identify the call in your automations.
     "sip_account": 1,
     "type": "message",
     "message": "message that has been played",
-    "internal_id": "something-unique"
+    "internal_id": "something-unique",
+    "headers": {}
 }
 ```
 
@@ -517,7 +529,8 @@ to identify the call in your automations.
     "sip_account": 1,
     "type": "audio_file",
     "audio_file": "/media/audio/welcome.mp3",
-    "internal_id": "something-unique"
+    "internal_id": "something-unique",
+    "headers": {}
 }
 ```
 
@@ -529,7 +542,8 @@ to identify the call in your automations.
     "caller": "<sip:5551234456@fritz.box>",
     "parsed_caller": "5551234456",
     "sip_account": 1,
-    "internal_id": "something-unique"
+    "internal_id": "something-unique",
+    "headers": {}
 }
 ```
 
@@ -542,7 +556,8 @@ to identify the call in your automations.
     "parsed_caller": "5551234456",
     "sip_account": 1,
     "menu_id": "main",
-    "internal_id": "something-unique"
+    "internal_id": "something-unique",
+    "headers": {}
 }
 ```
 
@@ -556,7 +571,8 @@ to identify the call in your automations.
     "sip_account": 1,
     "call_id": "5a42f2-54c5ba548-c545b54-554d55216",
     "recording_file": "/media/www/call_12345.wav",
-    "internal_id": "something-unique"
+    "internal_id": "something-unique",
+    "headers": {}
 }
 ```
 
@@ -570,9 +586,50 @@ to identify the call in your automations.
     "sip_account": 1,
     "call_id": "5a42f2-54c5ba548-c545b54-554d55216",
     "recording_file": "/config/www/call_12345.wav",
-    "internal_id": "something-unique"
+    "internal_id": "something-unique",
+    "headers": {}
 }
 ```
+
+## SIP Header Extraction
+
+You can extract specific SIP headers from incoming and outgoing calls and include them in all webhook events. This is useful for accessing custom headers like `X-Caller-ID`, `P-Asserted-Identity`, or any other SIP header your provider sends.
+
+To configure header extraction, add the `--extract-headers` option to your SIP account:
+
+```yaml
+sip:
+    enabled: true
+    registrar_uri: sip:provider.com
+    # ... other settings ...
+    options: '--extract-headers X-Caller-ID,P-Asserted-Identity'
+```
+
+The extracted headers will be included in all webhook events for calls on that account:
+
+```json
+{
+    "event": "incoming_call",
+    "caller": "<sip:5551234456@provider.com>",
+    "parsed_caller": "5551234456",
+    "sip_account": 1,
+    "headers": {
+        "X-Caller-ID": "John Doe",
+        "P-Asserted-Identity": "<sip:+15551234456@provider.com>"
+    }
+}
+```
+
+Headers that are not present in the SIP message will have a `null` value. Header name matching is case-insensitive.
+
+To discover which headers are available, enable `--debug-headers` in `global_options`:
+
+```yaml
+sip_global:
+    global_options: '--debug-headers enabled'
+```
+
+This will log all SIP headers for each incoming and outgoing call to help you identify which headers to extract.
 
 ## Examples
 
