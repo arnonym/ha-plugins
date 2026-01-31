@@ -47,6 +47,6 @@ def trigger_webhook(
     }
     event_id = event.get('event')
     if webhooks and (additional_webhook := webhooks.get(event_id)):
-        log(sip_account, 'Calling additional webhook %s for event %s' % (additional_webhook, event_id))
+        log(sip_account, f'Calling additional webhook {additional_webhook} for event {event_id}')
         event_sender_callback.send_event(complete_event, additional_webhook)
     event_sender_callback.send_event(complete_event)

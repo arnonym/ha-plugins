@@ -180,36 +180,36 @@ def create_and_get_tts(ha_config: HaConfig, message: str, language: str) -> tupl
     options = { 'options': { 'voice': ha_config.tts_config['voice'] } } if ha_config.tts_config['voice'] else {}
     payload = options | message_and_language | engine_or_platform
     if ha_config.tts_config['debug_print']:
-        log(None, 'TTS payload: %r' % payload)
+        log(None, f'TTS payload: {payload!r}')
     create_response = requests.post(ha_config.get_tts_url(), json=payload, headers=headers)
     if create_response.status_code != 200:
-        log(None, 'Error getting tts file %r %r' % (create_response.status_code, create_response.content))
+        log(None, f'Error getting tts file {create_response.status_code!r} {create_response.content!r}')
         error_file_name = os.path.join(constants.ROOT_PATH, 'sound/error.wav')
         return error_file_name, False, False
     response_deserialized = create_response.json()
     tts_url = response_deserialized['url']
-    log(None, 'Getting audio from "%s"' % tts_url)
+    log(None, f'Getting audio from "{tts_url}"')
     try:
         tts_response = requests.get(tts_url, headers=headers)
     except Exception as e:
-        log(None, 'Error getting tts audio: %s' % e)
+        log(None, f'Error getting tts audio: {e}')
         return error_file_name, False, False
     file_format = audio.audio_format_from_filename(tts_url)
     if not file_format:
-        log(None, 'Error getting audio format from filename: %s' % tts_url)
+        log(None, f'Error getting audio format from filename: {tts_url}')
         return error_file_name, False, False
     wav_file_name = audio.convert_audio_stream_to_wav_file(tts_response.content, file_format)
     if not wav_file_name:
-        log(None, 'Error converting to wav: %s' % wav_file_name)
+        log(None, f'Error converting to wav: {wav_file_name}')
         return error_file_name, False, False
     return wav_file_name, True, True
 
 
 def render_template(ha_config: HaConfig, text: str) -> str:
-    log(None, 'Rendering template: %s' % text)
+    log(None, f'Rendering template: {text}')
     headers = ha_config.create_headers()
     template_response = requests.post(ha_config.get_template_url(), json={'template': text}, headers=headers)
-    log(None, 'Template response %r %r' % (template_response.status_code, template_response.content))
+    log(None, f'Template response {template_response.status_code!r} {template_response.content!r}')
     return template_response.text if template_response.ok else text
 
 
@@ -221,7 +221,7 @@ def call_service(ha_config: HaConfig, domain: str, service: str, entity_id: Opti
     if service_data:
         payload.update(service_data)
     service_response = requests.post(ha_config.get_service_url(domain, service), json=payload, headers=headers)
-    log(None, 'Service response %r %r' % (service_response.status_code, service_response.content))
+    log(None, f'Service response {service_response.status_code!r} {service_response.content!r}')
 
 
 def trigger_webhook(ha_config: HaConfig, event: CompleteWebhookEvent, overwrite_webhook_id: Optional[str] = None) -> None:
@@ -229,10 +229,10 @@ def trigger_webhook(ha_config: HaConfig, event: CompleteWebhookEvent, overwrite_
     if not webhook_id:
         log(None, 'Warning: No webhook defined.')
         return
-    log(None, 'Calling webhook %s with data %s' % (webhook_id, event))
+    log(None, f'Calling webhook {webhook_id} with data {event}')
     headers = ha_config.create_headers()
     service_response = requests.post(ha_config.get_webhook_url(webhook_id), json=event, headers=headers)
-    log(None, 'Webhook response %r %r' % (service_response.status_code, service_response.content))
+    log(None, f'Webhook response {service_response.status_code!r} {service_response.content!r}')
 
 
 async def print_tts_providers(ha_config: HaConfig) -> None:

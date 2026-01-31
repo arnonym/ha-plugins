@@ -92,7 +92,7 @@ class Account(pj.Account):
         return pj.Account.create(self, account_config, self.make_default)
 
     def onRegState(self, prm) -> None:
-        log(self.config.index, 'OnRegState: %s %s' % (prm.code, prm.reason))
+        log(self.config.index, f'OnRegState: {prm.code} {prm.reason}')
 
     def onIncomingCall(self, prm) -> None:
         if not self.config:
@@ -109,12 +109,12 @@ class Account(pj.Account):
         )
         ci = incoming_call_instance.get_call_info()
         answer_mode = self.get_sip_return_code(self.config.mode, allowed_numbers, blocked_numbers, ci['parsed_caller'])
-        log(self.config.index, 'Incoming call  from  \'%s\' to \'%s\' (parsed: \'%s\')' % (ci['remote_uri'], ci['local_uri'], ci['parsed_caller']))
+        log(self.config.index, f"Incoming call  from  '{ci['remote_uri']}' (parsed: '{ci['parsed_caller']}') to '{ci['local_uri']}' (parsed: '{ci['parsed_called']}')")
         if allowed_numbers:
-            log(self.config.index, 'Allowed numbers: %s' % allowed_numbers)
+            log(self.config.index, f'Allowed numbers: {allowed_numbers}')
         if blocked_numbers:
-            log(self.config.index, 'Blocked numbers: %s' % blocked_numbers)
-        log(self.config.index, 'Answer mode: %s' % answer_mode.name)
+            log(self.config.index, f'Blocked numbers: {blocked_numbers}')
+        log(self.config.index, f'Answer mode: {answer_mode.name}')
         incoming_call_instance.accept(answer_mode, answer_after)
         webhook.trigger_webhook(
             {'event': 'incoming_call'},

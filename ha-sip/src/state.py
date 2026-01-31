@@ -14,12 +14,12 @@ class State(object):
 
     def register_call(self, callback_id: str, new_call: call.Call, additional_ids: List[str]) -> None:
         ids_to_print = [callback_id] + additional_ids
-        log(None, 'Add to state with IDs %s' % ', '.join(ids_to_print))
+        log(None, f"Add to state with IDs {', '.join(ids_to_print)}")
         self.current_call_dict[callback_id] = new_call
         self.alt_id_map[callback_id] = additional_ids
 
     def forget_call(self, callback_id: str) -> None:
-        log(None, 'Remove from state: %s' % callback_id)
+        log(None, f'Remove from state: {callback_id}')
         del self.current_call_dict[callback_id]
         del self.alt_id_map[callback_id]
 
@@ -39,7 +39,7 @@ class State(object):
             log(None, 'Currently registered calls:')
             for callback_id, call_obj in self.current_call_dict.items():
                 all_ids = [callback_id] + self.alt_id_map.get(callback_id, [])
-                log(None, '    %s' % ', '.join(all_ids))
+                log(None, f"    {', '.join(all_ids)}")
         else:
             log(None, 'No active calls.')
 

@@ -36,10 +36,10 @@ def load_menu_from_file(file_name: Optional[str], sip_account_index: int) -> Opt
     try:
         with open(file_name) as stream:
             content = yaml.safe_load(stream)
-            log(sip_account_index, 'Loaded menu for incoming call from "%s".' % file_name)
+            log(sip_account_index, f'Loaded menu for incoming call from "{file_name}".')
             return content
     except BaseException as e:
-        log(sip_account_index, 'Error loading menu for incoming call: %s' % e)
+        log(sip_account_index, f'Error loading menu for incoming call: {e}')
         return None
 
 
@@ -47,7 +47,7 @@ def get_name_server(raw_name_server: str):
     name_server = [ns.strip() for ns in raw_name_server.split(",")]
     name_server_without_empty = [ns for ns in name_server if ns]
     if name_server_without_empty:
-        log(None, 'Setting name server: %s' % name_server)
+        log(None, f'Setting name server: {name_server}')
     return name_server_without_empty
 
 
@@ -58,7 +58,7 @@ def get_cache_dir(raw_cache_dir: str) -> Optional[str]:
     if not os.path.isdir(raw_cache_dir):
         log(None, 'Error: Cache directory not found.')
         return None
-    log(None, "Found cache directory '%s'" % raw_cache_dir)
+    log(None, f"Found cache directory '{raw_cache_dir}'")
     return raw_cache_dir
 
 

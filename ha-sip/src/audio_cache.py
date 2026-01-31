@@ -16,9 +16,9 @@ def get_cached_file(should_cache: bool, cache_dir: Optional[str], file_or_messag
         return None
     file_name = get_cache_file_name(cache_dir, file_or_message, file_name_or_message)
     if not os.path.isfile(file_name):
-        log(None, 'Cache file not found: %s' % file_name)
+        log(None, f'Cache file not found: {file_name}')
         return None
-    log(None, 'Using cache from file: %s' % file_name)
+    log(None, f'Using cache from file: {file_name}')
     return file_name
 
 
@@ -32,9 +32,9 @@ def cache_file(should_cache: bool, cache_dir: Optional[str], file_or_message: ca
     try:
         shutil.copyfile(file_to_cache, file_name)
     except Exception as e:
-        log(None, 'Could not create cache file: %s' % e)
+        log(None, f'Could not create cache file: {e}')
         return
-    log(None, 'Created cache file: %s' % file_name)
+    log(None, f'Created cache file: {file_name}')
 
 
 def get_cache_file_name(cache_dir: str, file_or_message: cache_type, file_name_or_message: str) -> str:
