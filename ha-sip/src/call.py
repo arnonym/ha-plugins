@@ -119,13 +119,13 @@ class Call(pj.Call):
         self.menu = self.normalize_menu(menu) if menu else self.get_standard_menu()
         self.menu_map = self.create_menu_map(self.menu)
         Call.pretty_print_menu(self.menu)
-        log(self.account.config.index, 'Registering call with id %s' % self.callback_id)
+        log(self.account.config.index, f'Registering call with id {self.callback_id}')
         self.command_handler.register_call(self.callback_id, self, other_ids)
 
     def handle_events(self) -> None:
         if not self.connected and time.time() - self.last_seen > self.ring_timeout:
             self.trigger_webhook({'event': 'ring_timeout'})
-            log(self.account.config.index, 'Ring timeout of %s triggered' % self.ring_timeout)
+            log(self.account.config.index, f'Ring timeout of {self.ring_timeout} triggered')
             self.hangup_call()
             return
         if not self.connected and self.answer_at and self.answer_at < time.time():
@@ -142,7 +142,7 @@ class Call(pj.Call):
         if not self.connected:
             return
         if time.time() - self.last_seen > self.menu['timeout']:
-            log(self.account.config.index, 'Timeout of %s triggered' % self.menu['timeout'])
+            log(self.account.config.index, f"Timeout of {self.menu['timeout']} triggered")
             self.handle_menu(self.menu['timeout_choice'])
             self.trigger_webhook({'event': 'timeout', 'menu_id': self.menu['id']})
             return
@@ -157,7 +157,7 @@ class Call(pj.Call):
             return
 
     def handle_post_action(self, post_action: PostAction):
-        log(self.account.config.index, 'Scheduled post action: %s' % post_action["action"])
+        log(self.account.config.index, f'Scheduled post action: {post_action["action"]}')
         if post_action["action"] == 'noop':
             pass
         elif post_action["action"] == 'return':
@@ -168,13 +168,13 @@ class Call(pj.Call):
             if m:
                 self.handle_menu(m)
             else:
-                log(self.account.config.index, 'Could not return %s level in current menu' % post_action["level"])
+                log(self.account.config.index, f'Could not return {post_action["level"]} level in current menu')
         elif post_action["action"] == 'jump':
             new_menu = self.menu_map.get(post_action['menu_id'])
             if new_menu:
                 self.handle_menu(new_menu)
             else:
-                log(self.account.config.index, 'Could not find menu_id: "%s". Valid IDs are %s' % (post_action["menu_id"], self.menu_map.keys()))
+                log(self.account.config.index, f'Could not find menu_id: "{post_action["menu_id"]}". Valid IDs are {self.menu_map.keys()}')
         elif post_action["action"] == 'hangup':
             self.hangup_call()
         elif post_action["action"] == 'repeat_message':
@@ -221,14 +221,14 @@ class Call(pj.Call):
             self.tone_gen = None
             self.command_handler.forget_call(self.callback_id)
         else:
-            log(self.account.config.index, 'Unknown state: %s' % ci.state)
+            log(self.account.config.index, f'Unknown state: {ci.state}')
 
     def onCallMediaState(self, prm) -> None:
         call_info = self.getInfo()
-        log(self.account.config.index, 'onCallMediaState call info state %s' % call_info.state)
+        log(self.account.config.index, f'onCallMediaState call info state {call_info.state}')
         for media_index, media in enumerate(call_info.media):
             if media.type == pj.PJMEDIA_TYPE_AUDIO and (media.status == pj.PJSUA_CALL_MEDIA_ACTIVE or media.status == pj.PJSUA_CALL_MEDIA_REMOTE_HOLD):
-                log(self.account.config.index, 'Connected media %s' % media.status)
+                log(self.account.config.index, f'Connected media {media.status}')
                 self.audio_media = self.getAudioMedia(media_index)
                 if self.requested_recording_filename and not self.recorder:
                     self.start_recording(self.requested_recording_filename)
@@ -242,12 +242,12 @@ class Call(pj.Call):
         self.pressed_digit_list.append(prm.digit)
 
     def handle_dtmf_digit(self, pressed_digit: str) -> None:
-        log(self.account.config.index, 'onDtmfDigit: digit %s' % pressed_digit)
+        log(self.account.config.index, f'onDtmfDigit: digit {pressed_digit}')
         self.trigger_webhook({'event': 'dtmf_digit', 'digit': pressed_digit})
         if not self.menu:
             return
         self.current_input += pressed_digit
-        log(self.account.config.index, 'Current input: %s' % self.current_input)
+        log(self.account.config.index, f'Current input: {self.current_input}')
         choices = self.menu.get('choices')
         if choices is not None:
             if self.current_input in choices:
@@ -257,20 +257,20 @@ class Call(pj.Call):
                 # in PIN mode the error message will play if the input has same length than the longest PIN
                 max_choice_length = max(map(lambda choice: len(choice), choices))
                 if len(self.current_input) == max_choice_length:
-                    log(self.account.config.index, 'No PIN matched %s' % self.current_input)
+                    log(self.account.config.index, f'No PIN matched {self.current_input}')
                     self.handle_menu(self.menu['default_choice'])
             else:
                 # in normal mode the error will play as soon as the input does not match any choice
                 still_valid = any(map(lambda choice: choice.startswith(self.current_input), choices))
                 if not still_valid:
-                    log(self.account.config.index, 'Invalid input %s' % self.current_input)
+                    log(self.account.config.index, f'Invalid input {self.current_input}')
                     self.handle_menu(self.menu['default_choice'])
 
     def onCallTransferRequest(self, prm):
         log(self.account.config.index, 'onCallTransferRequest')
 
     def onCallTransferStatus(self, prm):
-        log(self.account.config.index, 'onCallTransferStatus. Status code: %s (%s)' % (prm.statusCode, prm.reason))
+        log(self.account.config.index, f'onCallTransferStatus. Status code: {prm.statusCode} ({prm.reason})')
 
     def onCallReplaceRequest(self, prm):
         log(self.account.config.index, 'onCallReplaceRequest')
@@ -326,7 +326,7 @@ class Call(pj.Call):
         self.command_handler.handle_command(action, self)
 
     def play_message(self, message: str, language: str, should_cache: bool, wait_for_audio_to_finish: bool) -> None:
-        log(self.account.config.index, 'Playing message: %s' % message)
+        log(self.account.config.index, f'Playing message: {message}')
         cached_file = audio_cache.get_cached_file(should_cache, self.ha_config.cache_dir, 'message', message)
         if cached_file:
             self.set_current_playback({'type': 'message', 'message': message})
@@ -338,7 +338,7 @@ class Call(pj.Call):
         self.play_wav_file(sound_file_name, must_be_deleted, wait_for_audio_to_finish)
 
     def play_audio_file(self, audio_file: str, should_cache: bool, wait_for_audio_to_finish: bool) -> None:
-        log(self.account.config.index, 'Playing audio file: %s' % audio_file)
+        log(self.account.config.index, f'Playing audio file: {audio_file}')
         cached_file = audio_cache.get_cached_file(should_cache, self.ha_config.cache_dir, 'audio_file', audio_file)
         if cached_file:
             self.set_current_playback({'type': 'audio_file', 'audio_file': audio_file})
@@ -346,13 +346,13 @@ class Call(pj.Call):
             return
         file_format = audio.audio_format_from_filename(audio_file)
         if not file_format:
-            log(None, 'Error getting audio format from filename: %s' % audio_file)
+            log(None, f'Error getting audio format from filename: {audio_file}')
             return
         with open(audio_file, 'rb') as f:
             audio_file_content = f.read()
             sound_file_name = audio.convert_audio_stream_to_wav_file(audio_file_content, file_format)
         if not sound_file_name:
-            log(None, 'Could not convert to wav: %s' % audio_file)
+            log(None, f'Could not convert to wav: {audio_file}')
             return
         self.set_current_playback({'type': 'audio_file', 'audio_file': audio_file})
         audio_cache.cache_file(should_cache, self.ha_config.cache_dir, 'audio_file', audio_file, sound_file_name)
@@ -409,18 +409,18 @@ class Call(pj.Call):
         target_file = record_filename
         target_dir = os.path.dirname(target_file)
         if not os.path.isdir(target_dir):
-            log(self.account.config.index, 'Error: Call recordings directory not found: %s' % target_dir)
+            log(self.account.config.index, f'Error: Call recordings directory not found: {target_dir}')
             return
         self.recorder = pj.AudioMediaRecorder()
         try:
             self.recorder.createRecorder(target_file)
             self.audio_media.startTransmit(self.recorder)
         except Exception as e:
-            log(self.account.config.index, 'Error: Failed to start call recording: %s' % e)
+            log(self.account.config.index, f'Error: Failed to start call recording: {e}')
             self.stop_recording()
             return
         self.recording_file = target_file
-        log(self.account.config.index, 'Call recording started: %s' % target_file)
+        log(self.account.config.index, f'Call recording started: {target_file}')
         assert self.call_info is not None
         self.trigger_webhook({'event': 'recording_started', 'recording_file': self.recording_file})
 
@@ -432,9 +432,9 @@ class Call(pj.Call):
             if self.audio_media:
                 self.audio_media.stopTransmit(self.recorder)
         except Exception as e:
-            log(self.account.config.index, 'Error: Failed to stop call recording: %s' % e)
+            log(self.account.config.index, f'Error: Failed to stop call recording: {e}')
         if self.recording_file:
-            log(self.account.config.index, 'Call recording stopped: %s' % self.recording_file)
+            log(self.account.config.index, f'Call recording stopped: {self.recording_file}')
             assert self.call_info is not None
             self.trigger_webhook({'event': 'recording_stopped', 'recording_file': self.recording_file})
         self.recorder = None
@@ -463,13 +463,13 @@ class Call(pj.Call):
         self.answer_at = time.time()
 
     def transfer(self, transfer_to):
-        log(self.account.config.index, 'Transfer call to %s' % transfer_to)
+        log(self.account.config.index, f'Transfer call to {transfer_to}')
         xfer_param = pj.CallOpParam(True)
         self.xfer(transfer_to, xfer_param)
 
     def bridge_audio(self, call_two: Call):
         if self.audio_media and call_two.audio_media:
-            log(self.account.config.index, 'Connect audio stream of "%s" and "%s"' % (self.callback_id, call_two.callback_id))
+            log(self.account.config.index, f'Connect audio stream of "{self.callback_id}" and "{call_two.callback_id}"')
             self.audio_media.startTransmit(call_two.audio_media)
             call_two.audio_media.startTransmit(self.audio_media)
             log(self.account.config.index, 'Audio streams connected.')
@@ -478,7 +478,7 @@ class Call(pj.Call):
 
     def send_dtmf(self, digits: str, method: DtmfMethod = 'in_band') -> None:
         self.reset_timeout()
-        log(self.account.config.index, 'Sending DTMF %s' % digits)
+        log(self.account.config.index, f'Sending DTMF {digits}')
         if method == 'in_band':
             if not self.audio_media:
                 log(self.account.config.index, 'Audio media not connected. Cannot send DTMF in-band!')
@@ -548,7 +548,7 @@ class Call(pj.Call):
                     log(self.account.config.index, 'Error: jump action requires a menu id as parameter')
                 return PostActionJump(action='jump', menu_id=jump_to.strip())
             else:
-                log(self.account.config.index, 'Unknown post_action: %s' % action)
+                log(self.account.config.index, f'Unknown post_action: {action}')
                 return PostActionNoop(action='noop')
 
         def normalize_choice(item: tuple[Any, MenuFromStdin], parent_menu_for_choice: Menu) -> tuple[str, Menu]:

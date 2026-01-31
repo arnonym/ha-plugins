@@ -44,14 +44,14 @@ class MqttClient:
         self.client.reconnect()
 
     def on_connect(self, client, userdata, flags, reason_code, properties):
-        log(None, 'Connected to mqtt broker with result code %s' % reason_code)
+        log(None, f'Connected to mqtt broker with result code {reason_code}')
         self.client.subscribe(self.topic)
 
     def on_disconnect(self, client, userdata, flags, reason_code, properties):
-        log(None, 'Lost connection to mqtt broker with reason code %s' % reason_code)
+        log(None, f'Lost connection to mqtt broker with reason code {reason_code}')
 
     def on_message(self, client, userdata, msg):
-        log(None, 'Received mqtt payload: %s on topic: %s' % (msg.payload, msg.topic))
+        log(None, f'Received mqtt payload: {msg.payload} on topic: {msg.topic}')
         command_list = CommandClient.list_to_json([msg.payload])
         for command in command_list:
             self.command_handler.handle_command(command, None)
@@ -74,7 +74,7 @@ class MqttClient:
         if not self.client.is_connected():
             log(None, 'Cannot send message, mqtt client is not connected')
             return
-        log(None, 'Sending mqtt message: %s to topic: %s' % (event, self.topic))
+        log(None, f'Sending mqtt message: {event} to topic: {self.topic}')
         self.client.publish(self.topic_state, json.dumps(event))
 
 def create_client_and_connect(command_handler: CommandHandler) -> MqttClient:

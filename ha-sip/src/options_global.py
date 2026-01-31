@@ -18,11 +18,11 @@ class GlobalOptions:
         self.enable_tcp = enable_tcp
         self.enable_tls = enable_tls
         self.tls_port = tls_port
-        log(None, 'STUN Server: %s' % self.stun_server)
-        log(None, 'UDP Enabled: %s' % self.enable_udp)
-        log(None, 'TCP Enabled: %s' % self.enable_tcp)
-        log(None, 'TLS Enabled: %s' % self.enable_tls)
-        log(None, 'TLS Port: %s' % self.tls_port)
+        log(None, f'STUN Server: {self.stun_server}')
+        log(None, f'UDP Enabled: {self.enable_udp}')
+        log(None, f'TCP Enabled: {self.enable_tcp}')
+        log(None, f'TLS Enabled: {self.enable_tls}')
+        log(None, f'TLS Port: {self.tls_port}')
 
 
 def create_parser() -> argparse.ArgumentParser:

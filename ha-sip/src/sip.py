@@ -23,26 +23,26 @@ def create_endpoint(ep_config: MyEndpointConfig) -> pj.Endpoint:
             nameserver.append(ns)
         ep_cfg.uaConfig.nameserver = nameserver
     if ep_config.global_options.stun_server:
-        log(None, "STUN server enabled: %s" % ep_config.global_options.stun_server)
+        log(None, f"STUN server enabled: {ep_config.global_options.stun_server}")
         ep_cfg.uaConfig.stunServer.append(ep_config.global_options.stun_server)
     end_point = pj.Endpoint()
     end_point.libCreate()
     end_point.libInit(ep_cfg)
     codecs = end_point.codecEnum2()
-    log(None, "Supported audio codecs: %s" % ", ".join(c.codecId for c in codecs))
+    log(None, f"Supported audio codecs: {', '.join(c.codecId for c in codecs)}")
     end_point.audDevManager().setNullDev()
     if ep_config.global_options.enable_udp:
-        log(None, "UDP transport enabled on port %d" % ep_config.port)
+        log(None, f"UDP transport enabled on port {ep_config.port}")
         sip_tp_config_udp = pj.TransportConfig()
         sip_tp_config_udp.port = ep_config.port
         end_point.transportCreate(pj.PJSIP_TRANSPORT_UDP, sip_tp_config_udp)
     if ep_config.global_options.enable_tcp:
-        log(None, "TCP transport enabled on port %d" % ep_config.port)
+        log(None, f"TCP transport enabled on port {ep_config.port}")
         sip_tp_config_tcp = pj.TransportConfig()
         sip_tp_config_tcp.port = ep_config.port
         end_point.transportCreate(pj.PJSIP_TRANSPORT_TCP, sip_tp_config_tcp)
     if ep_config.global_options.enable_tls:
-        log(None, "TLS transport enabled on port %d" % ep_config.global_options.tls_port)
+        log(None, f"TLS transport enabled on port {ep_config.global_options.tls_port}")
         sip_tp_config_tls = pj.TransportConfig()
         sip_tp_config_tls.port = ep_config.global_options.tls_port
         end_point.transportCreate(pj.PJSIP_TRANSPORT_TLS, sip_tp_config_tls)

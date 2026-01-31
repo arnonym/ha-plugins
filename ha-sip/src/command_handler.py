@@ -51,7 +51,7 @@ class CommandHandler(object):
 
     def handle_command(self, command: command_client.Command, from_call: Optional[call.Call]) -> None:
         if not isinstance(command, collections.abc.Mapping):
-            log(None, 'Error: Not an object: %s' % command)
+            log(None, f'Error: Not an object: {command}')
             return
         verb = command.get('command')
         number_unknown_type = command.get('number')
@@ -65,18 +65,18 @@ class CommandHandler(object):
                 if (not domain) or (not service):
                     log(None, 'Error: one of domain or service was not provided')
                     return
-                log(None, 'Calling home assistant service on domain %s service %s with entity %s' % (domain, service, entity_id))
+                log(None, f'Calling home assistant service on domain {domain} service {service} with entity {entity_id}')
                 try:
                     ha.call_service(self.ha_config, domain, service, entity_id, service_data)
                 except Exception as e:
-                    log(None, 'Error calling home-assistant service: %s' % e)
+                    log(None, f'Error calling home-assistant service: {e}')
             case 'dial':
                 if not number:
                     log(None, 'Error: Missing number for command "dial"')
                     return
-                log(None, 'Got "dial" command for %s' % number)
+                log(None, f'Got "dial" command for {number}')
                 if self.is_active(number):
-                    log(None, 'Warning: call already in progress: %s' % number)
+                    log(None, f'Warning: call already in progress: {number}')
                     return
                 menu = command.get('menu')
                 ring_timeout = utils.convert_to_float(command.get('ring_timeout'), DEFAULT_RING_TIMEOUT)
@@ -88,7 +88,7 @@ class CommandHandler(object):
                 if not number:
                     log(None, 'Error: Missing number for command "hangup"')
                     return
-                log(None, 'Got "hangup" command for %s' % number)
+                log(None, f'Got "hangup" command for {number}')
                 if not self.is_active(number):
                     self.call_not_in_progress_error(number)
                     return
@@ -98,7 +98,7 @@ class CommandHandler(object):
                 if not number:
                     log(None, 'Error: Missing number for command "answer"')
                     return
-                log(None, 'Got "answer" command for %s' % number)
+                log(None, f'Got "answer" command for {number}')
                 if not self.is_active(number):
                     self.call_not_in_progress_error(number)
                     return
@@ -142,13 +142,13 @@ class CommandHandler(object):
                     return
                 digits = command.get('digits')
                 method = command.get('method', 'in_band')
-                if (method != 'in_band') and (method != 'rfc2833') and (method != 'sip_info'):
+                if method not in ('in_band', 'rfc2833', 'sip_info'):
                     log(None, 'Error: method must be one of in_band, rfc2833, sip_info')
                     return
                 if not digits:
                     log(None, 'Error: Missing digits for command "send_dtmf"')
                     return
-                log(None, 'Got "send_dtmf" command for %s' % number)
+                log(None, f'Got "send_dtmf" command for {number}')
                 if not self.is_active(number):
                     self.call_not_in_progress_error(number)
                     return
@@ -240,8 +240,8 @@ class CommandHandler(object):
                 self.end_point.libDestroy()
                 sys.exit(0)
             case _:
-                log(None, 'Error: Unknown command: %s' % verb)
+                log(None, f'Error: Unknown command: {verb}')
 
     def call_not_in_progress_error(self, number: str):
-        log(None, 'Warning: call not in progress: %s' % number)
+        log(None, f'Warning: call not in progress: {number}')
         self.call_state.output()

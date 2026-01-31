@@ -45,9 +45,9 @@ class TurnServer:
         self.connection_type = turn_server_connection_type_to_int(connection_type)
         self.user = user
         self.password = password
-        log(None, 'TURN server set to: %s' % self.server)
-        log(None, 'TURN connection type set to: %s' % connection_type)
-        log(None, 'TURN user set to: %s' % self.user)
+        log(None, f'TURN server set to: {self.server}')
+        log(None, f'TURN connection type set to: {connection_type}')
+        log(None, f'TURN user set to: {self.user}')
 
 
 class SipOptions:
@@ -81,9 +81,9 @@ class SipOptions:
         self.via_rewrite_use = via_rewrite_use
         self.sdp_nat_rewrite_use = sdp_nat_rewrite_use
         self.sip_outbound_use = sip_outbound_use
-        log(account_index, 'Proxy set to: %s' % self.proxy)
-        log(account_index, 'ICE is enabled: %s' % self.enable_ice)
-        log(account_index, 'TURN server is enabled: %s' % str(self.turn_server is not None))
+        log(account_index, f'Proxy set to: {self.proxy}')
+        log(account_index, f'ICE is enabled: {self.enable_ice}')
+        log(account_index, f'TURN server is enabled: {self.turn_server is not None}')
 
 
 def create_parser() -> ArgumentParser:
