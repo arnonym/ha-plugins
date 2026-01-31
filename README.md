@@ -228,6 +228,8 @@ data:
                           # Defaults to false. `cache_dir` must be configured in ha-sip config.
                           # Don't enable this for dynamic messages, you'll just fill your storage.
         wait_for_audio_to_finish: true # Do not accept DTMF tones until the message has been played
+        post_action: hangup # hang up the call after the message has been played, only "noop" (default) 
+                            # and "hangup" are supported in this context
 ```
 
 #### To play an audio file
@@ -243,6 +245,8 @@ data:
         cache_audio: true # If converted file should be cached in `cache_dir`. 
                           # Defaults to false. `cache_dir` must be configured in ha-sip config
         wait_for_audio_to_finish: true # Do not accept DTMF tones until the audio file has been played
+        post_action: hangup # hang up the call after the message has been played, only "noop" (default) 
+        # and "hangup" are supported in this context
 ```
 
 #### To stop audio playback (both audio file and message):
@@ -435,31 +439,39 @@ menu:
 For most events in ha-sip there's a web-hook triggered. The property `internal_id` is the number you can use 
 to identify the call in your automations.
 
-### `incoming_call`
+These are the common fields available in all webhook events:
 
 ```json
 {
-    "event": "incoming_call",
-    "caller": "<sip:5551234456@fritz.box>",
-    "parsed_caller": "5551234456",
-    "sip_account": 1,
     "internal_id": "something-unique",
+    "caller": "<sip:5551234456@fritz.box>",
+    "called": "<sip:sip-user@fritz.box>",
+    "parsed_caller": "5551234456",
+    "parsed_called": "sip-user",
+    "sip_account": 1,
+    "call_id": "7490FE75C2CB1D45@192.168.178.1",
     "headers": {}
 }
 ```
 
-> **Note:** The `headers` field contains extracted SIP headers if `--extract-headers` is configured on the SIP account, otherwise it's an empty object.
+> **Note:** The `headers` field contains extracted SIP headers if `--extract-headers` is configured on the SIP account, 
+> otherwise it's an empty object. See [SIP Header Extraction](#sip-header-extraction) for more details.
+
+Additionally, the event name and event specific fields are available:
+
+### `incoming_call`
+
+```json
+{
+    "event": "incoming_call"
+}
+```
 
 ### `call_established`
 
 ```json
 {
-    "event": "call_established",
-    "caller": "<sip:5551234456@fritz.box>",
-    "parsed_caller": "5551234456",
-    "sip_account": 1,
-    "internal_id": "something-unique",
-    "headers": {}
+    "event": "call_established"
 }
 ```
 
@@ -468,12 +480,7 @@ to identify the call in your automations.
 ```json
 {
     "event": "entered_menu",
-    "caller": "<sip:5551234456@fritz.box>",
-    "parsed_caller": "5551234456",
-    "menu_id": "owner",
-    "sip_account": 1,
-    "internal_id": "something-unique",
-    "headers": {}
+    "menu_id": "owner"
 }
 ```
 
@@ -482,12 +489,7 @@ to identify the call in your automations.
 ```json
 {
     "event": "dtmf_digit",
-    "caller": "<sip:5551234456@fritz.box>",
-    "parsed_caller": "5551234456",
-    "digit": "1",
-    "sip_account": 1,
-    "internal_id": "something-unique",
-    "headers": {}
+    "digit": "1"
 }
 ```
 
@@ -495,12 +497,7 @@ to identify the call in your automations.
 
 ```json
 {
-    "event": "call_disconnected",
-    "caller": "<sip:5551234456@fritz.box>",
-    "parsed_caller": "5551234456",
-    "sip_account": 1,
-    "internal_id": "something-unique",
-    "headers": {}
+    "event": "call_disconnected"
 }
 ```
 
@@ -509,13 +506,8 @@ to identify the call in your automations.
 ```json
 {
     "event": "playback_done",
-    "caller": "<sip:5551234456@fritz.box>",
-    "parsed_caller": "5551234456",
-    "sip_account": 1,
     "type": "message",
-    "message": "message that has been played",
-    "internal_id": "something-unique",
-    "headers": {}
+    "message": "message that has been played"
 }
 ```
 
@@ -524,13 +516,8 @@ to identify the call in your automations.
 ```json
 {
     "event": "playback_done",
-    "caller": "<sip:5551234456@fritz.box>",
-    "parsed_caller": "5551234456",
-    "sip_account": 1,
     "type": "audio_file",
-    "audio_file": "/media/audio/welcome.mp3",
-    "internal_id": "something-unique",
-    "headers": {}
+    "audio_file": "/media/audio/welcome.mp3"
 }
 ```
 
@@ -538,12 +525,7 @@ to identify the call in your automations.
 
 ```json
 {
-    "event": "ring_timeout",
-    "caller": "<sip:5551234456@fritz.box>",
-    "parsed_caller": "5551234456",
-    "sip_account": 1,
-    "internal_id": "something-unique",
-    "headers": {}
+    "event": "ring_timeout"
 }
 ```
 
@@ -552,12 +534,7 @@ to identify the call in your automations.
 ```json
 {
     "event": "timeout",
-    "caller": "<sip:5551234456@fritz.box>",
-    "parsed_caller": "5551234456",
-    "sip_account": 1,
-    "menu_id": "main",
-    "internal_id": "something-unique",
-    "headers": {}
+    "menu_id": "main"
 }
 ```
 
@@ -566,13 +543,7 @@ to identify the call in your automations.
 ```json
 {
     "event": "recording_started",
-    "caller": "<sip:5551234456@fritz.box>",
-    "parsed_caller": "5551234456",
-    "sip_account": 1,
-    "call_id": "5a42f2-54c5ba548-c545b54-554d55216",
-    "recording_file": "/media/www/call_12345.wav",
-    "internal_id": "something-unique",
-    "headers": {}
+    "recording_file": "/media/www/call_12345.wav"
 }
 ```
 
@@ -581,13 +552,7 @@ to identify the call in your automations.
 ```json
 {
     "event": "recording_stopped",
-    "caller": "<sip:5551234456@fritz.box>",
-    "parsed_caller": "5551234456",
-    "sip_account": 1,
-    "call_id": "5a42f2-54c5ba548-c545b54-554d55216",
-    "recording_file": "/config/www/call_12345.wav",
-    "internal_id": "something-unique",
-    "headers": {}
+    "recording_file": "/config/www/call_12345.wav"
 }
 ```
 

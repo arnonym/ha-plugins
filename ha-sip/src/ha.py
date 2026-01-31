@@ -16,6 +16,7 @@ from log import log
 
 class WebhookBaseFields(TypedDict):
     caller: str
+    called: str
     parsed_caller: Optional[str]
     parsed_called: Optional[str]
     sip_account: int
@@ -90,9 +91,6 @@ WebhookEvent = Union[
     RecordingStarted,
     RecordingStopped
 ]
-
-
-CompleteWebhookEvent = Any
 
 
 class CurrentPlaybackMessage(TypedDict):
@@ -225,7 +223,7 @@ def call_service(ha_config: HaConfig, domain: str, service: str, entity_id: Opti
     log(None, f'Service response {service_response.status_code!r} {service_response.content!r}')
 
 
-def trigger_webhook(ha_config: HaConfig, event: CompleteWebhookEvent, overwrite_webhook_id: Optional[str] = None) -> None:
+def trigger_webhook(ha_config: HaConfig, event: Any, overwrite_webhook_id: Optional[str] = None) -> None:
     webhook_id = overwrite_webhook_id or ha_config.webhook_id
     if not webhook_id:
         log(None, 'Warning: No webhook defined.')

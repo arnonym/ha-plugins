@@ -1,16 +1,15 @@
 import json
 import time
-from typing import Optional
+from typing import Optional, Any
 
 import paho.mqtt.client as paho_mqtt
 from paho.mqtt.enums import CallbackAPIVersion
 
 import config
-from log import log
+import utils
 from command_client import CommandClient
 from command_handler import CommandHandler
-import utils
-import ha
+from log import log
 
 
 class MqttClient:
@@ -68,7 +67,7 @@ class MqttClient:
                 time.sleep(1)
         self.client.loop()
 
-    def send_event(self, event: ha.CompleteWebhookEvent):
+    def send_event(self, event: Any):
         if not self.topic_state:
             return
         if not self.client.is_connected():

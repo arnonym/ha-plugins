@@ -36,8 +36,7 @@ def trigger_webhook(
     event_sender_callback: EventSender,
     webhooks: Optional[WebhookToCall] = None,
 ) -> None:
-    complete_event: ha.CompleteWebhookEvent = {
-        **event,
+    base_event: ha.WebhookBaseFields = {
         'caller': call_info['remote_uri'] if call_info else 'unknown',
         'called': call_info['local_uri'] if call_info else 'unknown',
         'parsed_caller': call_info['parsed_caller'] if call_info else None,
@@ -46,6 +45,10 @@ def trigger_webhook(
         'call_id': call_info['call_id'] if call_info else None,
         'internal_id': internal_id,
         'headers': call_info['headers'] if call_info else {},
+    }
+    complete_event = {
+        **base_event,
+        **event,
     }
     event_id = event.get('event')
     if webhooks and (additional_webhook := webhooks.get(event_id)):
