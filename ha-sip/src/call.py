@@ -506,11 +506,11 @@ class Call(pj.Call):
             self.sendDtmf(dtmf_prm)
 
     def get_callback_ids(self) -> tuple[str, List[str]]:
-        call_info = self.get_call_info()
         if self.uri_to_call:
             # On outgoing calls we use the uri_to_call, as other info is not available yet
             parsed_caller = self.parse_caller(self.uri_to_call)
-            return self.uri_to_call, [x for x in [parsed_caller, call_info['call_id']] if x is not None]
+            return self.uri_to_call, [x for x in [parsed_caller] if x is not None]
+        call_info = self.get_call_info()
         return call_info['remote_uri'], [x for x in [call_info['parsed_caller'], call_info['call_id']] if x is not None]
 
     def get_call_info(self) -> webhook.CallInfo:
