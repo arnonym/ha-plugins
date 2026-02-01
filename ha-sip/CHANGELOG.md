@@ -2,6 +2,9 @@
 
 If you find ha-sip useful, consider starring ⭐ the [GitHub repo](https://github.com/arnonym/ha-plugins)!
 
+# 5.4.1
+- Fix crash for outgoing calls
+
 ## 5.4
 - Allow templating of messages in `incoming_call_file` or from MQTT (thanks nbe95@github for implementing this!)
 - Add option to extract SIP headers and receive them in webhooks
