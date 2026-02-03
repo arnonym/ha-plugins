@@ -10,6 +10,7 @@ from log import log
 
 
 class WebhookToCall(TypedDict):
+    outgoing_call_initiated: Optional[str]
     call_established: Optional[str]
     entered_menu: Optional[str]
     dtmf_digit: Optional[str]

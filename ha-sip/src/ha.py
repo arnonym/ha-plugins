@@ -56,6 +56,10 @@ class RingTimeout(TypedDict):
     event: Literal['ring_timeout']
 
 
+class OutgoingCallInitiatedEvent(TypedDict):
+    event: Literal['outgoing_call_initiated']
+
+
 class PlaybackDoneAudioFile(TypedDict):
     event: Literal['playback_done']
     type: Literal['audio_file']
@@ -80,6 +84,7 @@ class RecordingStopped(TypedDict):
 
 WebhookEvent = Union[
     IncomingCallEvent,
+    OutgoingCallInitiatedEvent,
     CallEstablishedEvent,
     CallDisconnectedEvent,
     EnteredMenuEvent,

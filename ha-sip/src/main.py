@@ -23,6 +23,8 @@ from command_handler import CommandHandler
 from event_sender import EventSender
 from ha import TtsConfigFromEnv
 from log import log
+from sensor import SensorConfig, SensorUpdater
+from sensor_event_handler import SensorEventHandler
 
 
 def handle_command_list(command_client: CommandClient, command_handler: CommandHandler) -> None:
@@ -135,10 +137,32 @@ def main():
     event_sender = EventSender()
     command_client = CommandClient()
     command_handler = CommandHandler(end_point, sip_accounts, call_state, ha_config, event_sender)
+
+    sensor_entity_prefix = config.SENSOR_ENTITY_PREFIX
+    if not sensor_entity_prefix:
+        sensor_entity_prefix = 'ha_sip'
+    sensor_config = SensorConfig(
+        enabled=config.SENSOR_ENABLED.lower() == 'true',
+        entity_prefix=sensor_entity_prefix,
+    )
+    enabled_account_indices = [key for key, acc in account_configs.items() if acc.enabled]
+    sensor_updater = SensorUpdater(ha_config, sensor_config, enabled_account_indices)
+    def on_reg_state_callback(account_index: int, code: int, reason: str) -> None:
+        sensor_updater.update_registration_status(account_index, code, reason)
+
     for key, account_config in account_configs.items():
         if account_config.enabled:
-            sip_accounts[key] = account.create_account(end_point, account_config, command_handler, event_sender, ha_config, is_first_enabled_account)
+            sip_accounts[key] = account.create_account(
+                end_point,
+                account_config,
+                command_handler,
+                event_sender,
+                ha_config,
+                on_reg_state_callback,
+                is_first_enabled_account,
+            )
             is_first_enabled_account = False
+
     mqtt_mode = config.COMMAND_SOURCE.lower().strip() == 'mqtt'
     mqtt_client = mqtt.create_client_and_connect(command_handler) if mqtt_mode else None
     def trigger_webhook(event: Any, webhook_id: Optional[str] = None):
@@ -148,6 +172,9 @@ def main():
             mqtt_client.send_event(event)
     event_sender.register_sender(trigger_webhook)
     event_sender.register_sender(send_mqtt_event)
+    sensor_event_handler = SensorEventHandler(sensor_updater)
+    event_sender.register_sender(sensor_event_handler.handle_event)
+    sensor_updater.initialize_sensors()
     while True:
         if mqtt_client:
             mqtt_client.handle()

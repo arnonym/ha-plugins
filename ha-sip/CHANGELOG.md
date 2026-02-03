@@ -2,6 +2,9 @@
 
 If you find ha-sip useful, consider starring ⭐ the [GitHub repo](https://github.com/arnonym/ha-plugins)!
 
+# 5.5
+- Add sensors for call and account state
+
 # 5.4.1
 - Fix crash for outgoing calls
 

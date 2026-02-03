@@ -47,6 +47,9 @@ export TTS_DEBUG_PRINT="$(bashio::config 'tts.debug_print')"
 
 export HA_WEBHOOK_ID="$(bashio::config 'webhook.id')"
 
+export SENSOR_ENABLED="$(bashio::config 'sensors.enabled')"
+export SENSOR_ENTITY_PREFIX="$(bashio::config 'sensors.entity_prefix')"
+
 export HA_BASE_URL="http://supervisor/core/api"
 export HA_WEBSOCKET_URL="ws://supervisor/core/websocket"
 export HA_TOKEN="${SUPERVISOR_TOKEN}"

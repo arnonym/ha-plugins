@@ -57,6 +57,9 @@ HA_WEBSOCKET_URL = os.environ.get('HA_WEBSOCKET_URL', '')
 HA_TOKEN = os.environ.get('HA_TOKEN', '')
 HA_WEBHOOK_ID = os.environ.get('HA_WEBHOOK_ID', '')
 
+SENSOR_ENABLED = os.environ.get('SENSOR_ENABLED', 'false')
+SENSOR_ENTITY_PREFIX = os.environ.get('SENSOR_ENTITY_PREFIX', 'ha_sip')
+
 BROKER_ADDRESS = os.environ.get('BROKER_ADDRESS', '')
 BROKER_PORT = os.environ.get('BROKER_PORT', '1833')
 MQTT_USERNAME = os.environ.get('BROKER_USERNAME', '')

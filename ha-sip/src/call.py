@@ -722,6 +722,7 @@ def make_call(
     new_call = Call(ep, acc, pj.PJSUA_INVALID_ID, uri_to_call, menu, command_handler, event_sender, ha_config, ring_timeout, webhooks, {})
     call_param = pj.CallOpParam(True)
     new_call.makeCall(uri_to_call, call_param)
+    new_call.trigger_webhook({'event': 'outgoing_call_initiated'})
     return new_call
 
 
