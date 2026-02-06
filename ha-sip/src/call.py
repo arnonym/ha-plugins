@@ -118,7 +118,7 @@ class Call(pj.Call):
         self.current_playback: Optional[ha.CurrentPlayback] = None
         self.sip_headers: Dict[str, Optional[str]] = sip_headers if sip_headers is not None else {}
         self.callback_id, other_ids = self.get_callback_ids()
-        self.menu = self.normalize_menu(menu) if menu else self.get_standard_menu()
+        self.menu = self.normalize_menu(menu) if menu else None
         self.menu_map = self.create_menu_map(self.menu)
         Call.pretty_print_menu(self.menu)
         log(self.account.config.index, f'Registering call with id {self.callback_id}')
@@ -143,10 +143,12 @@ class Call(pj.Call):
             return
         if not self.connected:
             return
-        if time.time() - self.last_seen > self.menu['timeout']:
-            log(self.account.config.index, f"Timeout of {self.menu['timeout']} triggered")
-            self.handle_menu(self.menu['timeout_choice'])
-            self.trigger_webhook({'event': 'timeout', 'menu_id': self.menu['id']})
+        timeout = self.menu and self.menu['timeout'] or DEFAULT_RING_TIMEOUT
+        if time.time() - self.last_seen > timeout:
+            log(self.account.config.index, f"Timeout of {timeout} triggered")
+            if self.menu:
+                self.handle_menu(self.menu['timeout_choice'])
+                self.trigger_webhook({'event': 'timeout', 'menu_id': self.menu['id']})
             return
         if self.playback_is_done and self.scheduled_post_action:
             post_action = self.scheduled_post_action
@@ -163,6 +165,9 @@ class Call(pj.Call):
         if post_action["action"] == 'noop':
             pass
         elif post_action["action"] == 'return':
+            if not self.menu:
+                log(self.account.config.index, 'No menu to return to')
+                return
             m = self.menu
             for _ in range(0, post_action['level']):
                 if m:
@@ -463,7 +468,11 @@ class Call(pj.Call):
             self.pretty_print_menu(self.menu)
         if overwrite_webhooks:
             self.webhooks = overwrite_webhooks
-        self.answer_at = time.time()
+        if self.connected:
+            if new_menu:
+                self.handle_menu(self.menu)
+        else:
+            self.answer_at = time.time()
 
     def transfer(self, transfer_to):
         log(self.account.config.index, f'Transfer call to {transfer_to}')
@@ -618,7 +627,7 @@ class Call(pj.Call):
         return normalized_menu
 
     @staticmethod
-    def create_menu_map(menu: Menu) -> dict[str, Menu]:
+    def create_menu_map(menu: Optional[Menu]) -> dict[str, Menu]:
         def add_to_map(menu_map: dict[str, Menu], m: Menu) -> dict[str, Menu]:
             if m['id']:
                 menu_map[m['id']] = m
@@ -626,6 +635,8 @@ class Call(pj.Call):
                 for m in m['choices'].values():
                     add_to_map(menu_map, m)
             return menu_map
+        if not menu:
+            return {}
         return add_to_map({}, menu)
 
     @staticmethod
@@ -702,7 +713,10 @@ class Call(pj.Call):
         return standard_menu
 
     @staticmethod
-    def pretty_print_menu(menu: Menu) -> None:
+    def pretty_print_menu(menu: Optional[Menu]) -> None:
+        if not menu:
+            print('No menu defined.')
+            return
         lines = yaml.dump(menu, sort_keys=False).split('\n')
         lines_with_pipe = map(lambda line: '| ' + line, lines)
         print('\n'.join(lines_with_pipe))

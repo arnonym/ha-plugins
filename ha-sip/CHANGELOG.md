@@ -4,6 +4,7 @@ If you find ha-sip useful, consider starring ⭐ the [GitHub repo](https://githu
 
 # 5.5
 - Add sensors for call and account state
+- Fix bug with post_action for play_message and play_audio_file not working for incoming calls
 
 # 5.4.1
 - Fix crash for outgoing calls
