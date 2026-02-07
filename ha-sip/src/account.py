@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import re
-from typing import Dict, List, Optional
+from typing import Callable, Dict, List, Optional
 
 import pjsua2 as pj
 
@@ -16,6 +16,9 @@ from log import log
 from command_handler import CommandHandler
 from options_global import GlobalOptions
 from options_sip import SipOptions
+
+# Type for registration state callback: (account_index, code, reason)
+OnRegStateCallback = Callable[[int, int, str], None]
 
 
 class MyAccountConfig(object):
@@ -56,7 +59,8 @@ class Account(pj.Account):
         command_handler: CommandHandler,
         event_sender: EventSender,
         ha_config: ha.HaConfig,
-        make_default=False
+        make_default: bool,
+        on_reg_state_callback: OnRegStateCallback
     ):
         pj.Account.__init__(self)
         self.config = config
@@ -65,6 +69,7 @@ class Account(pj.Account):
         self.event_sender = event_sender
         self.ha_config = ha_config
         self.make_default = make_default
+        self.on_reg_state_callback = on_reg_state_callback
 
     def init(self) -> None:
         account_config = pj.AccountConfig()
@@ -93,6 +98,8 @@ class Account(pj.Account):
 
     def onRegState(self, prm) -> None:
         log(self.config.index, f'OnRegState: {prm.code} {prm.reason}')
+        if self.on_reg_state_callback:
+            self.on_reg_state_callback(self.config.index, prm.code, prm.reason)
 
     def onIncomingCall(self, prm) -> None:
         if not self.config:
@@ -193,8 +200,9 @@ def create_account(
     command_handler: CommandHandler,
     event_sender: EventSender,
     ha_config: ha.HaConfig,
-    is_default: bool
+    on_reg_state_callback: OnRegStateCallback,
+    is_default: bool,
 ) -> Account:
-    account = Account(end_point, config, command_handler, event_sender, ha_config, is_default)
+    account = Account(end_point, config, command_handler, event_sender, ha_config, is_default, on_reg_state_callback)
     account.init()
     return account

@@ -556,6 +556,118 @@ Additionally, the event name and event specific fields are available:
 }
 ```
 
+### `outgoing_call_initiated`
+
+```json
+{
+    "event": "outgoing_call_initiated"
+}
+```
+
+## Sensors
+
+ha-sip can expose sensor entities to Home Assistant for monitoring SIP account status and call activity. 
+These only show information regarding ha-sip itself, not the SIP provider (you cannot see calls that are
+answered on other SIP devices, as this is not supported by the SIP protocol).
+
+To enable sensors, add the following to your add-on configuration:
+
+```yaml
+sensors:
+    enabled: true
+    entity_prefix: ha_sip  # optional, defaults to "ha_sip"
+```
+
+### Call Activity Sensor
+
+Tracks whether a call is currently active on each SIP account.
+
+| Entity ID | State | Description |
+|-----------|-------|-------------|
+| `sensor.{prefix}_account_{n}` | `true` / `false` | Whether a call is active |
+
+**Attributes when active:**
+- `caller`: Full caller URI
+- `called`: Full called URI
+- `parsed_caller`: Extracted caller number
+- `parsed_called`: Extracted called number
+- `sip_account`: Account number
+- `call_id`: SIP call ID
+- `headers`: Extracted SIP headers (if configured)
+
+### Registration Status Sensor
+
+Monitors the SIP registration state for each account. Useful for alerting when your SIP connection drops.
+
+| Entity ID | State | Description |
+|-----------|-------|-------------|
+| `sensor.{prefix}_registration_{n}` | `registered` / `unregistered` / `failed` / `unknown` | Registration state |
+
+**Attributes:**
+- `status_code`: SIP status code (200 = registered)
+- `reason`: Status reason text
+- `last_change`: ISO timestamp of last state change
+
+**Icons:**
+- `mdi:phone-check` - Registered
+- `mdi:phone-off` - Unregistered
+- `mdi:phone-alert` - Failed
+- `mdi:phone-clock` - Unknown (initial state)
+
+### Last Call Sensor
+
+Tracks information about the most recent call on each account.
+
+| Entity ID | State | Description |
+|-----------|-------|-------------|
+| `sensor.{prefix}_last_call_{n}` | `incoming` / `outgoing` / `none` | Direction of last call |
+
+**Attributes:**
+- `caller`: Full caller URI
+- `called`: Full called URI
+- `parsed_caller`: Extracted caller number
+- `parsed_called`: Extracted called number
+- `call_id`: SIP call ID
+- `timestamp`: ISO timestamp when call ended
+
+**Icons:**
+- `mdi:phone-incoming` - Incoming call
+- `mdi:phone-outgoing` - Outgoing call
+- `mdi:phone` - No calls yet
+
+### Example Automations
+
+Alert when SIP registration fails:
+
+```yaml
+automation:
+  - alias: "SIP Registration Alert"
+    trigger:
+      - platform: state
+        entity_id: sensor.ha_sip_registration_1
+        to: "failed"
+    action:
+      - service: notify.mobile_app
+        data:
+          message: "SIP account 1 registration failed!"
+```
+
+Log last call:
+
+```yaml
+automation:
+  - alias: "Log Incoming Calls"
+    trigger:
+      - platform: state
+        entity_id: sensor.ha_sip_last_call_1
+        to: "incoming"
+    action:
+      - service: logbook.log
+        data:
+          name: "Incoming Call"
+          message: "Call from {{ state_attr('sensor.ha_sip_last_call_1', 'parsed_caller') }}"
+```
+
 ## SIP Header Extraction
 
 You can extract specific SIP headers from incoming and outgoing calls and include them in all webhook events. This is useful for accessing custom headers like `X-Caller-ID`, `P-Asserted-Identity`, or any other SIP header your provider sends.

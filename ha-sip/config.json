@@ -1,6 +1,6 @@
 {
     "name": "ha-sip",
-    "version": "5.4.1",
+    "version": "5.5",
     "slug": "ha-sip",
     "url": "https://github.com/arnonym/ha-plugins",
     "description": "Home-Assistant SIP Gateway",
@@ -68,6 +68,10 @@
         },
         "webhook": {
             "id": "sip_call_webhook_id"
+        },
+        "sensors": {
+            "enabled": false,
+            "entity_prefix": "ha_sip"
         }
     },
     "schema": {
@@ -123,6 +127,10 @@
         },
         "webhook": {
             "id": "str"
+        },
+        "sensors": {
+            "enabled": "bool",
+            "entity_prefix": "str"
         }
     },
     "host_network": true,
