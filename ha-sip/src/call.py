@@ -4,62 +4,29 @@ import os
 import re
 import time
 from enum import Enum
-from typing import Dict, Optional, Callable, Union, Any, List
+from typing import Dict, Optional, Callable, Union, List
+from typing_extensions import Literal
 
 import pjsua2 as pj
-import yaml
-from typing_extensions import TypedDict, Literal
 
 import account
 import audio
 import audio_cache
 import ha
 import player
-import utils
 import webhook
 from call_state_change import CallStateChange
 from command_client import Command
 from command_handler import CommandHandler
-from constants import DEFAULT_RING_TIMEOUT, DEFAULT_DTMF_ON, DEFAULT_DTMF_OFF
-from log import log
+from constants import DEFAULT_RING_TIMEOUT, DEFAULT_DTMF_ON
 from event_sender import EventSender
-from post_action import PostAction, PostActionNoop, PostActionHangup, PostActionRepeatMessage, PostActionReturn, PostActionJump
+from log import log
+from menu import MenuFromStdin, Menu, normalize_menu, pretty_print_menu
+from tone_digit import create_tone_digit_vector
+from post_action import PostAction
 
 CallCallback = Callable[[CallStateChange, str, 'Call'], None]
 DtmfMethod = Union[Literal['in_band'], Literal['rfc2833'], Literal['sip_info']]
-
-
-class MenuFromStdin(TypedDict):
-    id: Optional[str]
-    message: Optional[str]
-    handle_as_template: Optional[bool]
-    audio_file: Optional[str]
-    language: Optional[str]
-    action: Optional[Command]
-    choices_are_pin: Optional[bool]
-    post_action: Optional[str]
-    timeout: Optional[int]
-    choices: Optional[dict[Any, MenuFromStdin]]
-    cache_audio: Optional[bool]
-    wait_for_audio_to_finish: Optional[bool]
-
-
-class Menu(TypedDict):
-    id: Optional[str]
-    message: Optional[str]
-    handle_as_template: bool
-    audio_file: Optional[str]
-    language: str
-    action: Optional[Command]
-    choices_are_pin: bool
-    post_action: PostAction
-    timeout: float
-    choices: Optional[dict[str, Menu]]
-    default_choice: Optional[Menu]
-    timeout_choice: Optional[Menu]
-    parent_menu: Optional[Menu]
-    cache_audio: bool
-    wait_for_audio_to_finish: bool
 
 
 class CallHandling(Enum):
@@ -93,34 +60,35 @@ class Call(pj.Call):
         self.player: Optional[player.Player] = None
         self.audio_media: Optional[pj.AudioMedia] = None
         self.recorder: Optional[pj.AudioMediaRecorder] = None
+        self.tone_gen: Optional[pj.ToneGenerator] = None
+
+        self.end_point = end_point
+        self.account = sip_account
+        self.uri_to_call = uri_to_call
+        self.command_handler = command_handler
+        self.event_sender = event_sender
+        self.ha_config = ha_config
+        self.ring_timeout = ring_timeout
+        self.webhooks: Optional[webhook.WebhookToCall] = webhooks
+        self.sip_headers: Dict[str, Optional[str]] = sip_headers if sip_headers is not None else {}
+
         self.recording_file: Optional[str] = None
         self.requested_recording_filename: Optional[str] = None
         self.connected = False
         self.current_input = ''
-        self.end_point = end_point
-        self.account = sip_account
-        self.uri_to_call = uri_to_call
-        self.ha_config = ha_config
-        self.ring_timeout = ring_timeout
-        self.settle_time = sip_account.config.settle_time
-        self.webhooks: Optional[webhook.WebhookToCall] = webhooks
-        self.command_handler = command_handler
-        self.event_sender = event_sender
         self.scheduled_post_action: Optional[PostAction] = None
         self.playback_is_done = True
         self.wait_for_audio_to_finish = False
         self.last_seen = time.time()
         self.call_settled_at: Optional[float] = None
         self.answer_at: Optional[float] = None
-        self.tone_gen: Optional[pj.ToneGenerator] = None
         self.call_info: Optional[webhook.CallInfo] = None
         self.pressed_digit_list: List[str] = []
         self.current_playback: Optional[ha.CurrentPlayback] = None
-        self.sip_headers: Dict[str, Optional[str]] = sip_headers if sip_headers is not None else {}
+
         self.callback_id, other_ids = self.get_callback_ids()
-        self.menu = self.normalize_menu(menu) if menu else None
-        self.menu_map = self.create_menu_map(self.menu)
-        Call.pretty_print_menu(self.menu)
+        self.menu, self.menu_map = normalize_menu(menu, self.ha_config.tts_config['language'], self.account.config.index)
+        pretty_print_menu(self.menu)
         log(self.account.config.index, f'Registering call with id {self.callback_id}')
         self.command_handler.register_call(self.callback_id, self, other_ids)
 
@@ -162,30 +130,31 @@ class Call(pj.Call):
 
     def handle_post_action(self, post_action: PostAction):
         log(self.account.config.index, f'Scheduled post action: {post_action["action"]}')
-        if post_action["action"] == 'noop':
-            pass
-        elif post_action["action"] == 'return':
-            if not self.menu:
-                log(self.account.config.index, 'No menu to return to')
-                return
-            m = self.menu
-            for _ in range(0, post_action['level']):
+        match post_action["action"]:
+            case 'noop':
+                pass
+            case 'return':
+                if not self.menu:
+                    log(self.account.config.index, 'No menu to return to')
+                    return
+                m = self.menu
+                for _ in range(0, post_action['level']):
+                    if m:
+                        m = m['parent_menu']
                 if m:
-                    m = m['parent_menu']
-            if m:
-                self.handle_menu(m)
-            else:
-                log(self.account.config.index, f'Could not return {post_action["level"]} level in current menu')
-        elif post_action["action"] == 'jump':
-            new_menu = self.menu_map.get(post_action['menu_id'])
-            if new_menu:
-                self.handle_menu(new_menu)
-            else:
-                log(self.account.config.index, f'Could not find menu_id: "{post_action["menu_id"]}". Valid IDs are {self.menu_map.keys()}')
-        elif post_action["action"] == 'hangup':
-            self.hangup_call()
-        elif post_action["action"] == 'repeat_message':
-            self.handle_menu(self.menu, send_webhook_event=False, handle_action=False, reset_input=False)
+                    self.handle_menu(m)
+                else:
+                    log(self.account.config.index, f'Could not return {post_action["level"]} level in current menu')
+            case 'jump':
+                new_menu = self.menu_map.get(post_action['menu_id'])
+                if new_menu:
+                    self.handle_menu(new_menu)
+                else:
+                    log(self.account.config.index, f'Could not find menu_id: "{post_action["menu_id"]}". Valid IDs are {self.menu_map.keys()}')
+            case 'hangup':
+                self.hangup_call()
+            case 'repeat_message':
+                self.handle_menu(self.menu, send_webhook_event=False, handle_action=False, reset_input=False)
 
     def trigger_webhook(self, event: ha.WebhookEvent):
         webhook.trigger_webhook(
@@ -208,28 +177,29 @@ class Call(pj.Call):
         if not self.call_info:
             self.call_info = self.get_call_info()
         ci = self.getInfo()
-        if ci.state == pj.PJSIP_INV_STATE_EARLY:
-            log(self.account.config.index, 'Early')
-        elif ci.state == pj.PJSIP_INV_STATE_CALLING:
-            log(self.account.config.index, 'Calling')
-        elif ci.state == pj.PJSIP_INV_STATE_CONNECTING:
-            log(self.account.config.index, 'Call connecting...')
-        elif ci.state == pj.PJSIP_INV_STATE_CONFIRMED:
-            log(self.account.config.index, 'Call connected')
-            self.extract_headers_from_response(prm)
-            self.call_settled_at = time.time() + self.settle_time
-        elif ci.state == pj.PJSIP_INV_STATE_DISCONNECTED:
-            log(self.account.config.index, 'Call disconnected')
-            self.stop_recording()
-            self.trigger_webhook({'event': 'call_disconnected'})
-            self.connected = False
-            self.current_input = ''
-            self.player = None
-            self.audio_media = None
-            self.tone_gen = None
-            self.command_handler.forget_call(self.callback_id)
-        else:
-            log(self.account.config.index, f'Unknown state: {ci.state}')
+        match ci.state:
+            case pj.PJSIP_INV_STATE_EARLY:
+                log(self.account.config.index, 'Early')
+            case pj.PJSIP_INV_STATE_CALLING:
+                log(self.account.config.index, 'Calling')
+            case pj.PJSIP_INV_STATE_CONNECTING:
+                log(self.account.config.index, 'Call connecting...')
+            case pj.PJSIP_INV_STATE_CONFIRMED:
+                log(self.account.config.index, 'Call connected')
+                self.extract_headers_from_response(prm)
+                self.call_settled_at = time.time() + self.account.config.settle_time
+            case pj.PJSIP_INV_STATE_DISCONNECTED:
+                log(self.account.config.index, 'Call disconnected')
+                self.stop_recording()
+                self.trigger_webhook({'event': 'call_disconnected'})
+                self.connected = False
+                self.current_input = ''
+                self.player = None
+                self.audio_media = None
+                self.tone_gen = None
+                self.command_handler.forget_call(self.callback_id)
+            case _:
+                log(self.account.config.index, f'Unknown state: {ci.state}')
 
     def onCallMediaState(self, prm) -> None:
         call_info = self.getInfo()
@@ -463,9 +433,8 @@ class Call(pj.Call):
     def answer_call(self, new_menu: Optional[MenuFromStdin], overwrite_webhooks: Optional[webhook.WebhookToCall]) -> None:
         log(self.account.config.index, 'Trigger answer of call (if not established already)')
         if new_menu:
-            self.menu = self.normalize_menu(new_menu)
-            self.menu_map = self.create_menu_map(self.menu)
-            self.pretty_print_menu(self.menu)
+            self.menu, self.menu_map = normalize_menu(new_menu, self.ha_config.tts_config['language'], self.account.config.index)
+            pretty_print_menu(self.menu)
         if overwrite_webhooks:
             self.webhooks = overwrite_webhooks
         if self.connected:
@@ -559,90 +528,6 @@ class Call(pj.Call):
     def set_current_playback(self, current_playback: ha.CurrentPlayback):
         self.current_playback = current_playback
 
-    def normalize_menu(self, menu: MenuFromStdin, parent_menu: Optional[Menu] = None, is_default_or_timeout_choice=False) -> Menu:
-        def parse_post_action(action: Optional[str]) -> PostAction:
-            if (not action) or (action == 'noop'):
-                return PostActionNoop(action='noop')
-            elif action == 'hangup':
-                return PostActionHangup(action='hangup')
-            elif action == 'repeat_message':
-                return PostActionRepeatMessage(action='repeat_message')
-            elif action.startswith('return'):
-                _, *params = action.split()
-                level_str = utils.safe_list_get(params, 0, 1)
-                level = utils.convert_to_int(level_str, 1)
-                return PostActionReturn(action='return', level=level)
-            elif action.startswith('jump'):
-                _, *params = action.split(None)
-                jump_to = utils.safe_list_get(params, 0, '')
-                if not jump_to:
-                    log(self.account.config.index, 'Error: jump action requires a menu id as parameter')
-                return PostActionJump(action='jump', menu_id=jump_to.strip())
-            else:
-                log(self.account.config.index, f'Unknown post_action: {action}')
-                return PostActionNoop(action='noop')
-
-        def normalize_choice(item: tuple[Any, MenuFromStdin], parent_menu_for_choice: Menu) -> tuple[str, Menu]:
-            choice, sub_menu = item
-            normalized_choice = str(choice).lower()
-            normalized_sub_menu = self.normalize_menu(sub_menu, parent_menu_for_choice, normalized_choice in ['default', 'timeout'])
-            return normalized_choice, normalized_sub_menu
-
-        def get_default_or_timeout_choice(choice: Union[Literal['default'], Literal['timeout']], parent_menu_for_choice: Menu) -> Optional[Menu]:
-            if is_default_or_timeout_choice:
-                return None
-            elif choice in normalized_choices:
-                return normalized_choices.pop(choice)
-            else:
-                if choice == 'default':
-                    return Call.get_default_menu(parent_menu_for_choice)
-                else:
-                    return Call.get_timeout_menu(parent_menu_for_choice)
-
-        menu_id = menu.get('id')
-        normalized_menu: Menu = {
-            'id': menu_id.strip() if menu_id else None,
-            'message': menu.get('message'),
-            'handle_as_template': menu.get('handle_as_template') or False,
-            'audio_file': menu.get('audio_file'),
-            'language': menu.get('language') or self.ha_config.tts_config['language'],
-            'action': menu.get('action'),
-            'choices_are_pin': menu.get('choices_are_pin') or False,
-            'choices': None,
-            'default_choice': None,
-            'timeout_choice': None,
-            'timeout': utils.convert_to_float(menu.get('timeout'), DEFAULT_RING_TIMEOUT),
-            'post_action': parse_post_action(menu.get('post_action')),
-            'parent_menu': parent_menu,
-            'cache_audio': menu.get('cache_audio') or False,
-            'wait_for_audio_to_finish': menu.get('wait_for_audio_to_finish') or False,
-        }
-        choices = menu.get('choices')
-        normalized_choices = dict(map(lambda c: normalize_choice(c, normalized_menu), choices.items())) if choices else dict()
-        default_choice = get_default_or_timeout_choice('default', normalized_menu)
-        timeout_choice = get_default_or_timeout_choice('timeout', normalized_menu)
-        normalized_menu['choices'] = normalized_choices
-        normalized_menu['default_choice'] = default_choice
-        normalized_menu['timeout_choice'] = timeout_choice
-        return normalized_menu
-
-    @staticmethod
-    def create_menu_map(menu: Optional[Menu]) -> dict[str, Menu]:
-        def add_to_map(menu_map: dict[str, Menu], m: Menu) -> dict[str, Menu]:
-            if m['id']:
-                menu_map[m['id']] = m
-            if m['choices']:
-                for choice in m['choices'].values():
-                    add_to_map(menu_map, choice)
-            if m['default_choice']:
-                add_to_map(menu_map, m['default_choice'])
-            if m['timeout_choice']:
-                add_to_map(menu_map, m['timeout_choice'])
-            return menu_map
-        if not menu:
-            return {}
-        return add_to_map({}, menu)
-
     @staticmethod
     def parse_caller(remote_uri: str) -> Optional[str]:
         parsed_caller_match = re.search('<sip:(.+?)[@;>]', remote_uri)
@@ -652,79 +537,6 @@ class Call(pj.Call):
         if parsed_caller_match_2nd_try:
             return parsed_caller_match_2nd_try.group(1)
         return None
-
-    @staticmethod
-    def get_default_menu(parent_menu: Menu) -> Menu:
-        return {
-            'id': None,
-            'message': 'Unknown option',
-            'handle_as_template': False,
-            'audio_file': None,
-            'language': 'en',
-            'action': None,
-            'choices_are_pin': False,
-            'choices': None,
-            'default_choice': None,
-            'timeout_choice': None,
-            'post_action': PostActionReturn(action="return", level=1),
-            'timeout': DEFAULT_RING_TIMEOUT,
-            'parent_menu': parent_menu,
-            'cache_audio': False,
-            'wait_for_audio_to_finish': False
-        }
-
-    @staticmethod
-    def get_timeout_menu(parent_menu: Menu) -> Menu:
-        return {
-            'id': None,
-            'message': None,
-            'handle_as_template': False,
-            'audio_file': None,
-            'language': 'en',
-            'action': None,
-            'choices_are_pin': False,
-            'choices': None,
-            'default_choice': None,
-            'timeout_choice': None,
-            'post_action': PostActionHangup(action="hangup"),
-            'timeout': DEFAULT_RING_TIMEOUT,
-            'parent_menu': parent_menu,
-            'cache_audio': False,
-            'wait_for_audio_to_finish': False
-        }
-
-    @staticmethod
-    def get_standard_menu() -> Menu:
-        standard_menu: Menu = {
-            'id': None,
-            'message': None,
-            'handle_as_template': False,
-            'audio_file': None,
-            'language': 'en',
-            'action': None,
-            'choices_are_pin': False,
-            'choices': dict(),
-            'default_choice': None,
-            'timeout_choice': None,
-            'post_action': PostActionNoop(action="noop"),
-            'timeout': DEFAULT_RING_TIMEOUT,
-            'parent_menu': None,
-            'cache_audio': False,
-            'wait_for_audio_to_finish': False
-        }
-        standard_menu['default_choice'] = Call.get_default_menu(standard_menu)
-        standard_menu['timeout_choice'] = Call.get_timeout_menu(standard_menu)
-        return standard_menu
-
-    @staticmethod
-    def pretty_print_menu(menu: Optional[Menu]) -> None:
-        if not menu:
-            print('No menu defined.')
-            return
-        lines = yaml.dump(menu, sort_keys=False).split('\n')
-        lines_with_pipe = map(lambda line: '| ' + line, lines)
-        print('\n'.join(lines_with_pipe))
-
 
 def make_call(
     ep: pj.Endpoint,
@@ -742,19 +554,3 @@ def make_call(
     new_call.makeCall(uri_to_call, call_param)
     new_call.trigger_webhook({'event': 'outgoing_call_initiated'})
     return new_call
-
-
-def create_tone_digit(digit: str) -> pj.ToneDigit:
-    td = pj.ToneDigit()
-    td.digit = digit
-    td.volume = 0
-    td.on_msec = DEFAULT_DTMF_ON
-    td.off_msec = DEFAULT_DTMF_OFF
-    return td
-
-
-def create_tone_digit_vector(digits: str) -> pj.ToneDigitVector:
-    tone_digits_vector = pj.ToneDigitVector()
-    for d in digits:
-        tone_digits_vector.append(create_tone_digit(d))
-    return tone_digits_vector

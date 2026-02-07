@@ -2,7 +2,7 @@ from typing import Optional
 
 from typing_extensions import TypedDict
 
-import call
+import menu
 import webhook
 
 
@@ -11,4 +11,4 @@ class IncomingCallConfig(TypedDict):
     blocked_numbers: Optional[list[str]]
     answer_after: Optional[int]
     webhook_to_call: Optional[webhook.WebhookToCall]
-    menu: call.MenuFromStdin
+    menu: menu.MenuFromStdin
