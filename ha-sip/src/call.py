@@ -632,8 +632,12 @@ class Call(pj.Call):
             if m['id']:
                 menu_map[m['id']] = m
             if m['choices']:
-                for m in m['choices'].values():
-                    add_to_map(menu_map, m)
+                for choice in m['choices'].values():
+                    add_to_map(menu_map, choice)
+            if m['default_choice']:
+                add_to_map(menu_map, m['default_choice'])
+            if m['timeout_choice']:
+                add_to_map(menu_map, m['timeout_choice'])
             return menu_map
         if not menu:
             return {}
