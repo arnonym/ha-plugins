@@ -66,6 +66,11 @@ webhook:
 ```
 
 > **Note:**
+> For advanced deployments you can optionally set `HA_WEBHOOK_BASE_URL` to use a different endpoint for webhook POSTs.
+> If not set, webhook calls use `HA_BASE_URL`.
+> In Home Assistant add-on mode, ha-sip now defaults webhook POSTs to the local Home Assistant API endpoint to keep `local_only: true` webhook automations working on newer core versions.
+
+> **Note:**
 > When your `user_name` or `password` starts with a number, you need to put it in quotes like `"1234"`.
 
 > **Note** 

@@ -128,7 +128,16 @@ class TtsConfig(TypedDict):
 
 
 class HaConfig(object):
-    def __init__(self, base_url: str, websocket_url: str, token: str, tts_config: TtsConfigFromEnv, webhook_id: str, cache_dir: Optional[str]):
+    def __init__(
+        self,
+        base_url: str,
+        websocket_url: str,
+        token: str,
+        tts_config: TtsConfigFromEnv,
+        webhook_id: str,
+        cache_dir: Optional[str],
+        webhook_base_url: Optional[str] = None,
+    ):
         self.base_url = base_url
         self.websocket_url = websocket_url
         self.token = token
@@ -148,6 +157,7 @@ class HaConfig(object):
         elif self.tts_config['platform']:
             log(None, f"TTS: Using platform {self.tts_config['platform']} with language {self.tts_config['language']} with voice {self.tts_config['voice']}")
         self.webhook_id = webhook_id
+        self.webhook_base_url = webhook_base_url or ''
         self.cache_dir = cache_dir
 
     def create_headers(self) -> Dict[str, str]:
@@ -166,7 +176,18 @@ class HaConfig(object):
         return self.base_url + '/services/' + domain + '/' + service
 
     def get_webhook_url(self, webhook_id: str) -> str:
-        return self.base_url + '/webhook/' + webhook_id
+        return self.get_webhook_urls(webhook_id)[0]
+
+    def get_webhook_urls(self, webhook_id: str) -> list[str]:
+        urls: list[str] = []
+        if self.webhook_base_url:
+            urls.append(self.webhook_base_url + '/webhook/' + webhook_id)
+        # On HA OS, this often resolves directly to Core and preserves local_only behavior.
+        urls.append('http://homeassistant:8123/api/webhook/' + webhook_id)
+        urls.append('http://127.0.0.1:8123/api/webhook/' + webhook_id)
+        urls.append(self.base_url + '/webhook/' + webhook_id)
+        # Keep order, remove duplicates.
+        return list(dict.fromkeys(urls))
 
 
 def create_and_get_tts(ha_config: HaConfig, message: str, language: str) -> tuple[str, bool, bool]:
@@ -233,10 +254,21 @@ def trigger_webhook(ha_config: HaConfig, event: Any, overwrite_webhook_id: Optio
     if not webhook_id:
         log(None, 'Warning: No webhook defined.')
         return
-    log(None, f'Calling webhook {webhook_id} with data {event}')
+    webhook_urls = ha_config.get_webhook_urls(webhook_id)
     headers = ha_config.create_headers()
-    service_response = requests.post(ha_config.get_webhook_url(webhook_id), json=event, headers=headers)
-    log(None, f'Webhook response {service_response.status_code!r} {service_response.content!r}')
+    for webhook_url in webhook_urls:
+        log(None, f'Calling webhook {webhook_id} ({webhook_url}) with data {event}')
+        try:
+            service_response = requests.post(webhook_url, json=event, headers=headers, timeout=8)
+        except requests.RequestException as exc:
+            log(None, f'Webhook request exception (url={webhook_url!r}, error={exc!r})')
+            continue
+        if service_response.ok:
+            log(None, f'Webhook response {service_response.status_code!r} {service_response.content!r}')
+            return
+        response_excerpt = service_response.text[:400]
+        log(None, f'Webhook request failed (url={webhook_url!r}, status={service_response.status_code!r}, body={response_excerpt!r})')
+    log(None, f'Webhook delivery failed for all targets: {webhook_urls!r}')
 
 
 async def print_tts_providers(ha_config: HaConfig) -> None:

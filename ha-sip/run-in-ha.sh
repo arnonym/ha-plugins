@@ -53,5 +53,6 @@ export SENSOR_ENTITY_PREFIX="$(bashio::config 'sensors.entity_prefix')"
 export HA_BASE_URL="http://supervisor/core/api"
 export HA_WEBSOCKET_URL="ws://supervisor/core/websocket"
 export HA_TOKEN="${SUPERVISOR_TOKEN}"
+export HA_WEBHOOK_BASE_URL="http://homeassistant:8123/api"
 
 python3 /ha-sip/main.py

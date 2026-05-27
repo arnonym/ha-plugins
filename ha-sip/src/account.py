@@ -70,6 +70,10 @@ class Account(pj.Account):
         self.ha_config = ha_config
         self.make_default = make_default
         self.on_reg_state_callback = on_reg_state_callback
+        # Some pjsua2/swIG builds resolve callbacks from instance attributes only.
+        # Binding them explicitly prevents runtime AttributeError crashes on callback dispatch.
+        self.onRegState = self._on_reg_state  # type: ignore[assignment]
+        self.onIncomingCall = self._on_incoming_call  # type: ignore[assignment]
 
     def init(self) -> None:
         account_config = pj.AccountConfig()
@@ -96,12 +100,12 @@ class Account(pj.Account):
             account_config.sipConfig.proxies.append(self.config.options.proxy)
         return pj.Account.create(self, account_config, self.make_default)
 
-    def onRegState(self, prm) -> None:
+    def _on_reg_state(self, prm) -> None:
         log(self.config.index, f'OnRegState: {prm.code} {prm.reason}')
         if self.on_reg_state_callback:
             self.on_reg_state_callback(self.config.index, prm.code, prm.reason)
 
-    def onIncomingCall(self, prm) -> None:
+    def _on_incoming_call(self, prm) -> None:
         if not self.config:
             log(None, 'Error: No config set when onIncomingCall was called.')
             return

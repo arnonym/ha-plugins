@@ -127,7 +127,15 @@ def main():
         'voice': config.TTS_VOICE,
         'debug_print': config.TTS_DEBUG_PRINT,
     }
-    ha_config = ha.HaConfig(config.HA_BASE_URL, config.HA_WEBSOCKET_URL, config.HA_TOKEN, tts_config_from_env, config.HA_WEBHOOK_ID, cache_dir)
+    ha_config = ha.HaConfig(
+        config.HA_BASE_URL,
+        config.HA_WEBSOCKET_URL,
+        config.HA_TOKEN,
+        tts_config_from_env,
+        config.HA_WEBHOOK_ID,
+        cache_dir,
+        config.HA_WEBHOOK_BASE_URL,
+    )
     if ha_config.tts_config['debug_print']:
         asyncio.run(ha.print_tts_providers(ha_config))
     call_state = state.create()

@@ -56,6 +56,7 @@ HA_BASE_URL = os.environ.get('HA_BASE_URL', '')
 HA_WEBSOCKET_URL = os.environ.get('HA_WEBSOCKET_URL', '')
 HA_TOKEN = os.environ.get('HA_TOKEN', '')
 HA_WEBHOOK_ID = os.environ.get('HA_WEBHOOK_ID', '')
+HA_WEBHOOK_BASE_URL = os.environ.get('HA_WEBHOOK_BASE_URL', '')
 
 SENSOR_ENABLED = os.environ.get('SENSOR_ENABLED', 'false')
 SENSOR_ENTITY_PREFIX = os.environ.get('SENSOR_ENTITY_PREFIX', 'ha_sip')
