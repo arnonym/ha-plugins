@@ -6,10 +6,7 @@
     "description": "Home-Assistant SIP Gateway",
     "arch": [
         "aarch64",
-        "amd64",
-        "armhf",
-        "armv7",
-        "i386"
+        "amd64"
     ],
     "image": "agellhaus/{arch}-ha-sip",
     "init": "false",

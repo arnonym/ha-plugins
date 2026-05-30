@@ -7,6 +7,7 @@ If you find ha-sip useful, consider starring ⭐ the [GitHub repo](https://githu
 - Fix not able to jump to certain menu IDs (thanks nbe95@github for the fix!)
 - Allow use of MQTT also inside supervisor mode
 - Update pjsip to latest version
+- Remove unsupported architectures i386, armhf and armv7
 
 #### Backward incompatible changes for stand-alone mode: use `GLOBAL_OPTIONS` instead of individual environment variables to configure MQTT.
 
