@@ -163,8 +163,7 @@ def main():
             )
             is_first_enabled_account = False
 
-    mqtt_mode = config.COMMAND_SOURCE.lower().strip() == 'mqtt'
-    mqtt_client = mqtt.create_client_and_connect(command_handler) if mqtt_mode else None
+    mqtt_client = mqtt.create_client_and_connect(global_options, command_handler) if global_options.enable_mqtt else None
     def trigger_webhook(event: Any, webhook_id: Optional[str] = None):
         ha.trigger_webhook(ha_config, event, webhook_id)
     def send_mqtt_event(event: Any, webhook_id: Optional[str] = None):

@@ -2,11 +2,19 @@
 
 If you find ha-sip useful, consider starring ⭐ the [GitHub repo](https://github.com/arnonym/ha-plugins)!
 
-# 5.5
+## 5.6
+
+- Fix not able to jump to certain menu IDs (thanks nbe95@github for the fix!)
+- Allow use of MQTT also inside supervisor mode
+- Update pjsip to latest version
+
+#### Backward incompatible changes for stand-alone mode: use `GLOBAL_OPTIONS` instead of individual environment variables to configure MQTT.
+
+## 5.5
 - Add sensors for call and account state
 - Fix bug with post_action for play_message and play_audio_file not working for incoming calls
 
-# 5.4.1
+## 5.4.1
 - Fix crash for outgoing calls
 
 ## 5.4

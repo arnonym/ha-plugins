@@ -91,6 +91,19 @@ webhook:
   --tls-port TLS_PORT   Port to use for TLS transport (default: 5061)
   --debug-headers {enabled,enable,true,yes,on,1,disabled,disable,false,no,off,0}
                         Enable debug printing of all available SIP headers (default: disabled)
+  --enable-mqtt         Enable MQTT as a command source (default: disabled)
+  --mqtt-address MQTT_ADDRESS
+                        MQTT broker address (default: empty)
+  --mqtt-port MQTT_PORT
+                        MQTT broker port (default: 1883)
+  --mqtt-username MQTT_USERNAME
+                        MQTT broker username (default: empty)
+  --mqtt-password MQTT_PASSWORD
+                        MQTT broker password (default: empty)
+  --mqtt-topic MQTT_TOPIC
+                        MQTT topic to subscribe to for incoming commands (default: hasip/execute)
+  --mqtt-state-topic MQTT_STATE_TOPIC
+                        MQTT topic to publish call state events to (default: hasip/state)
 ```
 
 #### For `options` on each SIP account there are
@@ -806,10 +819,14 @@ Instead of stdin - MQTT will be used for communication.
 
 1. Follow the instructions from home assistant to set up a working MQTT broker and install the MQTT integration [MQTT Broker](https://www.home-assistant.io/integrations/mqtt/)
 2. Copy `.env.example` to `.env` and replace the variable place-holders with your real configuration.
-3. Make sure you switched the `COMMAND_SOURCE` in your .env file from "stdin" to "mqtt" and set the `BROKER_*` variables to connect to your MQTT broker address
+3. In your `.env` file, enable MQTT through `GLOBAL_OPTIONS` and point it at your broker, for example:
+
+   ```
+   GLOBAL_OPTIONS="--enable-mqtt --mqtt-address 192.168.1.1 --mqtt-port 1883 --mqtt-username admin --mqtt-password secret --mqtt-topic hasip/execute --mqtt-state-topic hasip/state"
+   ```
 4. Install [docker compose plugin](https://docs.docker.com/compose/install/linux/#install-using-the-repository)
 5. Run `docker compose up -d` in the main folder of the application to run the ha-sip service
-6. Now you can use the `mqtt.publish` service in home assistant to send commands as json to the `hasip/execute` topic from your automations
+6. Now you can use the `mqtt.publish` service in home assistant to send commands as json to the topic configured in `--mqtt-topic` (defaults to `hasip/execute`) from your automations
 
    Example:
    ```yaml
@@ -820,7 +837,7 @@ Instead of stdin - MQTT will be used for communication.
         topic: hasip/execute
     ```
    
-7. You can listen to call state event on the topic configured in `MQTT_STATE_TOPIC` (defaults to `hasip/state`).
+7. You can listen to call state events on the topic configured in `--mqtt-state-topic` (defaults to `hasip/state`).
 
 ## Support
 

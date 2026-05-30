@@ -50,3 +50,31 @@ class GlobalOptionsTest(unittest.TestCase):
     def test_parse_debug_headers_disabled(self):
         options = parse_global_options('--debug-headers disabled')
         self.assertEqual(options.debug_headers, False)
+
+    def test_parse_mqtt_defaults(self):
+        options = parse_global_options('')
+        self.assertEqual(options.enable_mqtt, False)
+        self.assertEqual(options.mqtt_address, '')
+        self.assertEqual(options.mqtt_port, 1883)
+        self.assertEqual(options.mqtt_username, '')
+        self.assertEqual(options.mqtt_password, '')
+        self.assertEqual(options.mqtt_topic, 'hasip/execute')
+        self.assertEqual(options.mqtt_state_topic, 'hasip/state')
+
+    def test_parse_mqtt_enabled(self):
+        options = parse_global_options('--enable-mqtt')
+        self.assertEqual(options.enable_mqtt, True)
+
+    def test_parse_mqtt_full(self):
+        options = parse_global_options(
+            '--enable-mqtt --mqtt-address 192.168.1.1 --mqtt-port 1884 '
+            '--mqtt-username admin --mqtt-password secret '
+            '--mqtt-topic=custom/execute --mqtt-state-topic custom/state'
+        )
+        self.assertEqual(options.enable_mqtt, True)
+        self.assertEqual(options.mqtt_address, '192.168.1.1')
+        self.assertEqual(options.mqtt_port, 1884)
+        self.assertEqual(options.mqtt_username, 'admin')
+        self.assertEqual(options.mqtt_password, 'secret')
+        self.assertEqual(options.mqtt_topic, 'custom/execute')
+        self.assertEqual(options.mqtt_state_topic, 'custom/state')

@@ -5,11 +5,10 @@ from typing import Optional, Any
 import paho.mqtt.client as paho_mqtt
 from paho.mqtt.enums import CallbackAPIVersion
 
-import config
-import utils
 from command_client import CommandClient
 from command_handler import CommandHandler
 from log import log
+from options_global import GlobalOptions
 
 
 class MqttClient:
@@ -76,13 +75,16 @@ class MqttClient:
         log(None, f'Sending mqtt message: {event} to topic: {self.topic}')
         self.client.publish(self.topic_state, json.dumps(event))
 
-def create_client_and_connect(command_handler: CommandHandler) -> MqttClient:
-    broker_address = config.BROKER_ADDRESS
-    port = utils.convert_to_int(config.BROKER_PORT, 1883)
-    mqtt_username = config.MQTT_USERNAME
-    mqtt_password = config.MQTT_PASSWORD
-    topic = config.MQTT_TOPIC
-    topic_state = config.MQTT_TOPIC_STATE or None
-    client = MqttClient(broker_address, port, mqtt_username, mqtt_password, topic, topic_state, command_handler)
+def create_client_and_connect(global_options: GlobalOptions, command_handler: CommandHandler) -> MqttClient:
+    topic_state = global_options.mqtt_state_topic or None
+    client = MqttClient(
+        global_options.mqtt_address,
+        global_options.mqtt_port,
+        global_options.mqtt_username,
+        global_options.mqtt_password,
+        global_options.mqtt_topic,
+        topic_state,
+        command_handler,
+    )
     client.connect()
     return client
