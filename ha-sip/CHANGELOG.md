@@ -4,6 +4,7 @@ If you find ha-sip useful, consider starring ⭐ the [GitHub repo](https://githu
 
 ## 5.6
 
+- Allow to specify a SIP status code in the `hangup` command for unanswered calls
 - Fix not able to jump to certain menu IDs (thanks nbe95@github for the fix!)
 - Allow use of MQTT also inside supervisor mode
 - Update pjsip to latest version

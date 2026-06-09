@@ -22,6 +22,7 @@ from constants import DEFAULT_RING_TIMEOUT, DEFAULT_DTMF_ON
 from event_sender import EventSender
 from log import log
 from menu import MenuFromStdin, Menu, normalize_menu, pretty_print_menu
+from sip_status import REASON_PHRASES
 from tone_digit import create_tone_digit_vector
 from post_action import PostAction
 
@@ -425,9 +426,12 @@ class Call(pj.Call):
         if answer_mode == CallHandling.ACCEPT:
             self.answer_at = time.time() + answer_after
 
-    def hangup_call(self) -> None:
+    def hangup_call(self, sip_code: int = 0) -> None:
         log(self.account.config.index, 'Hang-up.')
         call_prm = pj.CallOpParam(True)
+        if sip_code and not self.connected:
+            call_prm.statusCode = sip_code
+            call_prm.reason = REASON_PHRASES.get(sip_code, "")
         self.hangup(call_prm)
 
     def answer_call(self, new_menu: Optional[MenuFromStdin], overwrite_webhooks: Optional[webhook.WebhookToCall]) -> None:

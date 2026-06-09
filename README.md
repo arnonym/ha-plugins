@@ -181,6 +181,9 @@ data:
     input:
         command: hangup
         number: sip:**620@fritz.box
+        sip_code: 486 # optional SIP status code (e.g. 486 "Busy Here", 603 "Decline")
+                      # only applied when the call has not been answered yet;
+                      # ignored for already active calls
 ```
 
 #### To send DTMF digits to an established call:

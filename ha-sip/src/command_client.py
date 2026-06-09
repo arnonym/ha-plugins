@@ -38,6 +38,7 @@ class CommandDial(TypedDict):
 class CommandHangup(TypedDict):
     command: Literal['hangup']
     number: str
+    sip_code: int
 
 
 class CommandAnswer(TypedDict):

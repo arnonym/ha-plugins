@@ -93,7 +93,8 @@ class CommandHandler(object):
                     self.call_not_in_progress_error(number)
                     return
                 current_call = self.get_call_from_state_unsafe(number)
-                current_call.hangup_call()
+                sip_code = utils.convert_to_int(command.get('sip_code'), 0)
+                current_call.hangup_call(sip_code=sip_code)
             case 'answer':
                 if not number:
                     log(None, 'Error: Missing number for command "answer"')
