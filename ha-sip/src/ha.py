@@ -15,14 +15,20 @@ from log import log
 
 
 class WebhookBaseFields(TypedDict):
-    caller: str
-    called: str
-    parsed_caller: Optional[str]
-    parsed_called: Optional[str]
+    remote_uri: str
+    local_uri: str
+    parsed_remote_uri: Optional[str]
+    parsed_local_uri: Optional[str]
     sip_account: int
     call_id: Optional[str]
     internal_id: str
     headers: Dict[str, Optional[str]]
+    call_direction: Literal['incoming', 'outgoing']
+    # Deprecated
+    caller: str
+    called: str
+    parsed_caller: Optional[str]
+    parsed_called: Optional[str]
 
 
 class IncomingCallEvent(TypedDict):

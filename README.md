@@ -311,7 +311,7 @@ data:
 In `listen` mode no call will be answered (picked up) but you can trigger an automation through a [Webhook trigger](https://www.home-assistant.io/docs/automation/trigger/#webhook-trigger) for every incoming call.
 The webhook ID must match the ID set in the configuration.
 
-You can get the caller from `{{trigger.json.caller}}` or `{{trigger.json.parsed_caller}}` for usage in e.g. the action of your automation. 
+You can get the remote from `{{trigger.json.remote_uri}}` or `{{trigger.json.parsed_remote_uri}}` for usage in e.g. the action of your automation. 
 If you want to react on a webhook message with another command you should use `{{ trigger.json.internal_id }}` as the number.
 If you also use the menu ID webhook you need to check for `{{ trigger.json.event == "incoming_call" }}` e.g. in a "Choose" action type.
 
@@ -320,8 +320,9 @@ Example of "incoming call" webhook message:
 ```json
 {
     "event": "incoming_call",
-    "caller": "<sip:5551234456@fritz.box>",
-    "parsed_caller": "5551234456",
+    "call_direction": "incoming",
+    "remote_uri": "<sip:5551234456@fritz.box>",
+    "parsed_remote_uri": "5551234456",
     "sip_account": 1,
     "internal_id": "something-unique"
 }
@@ -471,15 +472,18 @@ These are the common fields available in all webhook events:
 ```json
 {
     "internal_id": "something-unique",
-    "caller": "<sip:5551234456@fritz.box>",
-    "called": "<sip:sip-user@fritz.box>",
-    "parsed_caller": "5551234456",
-    "parsed_called": "sip-user",
+    "call_direction": "incoming",
+    "local_uri": "<sip:sip-user@fritz.box>",
+    "remote_uri": "<sip:5551234456@fritz.box>",
+    "parsed_local_uri": "sip-user",
+    "parsed_remote_uri": "5551234456",
     "sip_account": 1,
     "call_id": "7490FE75C2CB1D45@192.168.178.1",
     "headers": {}
 }
 ```
+
+`call_direction` is either `"incoming"` or `"outgoing"`.
 
 > **Note:** The `headers` field contains extracted SIP headers if `--extract-headers` is configured on the SIP account, 
 > otherwise it's an empty object. See [SIP Header Extraction](#sip-header-extraction) for more details.
@@ -614,10 +618,10 @@ Tracks whether a call is currently active on each SIP account.
 | `sensor.{prefix}_account_{n}` | `true` / `false` | Whether a call is active |
 
 **Attributes when active:**
-- `caller`: Full caller URI
-- `called`: Full called URI
-- `parsed_caller`: Extracted caller number
-- `parsed_called`: Extracted called number
+- `remote_uri`: Full remote party URI
+- `local_uri`: Full local SIP account URI
+- `parsed_remote_uri`: Extracted remote party number
+- `parsed_local_uri`: Extracted local SIP account number
 - `sip_account`: Account number
 - `call_id`: SIP call ID
 - `headers`: Extracted SIP headers (if configured)
@@ -650,10 +654,10 @@ Tracks information about the most recent call on each account.
 | `sensor.{prefix}_last_call_{n}` | `incoming` / `outgoing` / `none` | Direction of last call |
 
 **Attributes:**
-- `caller`: Full caller URI
-- `called`: Full called URI
-- `parsed_caller`: Extracted caller number
-- `parsed_called`: Extracted called number
+- `remote_uri`: Full remote party URI
+- `local_uri`: Full local SIP account URI
+- `parsed_remote_uri`: Extracted remote party number
+- `parsed_local_uri`: Extracted local SIP account number
 - `call_id`: SIP call ID
 - `timestamp`: ISO timestamp when call ended
 
@@ -692,7 +696,7 @@ automation:
       - service: logbook.log
         data:
           name: "Incoming Call"
-          message: "Call from {{ state_attr('sensor.ha_sip_last_call_1', 'parsed_caller') }}"
+          message: "Call from {{ state_attr('sensor.ha_sip_last_call_1', 'parsed_remote_uri') }}"
 ```
 
 ## SIP Header Extraction
@@ -714,8 +718,9 @@ The extracted headers will be included in all webhook events for calls on that a
 ```json
 {
     "event": "incoming_call",
-    "caller": "<sip:5551234456@provider.com>",
-    "parsed_caller": "5551234456",
+    "call_direction": "incoming",
+    "remote_uri": "<sip:5551234456@provider.com>",
+    "parsed_remote_uri": "5551234456",
     "sip_account": 1,
     "headers": {
         "X-Caller-ID": "John Doe",

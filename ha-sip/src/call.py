@@ -67,6 +67,7 @@ class Call(pj.Call):
         self.end_point = end_point
         self.account = sip_account
         self.uri_to_call = uri_to_call
+        self.direction: Literal['incoming', 'outgoing'] = 'outgoing' if uri_to_call else 'incoming'
         self.command_handler = command_handler
         self.event_sender = event_sender
         self.ha_config = ha_config
@@ -499,22 +500,23 @@ class Call(pj.Call):
     def get_callback_ids(self) -> tuple[str, List[str]]:
         if self.uri_to_call:
             # On outgoing calls we use the uri_to_call, as other info is not available yet
-            parsed_caller = self.parse_caller(self.uri_to_call)
-            return self.uri_to_call, [x for x in [parsed_caller] if x is not None]
+            parsed_uri = self.parse_sip_uri(self.uri_to_call)
+            return self.uri_to_call, [x for x in [parsed_uri] if x is not None]
         call_info = self.get_call_info()
-        return call_info['remote_uri'], [x for x in [call_info['parsed_caller'], call_info['call_id']] if x is not None]
+        return call_info['remote_uri'], [x for x in [call_info['parsed_remote_uri'], call_info['call_id']] if x is not None]
 
     def get_call_info(self) -> webhook.CallInfo:
         ci = self.getInfo()
-        parsed_caller = self.parse_caller(ci.remoteUri)
-        parsed_called = self.parse_caller(ci.localUri)
+        parsed_remote_uri = self.parse_sip_uri(ci.remoteUri)
+        parsed_local_uri = self.parse_sip_uri(ci.localUri)
         return {
             'remote_uri': ci.remoteUri,
             'local_uri': ci.localUri,
-            'parsed_caller': parsed_caller,
-            'parsed_called': parsed_called,
+            'parsed_remote_uri': parsed_remote_uri,
+            'parsed_local_uri': parsed_local_uri,
             'call_id': ci.callIdString,
             'headers': self.sip_headers,
+            'direction': self.direction,
         }
 
     def extract_headers_from_response(self, prm) -> None:
@@ -542,13 +544,13 @@ class Call(pj.Call):
         self.current_playback = current_playback
 
     @staticmethod
-    def parse_caller(remote_uri: str) -> Optional[str]:
-        parsed_caller_match = re.search('<sip:(.+?)[@;>]', remote_uri)
-        if parsed_caller_match:
-            return parsed_caller_match.group(1)
-        parsed_caller_match_2nd_try = re.search('sip:(.+?)($|[@;])', remote_uri)
-        if parsed_caller_match_2nd_try:
-            return parsed_caller_match_2nd_try.group(1)
+    def parse_sip_uri(sip_uri: str) -> Optional[str]:
+        match = re.search('<sip:(.+?)[@;>]', sip_uri)
+        if match:
+            return match.group(1)
+        match_fallback = re.search('sip:(.+?)($|[@;])', sip_uri)
+        if match_fallback:
+            return match_fallback.group(1)
         return None
 
 def make_call(

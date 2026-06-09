@@ -121,8 +121,8 @@ class Account(pj.Account):
             self.ha_config, DEFAULT_RING_TIMEOUT, webhook_to_call, sip_headers,
         )
         ci = incoming_call_instance.get_call_info()
-        answer_mode = self.get_sip_return_code(self.config.mode, allowed_numbers, blocked_numbers, ci['parsed_caller'])
-        log(self.config.index, f"Incoming call  from  '{ci['remote_uri']}' (parsed: '{ci['parsed_caller']}') to '{ci['local_uri']}' (parsed: '{ci['parsed_called']}')")
+        answer_mode = self.get_sip_return_code(self.config.mode, allowed_numbers, blocked_numbers, ci['parsed_remote_uri'])
+        log(self.config.index, f"Incoming call  from  '{ci['remote_uri']}' (parsed: '{ci['parsed_remote_uri']}') to '{ci['local_uri']}' (parsed: '{ci['parsed_local_uri']}')")
         if allowed_numbers:
             log(self.config.index, f'Allowed numbers: {allowed_numbers}')
         if blocked_numbers:
@@ -142,15 +142,15 @@ class Account(pj.Account):
         mode: call.CallHandling,
         allowed_numbers: Optional[list[str]],
         blocked_numbers: Optional[list[str]],
-        parsed_caller: Optional[str],
+        parsed_number: Optional[str],
     ) -> call.CallHandling:
         if allowed_numbers and blocked_numbers:
             log(self.config.index, 'Error: cannot specify both of allowed and blocked numbers. Call won\'t be accepted!')
             return call.CallHandling.LISTEN
         if mode == call.CallHandling.ACCEPT and allowed_numbers:
-            return call.CallHandling.ACCEPT if Account.is_number_in_list(parsed_caller, allowed_numbers) else call.CallHandling.LISTEN
+            return call.CallHandling.ACCEPT if Account.is_number_in_list(parsed_number, allowed_numbers) else call.CallHandling.LISTEN
         if mode == call.CallHandling.ACCEPT and blocked_numbers:
-            return call.CallHandling.ACCEPT if not Account.is_number_in_list(parsed_caller, blocked_numbers) else call.CallHandling.LISTEN
+            return call.CallHandling.ACCEPT if not Account.is_number_in_list(parsed_number, blocked_numbers) else call.CallHandling.LISTEN
         return mode
 
     @staticmethod

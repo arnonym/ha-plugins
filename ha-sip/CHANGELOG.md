@@ -6,12 +6,19 @@ If you find ha-sip useful, consider starring ⭐ the [GitHub repo](https://githu
 
 - Allow to specify a SIP status code in the `hangup` command for unanswered calls
 - Add "reject" mode for SIP accounts to reject incoming calls by default
+- Add `call_direction` field to all webhook payloads to distinguish between `"incoming"` and `"outgoing"` calls
 - Fix not able to jump to certain menu IDs (thanks nbe95@github for the fix!)
 - Allow use of MQTT also inside supervisor mode
 - Update pjsip to latest version
 - Remove unsupported architectures i386, armhf and armv7
 
-#### Backward incompatible changes for stand-alone mode: use `GLOBAL_OPTIONS` instead of individual environment variables to configure MQTT.
+> **Deprecation notice**: `caller`, `called`, `parsed_caller`, and `parsed_called` webhook and sensor fields are deprecated and will be removed in a future version
+> as those were interchanged in outgoing calls. 
+> 
+> Use `remote_uri`, `local_uri`, `parsed_remote_uri`, and `parsed_local_uri` instead.
+
+> **Backward incompatible changes for stand-alone mode**: 
+> use `GLOBAL_OPTIONS` instead of individual environment variables to configure MQTT.
 
 ## 5.5
 - Add sensors for call and account state
@@ -41,7 +48,7 @@ If you find ha-sip useful, consider starring ⭐ the [GitHub repo](https://githu
 - Allow setting voice and other options for TTS messages
 - Add opus codec support for home-assistant VoIP integration
 - Add webhook overwrite option for 'answer' command
-#### Deprecation notice: `platform` in TTS options is replaced by `engine_id`
+> **Deprecation notice**: `platform` in TTS options is replaced by `engine_id`
 
 ## 5.0
 - Add MQTT topic for call state events
@@ -115,7 +122,7 @@ If you find ha-sip useful, consider starring ⭐ the [GitHub repo](https://githu
 
 ## 2.6
 - Call additional web-hooks for incoming and outgoing calls
-#### Deprecation notice: `webhook_to_call_after_call_was_established` will be removed in the next release and is replaced by the more granular `webhook_to_call`.
+> **Deprecation notice**: `webhook_to_call_after_call_was_established` will be removed in the next release and is replaced by the more granular `webhook_to_call`.
 
 The old config option can be converted from
 

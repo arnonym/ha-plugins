@@ -34,14 +34,14 @@ class CommandHandler(object):
         self.event_sender = event_sender
         self.call_state = call_state
 
-    def get_call_from_state(self, caller_id: str) -> Optional[call.Call]:
-        return self.call_state.get_call(caller_id)
+    def get_call_from_state(self, call_key: str) -> Optional[call.Call]:
+        return self.call_state.get_call(call_key)
 
-    def get_call_from_state_unsafe(self, caller_id: str) -> call.Call:
-        return self.call_state.get_call_unsafe(caller_id)
+    def get_call_from_state_unsafe(self, call_key: str) -> call.Call:
+        return self.call_state.get_call_unsafe(call_key)
 
-    def is_active(self, caller_id: str) -> bool:
-        return self.call_state.is_active(caller_id)
+    def is_active(self, call_key: str) -> bool:
+        return self.call_state.is_active(call_key)
 
     def register_call(self, callback_id: str, new_call: call.Call, additional_ids: List[str]) -> None:
         self.call_state.register_call(callback_id, new_call, additional_ids)

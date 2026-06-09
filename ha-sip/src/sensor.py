@@ -66,10 +66,14 @@ class SensorUpdater:
         attributes = {
             "friendly_name": f"SIP Account {account_index}",
             "icon": "mdi:phone-in-talk",
-            "caller": call_info.get("caller"),
-            "called": call_info.get("called"),
-            "parsed_caller": call_info.get("parsed_caller"),
-            "parsed_called": call_info.get("parsed_called"),
+            "caller": call_info.get("remote_uri"),
+            "called": call_info.get("local_uri"),
+            "parsed_caller": call_info.get("parsed_remote_uri"),
+            "parsed_called": call_info.get("parsed_local_uri"),
+            "remote_uri": call_info.get("remote_uri"),
+            "local_uri": call_info.get("local_uri"),
+            "parsed_remote_uri": call_info.get("parsed_remote_uri"),
+            "parsed_local_uri": call_info.get("parsed_local_uri"),
             "sip_account": call_info.get("sip_account"),
             "call_id": call_info.get("call_id"),
             "internal_id": call_info.get("internal_id"),
@@ -130,10 +134,14 @@ class SensorUpdater:
             "icon": icon,
         }
         if call_info:
-            attributes["caller"] = call_info.get("caller")
-            attributes["called"] = call_info.get("called")
-            attributes["parsed_caller"] = call_info.get("parsed_caller")
-            attributes["parsed_called"] = call_info.get("parsed_called")
+            attributes["caller"] = call_info.get("remote_uri")
+            attributes["called"] = call_info.get("local_uri")
+            attributes["parsed_caller"] = call_info.get("parsed_remote_uri")
+            attributes["parsed_called"] = call_info.get("parsed_local_uri")
+            attributes["remote_uri"] = call_info.get("remote_uri")
+            attributes["local_uri"] = call_info.get("local_uri")
+            attributes["parsed_remote_uri"] = call_info.get("parsed_remote_uri")
+            attributes["parsed_local_uri"] = call_info.get("parsed_local_uri")
             attributes["call_id"] = call_info.get("call_id")
             attributes["timestamp"] = datetime.now().isoformat()
         self._update_sensor(entity_id, direction, attributes)
