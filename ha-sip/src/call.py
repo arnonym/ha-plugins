@@ -33,6 +33,7 @@ DtmfMethod = Union[Literal['in_band'], Literal['rfc2833'], Literal['sip_info']]
 class CallHandling(Enum):
     LISTEN = 'LISTEN'
     ACCEPT = 'ACCEPT'
+    REJECT = 'REJECT'
 
     @staticmethod
     def get_or_else(name: Optional[str], default: CallHandling) -> CallHandling:
@@ -420,6 +421,14 @@ class Call(pj.Call):
         self.recording_file = None
 
     def accept(self, answer_mode: CallHandling, answer_after: float) -> None:
+        if answer_mode == CallHandling.REJECT:
+            sip_code = self.account.config.options.reject_sip_code
+            log(self.account.config.index, f'Rejecting call with SIP code {sip_code}.')
+            call_prm = pj.CallOpParam()
+            call_prm.statusCode = sip_code
+            call_prm.reason = REASON_PHRASES.get(sip_code, "")
+            self.answer(call_prm)
+            return
         call_prm = pj.CallOpParam()
         call_prm.statusCode = 180
         self.answer(call_prm)

@@ -40,7 +40,7 @@ sip:
     realm: '*'
     user_name: homeassistant
     password: secure
-    answer_mode: listen  # "listen" or "accept", see below
+    answer_mode: listen  # "listen", "accept", or "reject". see below
     settle_time: 1 # time to wait for playing the message/actions/etc. after call was established
     incoming_call_file: "" # config and menu definition file for incoming calls, see below
     options: ''
@@ -134,6 +134,8 @@ webhook:
                         Set the TURN password (default: None)
   --extract-headers EXTRACT_HEADERS
                         Comma-separated list of SIP headers to extract and include in webhooks (default: None)
+  --reject-sip-code REJECT_SIP_CODE
+                        SIP response code used when rejecting incoming calls in reject mode (default: 603)
 ```
 
 ## Usage
@@ -389,6 +391,15 @@ menu:
 ```
 
 After that you set `incoming_call_file` in the add-on configuration to `/config/sip-1-incoming.yaml`.
+
+#### Reject mode
+
+In `reject` mode every incoming call is automatically rejected. No audio is played and the call is never
+answered. A webhook is still triggered for each rejected call, so you can still react to incoming calls
+in your automations (e.g. for logging or notifications).
+
+The SIP response code sent to the caller defaults to `603 Decline` and can be changed via the
+`--reject-sip-code` option on the SIP account (e.g. `--reject-sip-code 486` for "Busy Here").
 
 ## Call menu definition
 

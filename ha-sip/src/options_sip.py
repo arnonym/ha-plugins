@@ -60,6 +60,7 @@ class SipOptions:
     sdp_nat_rewrite_use: bool
     sip_outbound_use: bool
     extract_headers: List[str]
+    reject_sip_code: int
 
     def __init__(
         self,
@@ -74,6 +75,7 @@ class SipOptions:
         turn_server: Optional[TurnServer],
         extract_headers: List[str],
         account_index: int,
+        reject_sip_code: int,
     ):
         self.proxy = proxy
         self.enable_ice = enable_ice
@@ -85,6 +87,7 @@ class SipOptions:
         self.sdp_nat_rewrite_use = sdp_nat_rewrite_use
         self.sip_outbound_use = sip_outbound_use
         self.extract_headers = extract_headers
+        self.reject_sip_code = reject_sip_code
         log(account_index, f'Proxy set to: {self.proxy}')
         log(account_index, f'ICE is enabled: {self.enable_ice}')
         log(account_index, f'TURN server is enabled: {self.turn_server is not None}')
@@ -167,6 +170,12 @@ def create_parser() -> ArgumentParser:
         default=None,
         help='Comma-separated list of SIP headers to extract (default: None)'
     )
+    parser.add_argument(
+        '--reject-sip-code',
+        type=int,
+        default=603,
+        help='SIP response code used when rejecting incoming calls in reject mode (default: 603)'
+    )
     return parser
 
 
@@ -193,5 +202,6 @@ def parse_sip_options(raw: str, account_index: int = 0) -> SipOptions:
         sip_outbound_use=is_true(args.use_sip_outbound),
         turn_server=turn_server,
         extract_headers=extract_headers,
-        account_index=account_index
+        account_index=account_index,
+        reject_sip_code=args.reject_sip_code,
     )

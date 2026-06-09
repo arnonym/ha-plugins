@@ -17,6 +17,7 @@ class SipOptionsTest(unittest.TestCase):
         self.assertEqual(options.via_rewrite_use, True)
         self.assertEqual(options.sdp_nat_rewrite_use, True)
         self.assertEqual(options.sip_outbound_use, True)
+        self.assertEqual(options.reject_sip_code, 603)
 
     def test_parse_proxy(self):
         options = parse_sip_options('--proxy sip:example.com')
@@ -86,4 +87,12 @@ class SipOptionsTest(unittest.TestCase):
     def test_parse_extract_headers_multiple(self):
         options = parse_sip_options('--extract-headers X-Custom-Header,P-Asserted-Identity,X-Another')
         self.assertEqual(options.extract_headers, ['X-Custom-Header', 'P-Asserted-Identity', 'X-Another'])
+
+    def test_parse_reject_sip_code_default(self):
+        options = parse_sip_options('')
+        self.assertEqual(options.reject_sip_code, 603)
+
+    def test_parse_reject_sip_code_custom(self):
+        options = parse_sip_options('--reject-sip-code 486')
+        self.assertEqual(options.reject_sip_code, 486)
 

@@ -86,7 +86,7 @@
             "realm": "str",
             "user_name": "str",
             "password": "str",
-            "answer_mode": "list(listen|accept)",
+            "answer_mode": "list(listen|accept|reject)",
             "settle_time": "float",
             "incoming_call_file": "str",
             "options": "str"
@@ -98,7 +98,7 @@
             "realm": "str",
             "user_name": "str",
             "password": "str",
-            "answer_mode": "list(listen|accept)",
+            "answer_mode": "list(listen|accept|reject)",
             "settle_time": "float",
             "incoming_call_file": "str",
             "options": "str"
@@ -110,7 +110,7 @@
             "realm": "str",
             "user_name": "str",
             "password": "str",
-            "answer_mode": "list(listen|accept)",
+            "answer_mode": "list(listen|accept|reject)",
             "settle_time": "float",
             "incoming_call_file": "str",
             "options": "str"
