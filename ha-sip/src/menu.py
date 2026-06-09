@@ -84,7 +84,8 @@ def _normalize_menu(
             _, *params = action.split(None)
             jump_to = utils.safe_list_get(params, 0, '')
             if not jump_to:
-                log(account_index, 'Error: jump action requires a menu id as parameter')
+                log(account_index, 'Error: jump action requires a menu id as parameter, will be treated as noop')
+                return PostActionNoop(action='noop')
             return PostActionJump(action='jump', menu_id=jump_to.strip())
         else:
             log(account_index, f'Unknown post_action: {action}')
