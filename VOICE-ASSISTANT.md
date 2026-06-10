@@ -12,7 +12,7 @@ By combining ha-sip's phone capabilities with Home Assistant's AI conversation f
 
 ## Prerequisites
 
-### 1. ha-sip add-on installed and configured with at least one working SIP account
+### 1. ha-sip app installed and configured with at least one working SIP account
 
  see [README.md](README.md). We are using the SIP Account in "Listen Mode" for our examples.
 

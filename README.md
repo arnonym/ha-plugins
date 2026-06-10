@@ -1,6 +1,6 @@
 # ![logo](icon.png) ha-sip 
 
-### Home Assistant SIP/VoIP Gateway is a Home Assistant add-on which 
+### Home Assistant SIP/VoIP Gateway is a Home Assistant app which 
 - allows the dialing and hanging up of phone numbers through a SIP end-point 
 - triggering of services through dial tones (DTMF) after the call was established.
 - listens for incoming calls and can trigger actions through a web-hook (the call is not picked up)
@@ -12,11 +12,11 @@
 
 ## Installation
 
-[![Open your Home Assistant instance and show the add add-on repository dialog with a specific repository URL pre-filled.](https://my.home-assistant.io/badges/supervisor_add_addon_repository.svg)](https://my.home-assistant.io/redirect/supervisor_add_addon_repository/?repository_url=https%3A%2F%2Fgithub.com%2Farnonym%2Fha-plugins)
+[![Open your Home Assistant instance and show the add app repository dialog with a specific repository URL pre-filled.](https://my.home-assistant.io/badges/supervisor_add_addon_repository.svg)](https://my.home-assistant.io/redirect/supervisor_add_addon_repository/?repository_url=https%3A%2F%2Fgithub.com%2Farnonym%2Fha-plugins)
 
-This add-on is for the Home Assistant OS or supervised installation methods mentioned in
+This app is for the Home Assistant OS or supervised installation methods mentioned in
 https://www.home-assistant.io/installation/. With that in place you can install this third-party plug-in like described in
-https://www.home-assistant.io/common-tasks/os#installing-a-third-party-add-on-repository. The repository URL is
+https://www.home-assistant.io/common-tasks/os#installing-a-third-party-app-repository. The repository URL is
 `https://github.com/arnonym/ha-plugins`.
 
 > **Note:**
@@ -70,12 +70,12 @@ webhook:
 
 > **Note** 
 > For TTS you need to install one of the [TTS integrations](https://www.home-assistant.io/integrations/#text-to-speech). 
-> If you're unsure about the entity id used for `engine_id`, set `debug_print` to `true` and restart the add-on.
-> The add-on will output a list of all available engines and languages into the log. If the configured engine and language
+> If you're unsure about the entity id used for `engine_id`, set `debug_print` to `true` and restart the app.
+> The app will output a list of all available engines and languages into the log. If the configured engine and language
 > is valid, it will also log the available voices (if the engine supports it).
 
 > **Note** 
-> You are able to access the /config and /media directory inside the add-on for config files, audio files, cache and recordings. 
+> You are able to access the /config and /media directory inside the app for config files, audio files, cache and recordings. 
 
 #### For `global_options` you can specify the following options
 
@@ -354,7 +354,7 @@ If you don't provide a menu the menu from `incoming_call_file` will be used.
 #### Accept mode
 
 In `accept` mode you can additionally make ha-sip to accept the call. For this you can define a menu per SIP account. Put a config file
-into your `/config` directory of your home-assistant installation (e.g. use the samba add-on to access that directory).
+into your `/config` directory of your home-assistant installation (e.g. use the samba app to access that directory).
 
 Example content of `/config/sip-1-incoming.yaml`:
 
@@ -391,7 +391,7 @@ menu:
             post_action: return
 ```
 
-After that you set `incoming_call_file` in the add-on configuration to `/config/sip-1-incoming.yaml`.
+After that you set `incoming_call_file` in the app configuration to `/config/sip-1-incoming.yaml`.
 
 #### Reject mode
 
@@ -410,7 +410,7 @@ used for incoming and outgoing calls.
 menu:
     id: main # If "id" is present, a message will be sent via webhook (entered_menu), see below (optional)
     message: Please enter your access code # the message to be played via TTS (optional, defaults to empty)
-    language: en # TTS language (optional, defaults to the global language from add-on config)
+    language: en # TTS language (optional, defaults to the global language from app config)
     choices_are_pin: true # If the choices should be handled like PINs (optional, defaults to false)
     timeout: 10 # time in seconds before "timeout" choice is triggered (optional, defaults to 300)
     post_action: noop # this action will be triggered after the message was played. Can be 
@@ -460,7 +460,7 @@ menu:
 ```
 
 > **Note:** 
-> The audio files need to reside in your home-assistant `config` directory, as this is the only directory accessible inside the add-on.
+> The audio files need to reside in your home-assistant `config` or `media` directory, as these are the only directory accessible inside the app.
 
 ## Web-hooks
 
@@ -601,7 +601,7 @@ ha-sip can expose sensor entities to Home Assistant for monitoring SIP account s
 These only show information regarding ha-sip itself, not the SIP provider (you cannot see calls that are
 answered on other SIP devices, as this is not supported by the SIP protocol).
 
-To enable sensors, add the following to your add-on configuration:
+To enable sensors, add the following to your app configuration:
 
 ```yaml
 sensors:
@@ -828,7 +828,7 @@ All the examples are working also for incoming calls when you copy the `menu` pa
 
 ## Troubleshooting
 
-The first place to look is the log of the ha-sip add-on. There you can see individual SIP messages and the logs of
+The first place to look is the log of the ha-sip app. There you can see individual SIP messages and the logs of
 ha-sip itself (prefixed with "|").
 
 ## Stand-alone mode
@@ -872,8 +872,8 @@ Your support helps others discover the project and keeps me motivated.
    `HA_BASE_URL` is something like "http://homeassistant.local:8123/api"
 
    The access token is created from http://homeassistant.local:8123/profile
-4. Run `./build.sh run-local` to run the add-on locally
-5. Paste commands as json (without line-breaks) into stdin of the running add-on:
+4. Run `./build.sh run-local` to run the app locally
+5. Paste commands as json (without line-breaks) into stdin of the running app:
 
    Example:
    ```json
