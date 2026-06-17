@@ -563,9 +563,14 @@ def make_call(
     ha_config: ha.HaConfig,
     ring_timeout: float,
     webhooks: Optional[webhook.WebhookToCall],
-) -> Call:
+) -> Optional[Call]:
     new_call = Call(ep, acc, pj.PJSUA_INVALID_ID, uri_to_call, menu, command_handler, event_sender, ha_config, ring_timeout, webhooks, {})
     call_param = pj.CallOpParam(True)
-    new_call.makeCall(uri_to_call, call_param)
+    try:
+        new_call.makeCall(uri_to_call, call_param)
+    except pj.Error as e:
+        log(None, f'Error making call to {uri_to_call}: {e}')
+        command_handler.forget_call(new_call.callback_id)
+        return None
     new_call.trigger_webhook({'event': 'outgoing_call_initiated'})
     return new_call
