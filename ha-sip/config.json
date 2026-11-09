@@ -56,7 +56,18 @@
             "incoming_call_file": "",
             "options": ""
         },
-        "tts": {
+        "sip_4": {
+            "enabled": false,
+            "registrar_uri": "sip:192.168.178.11",
+            "id_uri": "",
+            "realm": "*",
+            "user_name": "",
+            "password": "",
+            "answer_mode": "listen",
+            "settle_time": 1,
+            "incoming_call_file": "",
+            "options": ""
+        },        "tts": {
             "engine_id": "",
             "platform": "",
             "language": "",
@@ -104,6 +115,18 @@
             "options": "str"
         },
         "sip_3": {
+            "enabled": "bool",
+            "registrar_uri": "str",
+            "id_uri": "str",
+            "realm": "str",
+            "user_name": "str",
+            "password": "str",
+            "answer_mode": "list(listen|accept|reject)",
+            "settle_time": "float",
+            "incoming_call_file": "str",
+            "options": "str"
+        },
+        "sip_4": {
             "enabled": "bool",
             "registrar_uri": "str",
             "id_uri": "str",

@@ -135,6 +135,20 @@ def main():
             options=options_sip.parse_sip_options(config.SIP3_OPTIONS, 3),
             global_options=global_options,
         ),
+        4: account.MyAccountConfig(
+            enabled=config.SIP4_ENABLED.lower() == 'true',
+            index=4,
+            id_uri=config.SIP4_ID_URI,
+            registrar_uri=config.SIP4_REGISTRAR_URI,
+            realm=config.SIP4_REALM,
+            user_name=config.SIP4_USER_NAME,
+            password=config.SIP4_PASSWORD,
+            mode=call.CallHandling.get_or_else(config.SIP4_ANSWER_MODE, call.CallHandling.LISTEN),
+            settle_time=utils.convert_to_float(config.SIP4_SETTLE_TIME, 1),
+            incoming_call_config=load_menu_from_file(config.SIP4_INCOMING_CALL_FILE, 4),
+            options=options_sip.parse_sip_options(config.SIP4_OPTIONS, 4),
+            global_options=global_options,
+        ),
     }
     tts_config_from_env: TtsConfigFromEnv = {
         'platform': config.TTS_PLATFORM,
