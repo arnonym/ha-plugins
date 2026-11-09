@@ -1,6 +1,6 @@
 {
     "name": "ha-sip",
-    "version": "5.9",
+    "version": "5.9.1",
     "slug": "ha-sip",
     "url": "https://github.com/aceindy/ha-plugins",
     "description": "Home-Assistant SIP Gateway",
@@ -8,7 +8,7 @@
         "aarch64",
         "amd64"
     ],
-	"image": "aceindy/{arch}-ha-sip"
+	"image": "aceindy/{arch}-ha-sip",
     "init": "false",
     "startup": "application",
     "boot": "auto",
