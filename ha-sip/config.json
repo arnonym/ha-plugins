@@ -8,7 +8,6 @@
         "aarch64",
         "amd64"
     ],
-	"image": "aceindy/{arch}-ha-sip",
     "init": "false",
     "startup": "application",
     "boot": "auto",
