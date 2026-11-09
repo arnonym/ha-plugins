@@ -3,11 +3,11 @@
 export TMP_URL=~/tmp/ha-plugins-next
 
 if [ -z "$REPO_URL" ]; then
-  export REPO_URL=https://github.com/arnonym/ha-plugins
+  export REPO_URL=https://github.com/aceindy/ha-plugins
 fi
 
-export NEXT_REPO_URL=https://github.com/arnonym/ha-plugins-next
-export NEXT_REPO_SSH=git@github.com:arnonym/ha-plugins-next.git
+export NEXT_REPO_URL=https://github.com/aceindy/ha-plugins-next
+export NEXT_REPO_SSH=git@github.com:aceindy/ha-plugins-next.git
 
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd)
 
@@ -26,7 +26,7 @@ case "$1" in
         contents="$(jq --indent 4 '.slug = "ha-sip-next"' $CONFIG_JSON)" && echo -E "${contents}" > $CONFIG_JSON
         contents="$(jq --indent 4 '.url = env.NEXT_REPO_URL' $CONFIG_JSON)" && echo -E "${contents}" > $CONFIG_JSON
         contents="$(jq --indent 4 '.description = "Home-Assistant SIP Gateway (next version)"' $CONFIG_JSON)" && echo -E "${contents}" > $CONFIG_JSON
-        contents="$(jq --indent 4 '.image = "agellhaus/{arch}-ha-sip-next"' $CONFIG_JSON)" && echo -E "${contents}" > $CONFIG_JSON
+        contents="$(jq --indent 4 '.image = "aceindy/{arch}-ha-sip-next"' $CONFIG_JSON)" && echo -E "${contents}" > $CONFIG_JSON
         # Change readme
         README=$TMP_URL/README.md
         sed -i -e 's/ha-plugins/ha-plugins-next/g' $README
