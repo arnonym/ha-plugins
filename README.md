@@ -140,6 +140,16 @@ webhook:
 
 ## Usage
 
+### Finding the add-on ID 
+
+It could be that addon is installed with a different slug ID. In that case you need to find the new ID.
+To look it up, open SSH and type:
+
+```Shell
+ha addons list
+```
+which will show you the current addon ID.
+
 ### Outgoing calls
 
 Outgoing calls are made via the `hassio.addon_stdin` service in the action part of an automation.
