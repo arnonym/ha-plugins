@@ -77,7 +77,7 @@ jq_edit "$KT_CONFIG_JSON" '.name = "ha-sip-kt-next"'
 jq_edit "$KT_CONFIG_JSON" '.slug = "ha-sip-kt-next"'
 jq_edit "$KT_CONFIG_JSON" '.url = env.NEXT_REPO_URL'
 jq_edit "$KT_CONFIG_JSON" '.description = "Home-Assistant SIP Gateway (Kotlin/JVM port, next version)"'
-jq_edit "$KT_CONFIG_JSON" '.image = "ghcr.io/arnonym/{arch}-ha-sip-kt-next"'
+jq_edit "$KT_CONFIG_JSON" '.image = "ghcr.io/arnonym/ha-plugins-next/{arch}-ha-sip-kt-next"'
 
 # Docs: repo URLs, install badge, app slugs and image names. The optional `-next` in the
 # patterns keeps this idempotent, and `ha-sip-kt` followed by `/` is a directory path,
