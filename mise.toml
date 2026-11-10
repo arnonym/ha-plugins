@@ -1,0 +1,71 @@
+[tools]
+java = "temurin-25"
+# Used by the `mqtt-cli` task (scripts/hasip_mqtt_cli.py) -- uv reads that script's
+# inline PEP 723 dependency block and manages its own ephemeral venv, so no
+# requirements.txt/pyproject.toml is needed for this single-file utility.
+python = "3.12"
+uv = "latest"
+
+[tasks.extract-bindings]
+description = "Build the PJSIP Java SWIG bindings natively (no Docker/Podman) -- run once, or whenever pjproject's pinned version changes"
+run = "scripts/build-pjsua2-bindings-native.sh"
+
+[tasks."extract-bindings:docker"]
+description = "Build the PJSIP Java SWIG bindings via podman/docker instead of natively"
+run = "scripts/extract-pjsua2-bindings.sh"
+
+[tasks.build]
+description = "Compile the Kotlin app (ha-sip-kt) and run all its tests"
+run = "./gradlew build"
+dir = "ha-sip-kt"
+
+[tasks.test]
+description = "Run just the fast, pjsip-free :core tests (no native bindings needed at all)"
+run = "./gradlew :core:test"
+dir = "ha-sip-kt"
+
+[tasks.integration-test]
+description = "Run the two-instance direct-IP SIP suite (needs `mise run extract-bindings` + ffmpeg on PATH)"
+run = "./gradlew :integration-test:test -PintegrationTests"
+dir = "ha-sip-kt"
+
+[tasks.format]
+description = "Auto-format Kotlin sources (ktlint)"
+run = "./gradlew ktlintFormat"
+dir = "ha-sip-kt"
+
+[tasks.lint]
+description = "Check Kotlin formatting without modifying files (ktlint)"
+run = "./gradlew ktlintCheck"
+dir = "ha-sip-kt"
+
+[tasks.run]
+description = "Run the Kotlin app locally against .env (needs `mise run extract-bindings` first)"
+run = '''
+#!/usr/bin/env bash
+set -euo pipefail
+arch="$(uname -m)"
+case "$arch" in
+    x86_64|amd64) out_arch=amd64 ;;
+    aarch64|arm64) out_arch=aarch64 ;;
+    *) out_arch="$arch" ;;
+esac
+native_dir="ha-sip-kt/app/native/$out_arch"
+if [ ! -f "$native_dir/jni/libpjsua2.so" ]; then
+    echo "error: $native_dir/jni/libpjsua2.so not found -- run 'mise run extract-bindings' first" >&2
+    exit 1
+fi
+set -a
+[ -f .env ] && source .env
+set +a
+export LD_LIBRARY_PATH="$native_dir/runtime"
+exec java -Djava.library.path="$native_dir/jni" -jar ha-sip-kt/app/build/libs/ha-sip.jar
+'''
+
+[tasks.mqtt-cli]
+description = "Send ha-sip commands over MQTT; no args starts an interactive REPL"
+run = '''
+#!/usr/bin/env bash
+set -euo pipefail
+exec uv run scripts/hasip_mqtt_cli.py "$@"
+'''

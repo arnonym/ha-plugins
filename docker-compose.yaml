@@ -7,3 +7,36 @@ services:
                 BUILD_FROM: debian:bookworm
         network_mode: host
         env_file: ./.env
+
+    # The Kotlin app and a local MQTT broker for it. Neither starts with a bare
+    # `docker compose up`; use `docker compose --profile kt up` (or name the service,
+    # e.g. `docker compose up ha-sip-kt`). Don't run both apps at once against the same
+    # SIP account/port.
+    ha-sip-kt:
+        profiles:
+            - kt
+        build:
+            context: ./ha-sip-kt
+            dockerfile: Dockerfile
+            args:
+                BUILD_FROM: debian:trixie
+        network_mode: host
+        env_file: ./.env
+        depends_on:
+            - mosquitto
+
+    mosquitto:
+        profiles:
+            - kt
+        image: eclipse-mosquitto:2
+        volumes:
+            - ./mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro,Z
+            - mosquitto-data:/mosquitto/data
+        # ha-sip-kt reaches this via network_mode: host, i.e. localhost:1883 --
+        # bound to localhost only, not exposed beyond this machine.
+        ports:
+            - "127.0.0.1:1883:1883"
+        restart: unless-stopped
+
+volumes:
+    mosquitto-data:

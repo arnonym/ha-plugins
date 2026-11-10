@@ -134,3 +134,11 @@ deps/
 /ha-sip/src/config_local.py
 /incoming.yaml
 deploy.sh
+
+# Kotlin app (ha-sip-kt): Gradle output and the locally extracted PJSIP Java SWIG
+# bindings (built via scripts/extract-pjsua2-bindings.sh or
+# scripts/build-pjsua2-bindings-native.sh)
+.gradle/
+.kotlin/
+ha-sip-kt/app/libs/
+ha-sip-kt/app/native/
