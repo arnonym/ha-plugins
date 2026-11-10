@@ -26,7 +26,7 @@ class HaSipInstance(
     private val monitor = Object()
 
     /**
-     * A private, empty working directory. Not cosmetic: `AppConfig.fromEnv(dotEnvLookup())`
+     * A private, empty working directory. Not cosmetic: `AppConfig.fromEnv(loadDotEnv())`
      * reads a `.env` file relative to the process CWD, so without this the developer's
      * real `.env` at the repo root would silently override the test's env vars.
      */

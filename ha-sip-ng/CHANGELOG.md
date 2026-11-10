@@ -9,6 +9,10 @@ If you find ha-sip useful, consider starring ⭐ the [GitHub repo](https://githu
 - Fix crash when using wrong SIP URI format
 - Allow disabling of unused codecs
 - Allow specifying a RTP port range in `global_options` via `--rtp-port-range`
+- SIP accounts are now a list (`sip`) with any number of entries instead of the fixed
+  `sip`, `sip_2` and `sip_3` sections; an account's number is its position in the list.
+  Existing configurations need to be moved into the list once.
+- Allow resampling all audio to a fixed rate via `--audio-sample-rate` in `global_options`
 
 ## 5.6
 

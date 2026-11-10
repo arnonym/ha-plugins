@@ -4,11 +4,10 @@ import io.github.arnonym.command.CommandHandler
 import io.github.arnonym.config.AnswerMode
 import io.github.arnonym.config.AppConfig
 import io.github.arnonym.config.GlobalOptions
-import io.github.arnonym.config.SIP_ACCOUNT_INDICES
 import io.github.arnonym.config.SipOptions
 import io.github.arnonym.config.convertToDouble
 import io.github.arnonym.config.convertToInt
-import io.github.arnonym.config.dotEnvLookup
+import io.github.arnonym.config.loadDotEnv
 import io.github.arnonym.event.EventSender
 import io.github.arnonym.ha.HaClient
 import io.github.arnonym.ha.HaConfig
@@ -100,8 +99,7 @@ private fun enabledAccountConfigs(
     config: AppConfig,
     globalOptions: GlobalOptions,
 ): Map<Int, MyAccountConfig> =
-    SIP_ACCOUNT_INDICES.associateWith { index ->
-        val env = config.sipAccounts.getValue(index)
+    config.sipAccounts.mapValues { (index, env) ->
         MyAccountConfig(
             enabled = env.enabled.equals("true", ignoreCase = true),
             index = index,
@@ -205,7 +203,7 @@ fun main(args: Array<String>) {
         SipOptions.printHelp()
         exitProcess(0)
     }
-    val config = AppConfig.fromEnv(dotEnvLookup())
+    val config = AppConfig.fromEnv(loadDotEnv())
 
     val globalOptions = GlobalOptions.parse(config.globalOptions)
     val nameServer = config.nameServer.split(",").map { it.trim() }.filter { it.isNotEmpty() }

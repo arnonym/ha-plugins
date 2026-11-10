@@ -51,28 +51,27 @@ sip_global:
     name_server: '' # comma separated list of name servers, must be set if sip server must be resolved via SRV record
     cache_dir: '/config/audio_cache' # directory to cache TTS messages or converted audio files. Must be inside /config or /media and existing
     global_options: ''
-sip:
-    enabled: true
-    registrar_uri: sip:fritz.box
-    id_uri: sip:homeassistant@fritz.box
-    realm: '*'
-    user_name: homeassistant
-    password: secure
-    answer_mode: listen  # "listen", "accept", or "reject". see below
-    settle_time: 1 # time to wait for playing the message/actions/etc. after call was established
-    incoming_call_file: "" # config and menu definition file for incoming calls, see below
-    options: ''
-sip_2:
-    enabled: false
-    registrar_uri: sip:fritz.box
-    id_uri: sip:anotheruser@fritz.box
-    realm: '*'
-    user_name: anotheruser
-    password: secret
-    answer_mode: listen
-    settle_time: 1
-    incoming_call_file: ""
-    options: ''
+sip: # list of SIP accounts, as many as you need
+    - enabled: true # account 1
+      registrar_uri: sip:fritz.box
+      id_uri: sip:homeassistant@fritz.box
+      realm: '*'
+      user_name: homeassistant
+      password: secure
+      answer_mode: listen  # "listen", "accept", or "reject". see below
+      settle_time: 1 # time to wait for playing the message/actions/etc. after call was established
+      incoming_call_file: "" # config and menu definition file for incoming calls, see below
+      options: ''
+    - enabled: false # account 2
+      registrar_uri: sip:fritz.box
+      id_uri: sip:anotheruser@fritz.box
+      realm: '*'
+      user_name: anotheruser
+      password: secret
+      answer_mode: listen
+      settle_time: 1
+      incoming_call_file: ""
+      options: ''
 tts:
     engine_id: tts.google_translate_de_com # entity id of the TTS engine
     platform: google_translate # deprecated, must not be set if engine_id is set
@@ -82,6 +81,15 @@ tts:
 webhook:
     id: sip_call_webhook_id
 ```
+
+> **Note:**
+> `sip` is a list, so you can configure any number of SIP accounts. An account's number — used as
+> `sip_account` in commands and web-hooks, and in the sensor entity IDs — is its position in the list:
+> the first entry is account 1, the second account 2, and so on. To switch an account off without
+> renumbering the ones after it, set `enabled: false` instead of removing it.
+>
+> In stand-alone mode, accounts are configured through the `SIP<n>_*` variables in `.env`
+> (`SIP1_ENABLED`, `SIP1_ID_URI`, ...), likewise with as many accounts as you need.
 
 > **Note:**
 > When your `user_name` or `password` starts with a number, you need to put it in quotes like `"1234"`.
@@ -208,7 +216,7 @@ data:
             call_disconnected: another_webhook_id
             playback_done: another_webhook_id # is called after playback of message or audio file is done
         ring_timeout: 15 # time to ring in seconds (optional, defaults to 300)
-        sip_account: 1 # number of configured sip account: 1, 2, or 3
+        sip_account: 1 # number of the sip account, i.e. its position in the `sip` list (1 is the first)
                        # (optional, defaults to first enabled sip account)
         menu:
             message: There's a burglar in da house.

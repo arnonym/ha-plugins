@@ -1,7 +1,17 @@
 package io.github.arnonym.config
 
-/** ha-sip reads three fixed sets of SIP account variables: `SIP1_*`, `SIP2_*`, `SIP3_*`. */
-val SIP_ACCOUNT_INDICES = 1..3
+/**
+ * A SIP account is a set of `SIP<n>_*` variables, `<n>` being its account number. Any
+ * number of accounts can be configured; in Home Assistant, `run-in-ha.sh` numbers the
+ * entries of the `sip` list 1, 2, 3, ... in order.
+ */
+private val SIP_ACCOUNT_VARIABLE = Regex("""^SIP([0-9]+)_""")
+
+/** The account numbers that have at least one `SIP<n>_*` variable, in ascending order. */
+fun sipAccountIndices(names: Collection<String>): List<Int> =
+    names.mapNotNull { SIP_ACCOUNT_VARIABLE.find(it)?.groupValues?.get(1)?.toIntOrNull() }
+        .distinct()
+        .sorted()
 
 data class SipAccountEnv(
     val enabled: String,
@@ -42,17 +52,18 @@ data class AppConfig(
     val nameServer: String,
     val cacheDir: String,
     val globalOptions: String,
+    /** Keyed by account number, in ascending order. */
     val sipAccounts: Map<Int, SipAccountEnv>,
     val tts: TtsEnv,
     val ha: HaEnv,
     val sensor: SensorEnv,
 ) {
     companion object {
-        fun fromEnv(getenv: (String) -> String? = System::getenv): AppConfig {
+        fun fromEnv(source: EnvSource = EnvSource.system()): AppConfig {
             fun env(
                 name: String,
                 default: String = "",
-            ) = getenv(name) ?: default
+            ) = source[name] ?: default
 
             fun sipAccountEnv(index: Int) =
                 SipAccountEnv(
@@ -74,7 +85,7 @@ data class AppConfig(
                 nameServer = env("NAME_SERVER"),
                 cacheDir = env("CACHE_DIR"),
                 globalOptions = env("GLOBAL_OPTIONS"),
-                sipAccounts = SIP_ACCOUNT_INDICES.associateWith { sipAccountEnv(it) },
+                sipAccounts = sipAccountIndices(source.names).associateWith { sipAccountEnv(it) },
                 tts =
                     TtsEnv(
                         engineId = env("TTS_ENGINE_ID"),
