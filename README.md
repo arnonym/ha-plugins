@@ -870,17 +870,30 @@ Your support helps others discover the project and keeps me motivated.
 
 ## Development
 
-1. Create a virtual environment with pjsip and dependencies installed running `./build.sh create-venv` from the root directory of the repo
-2. Activate virtual env with `source venv/bin/activate` (bash, might be different with other shells)
-3. Copy `.env.example` to `.env` and replace the variable place-holders with your real configuration.
+Development tasks for both apps are [mise](https://mise.jdx.dev/) tasks, run from the root directory of the
+repo (`mise tasks` lists them all). The ones for this app are prefixed `ha-sip:`, the Kotlin app's
+`ha-sip-kt:` (see [its development section](ha-sip-kt/README.md#development)).
+
+1. Create a virtual environment `venv/` with pjsip and dependencies installed by running `mise run ha-sip:setup`
+2. Copy `.env.example` to `.env` and replace the variable place-holders with your real configuration.
 
    `HA_BASE_URL` is something like "http://homeassistant.local:8123/api"
 
    The access token is created from http://homeassistant.local:8123/profile
-4. Run `./build.sh run-local` to run the app locally
+3. Run `mise run ha-sip:test` to run the unit tests and the type-check (`mise run test` runs the tests of both apps)
+4. Run `mise run ha-sip:run` to run the app locally (`mise run ha-sip:run -- --help` lists its options)
 5. Paste commands as json (without line-breaks) into stdin of the running app:
 
    Example:
    ```json
    { "command": "dial", "number": "sip:**620@fritz.box", "menu": { "message": "Hello from ha-sip.", "language": "en" } }
    ```
+
+`mise run ha-sip:image` builds the app's container image locally. Images for Home Assistant are built by
+[the `build-ha-sip.yml` workflow](.github/workflows/build-ha-sip.yml): it runs the unit tests on every push to
+`main` and `next`, and builds and pushes the images only from `next`. To release, bump the `version` in
+`ha-sip/config.json` on `next`, let the images build, then merge into `main`.
+
+To publish a beta, push `next` and run `mise run update-next-repo [version] [--kt-version <version>]`. It
+copies `next` to [ha-plugins-next](https://github.com/arnonym/ha-plugins-next) with both apps renamed for the
+beta channel (`ha-sip-next`, `ha-sip-kt-next`) and force-pushes it there.

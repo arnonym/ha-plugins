@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Native (no Docker/Podman) equivalent of scripts/extract-pjsua2-bindings.sh --
-# the Kotlin/JVM counterpart of the Python project's `build.sh create-venv`.
+# the Kotlin/JVM counterpart of the Python app's `mise run ha-sip:setup`.
 #
 # Builds pjproject + its Java SWIG module directly on this machine (into
 # deps/kt/pjproject, isolated from the system via --prefix) and copies the
@@ -16,7 +16,7 @@ set -euo pipefail
 PJPROJECT_VERSION="${PJPROJECT_VERSION:-2.17}"
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 ha_sip_dir="$repo_root/ha-sip-kt"
-# deps/kt, not deps: deps/pjproject is the Python app's own checkout (build.sh create-venv).
+# deps/kt, not deps: deps/pjproject is the Python app's own checkout (mise run ha-sip:setup).
 deps_dir="$repo_root/deps/kt"
 prefix="$deps_dir/install"
 
