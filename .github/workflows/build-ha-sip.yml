@@ -21,7 +21,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Read BUILD_FROM base image
         id: manifest
@@ -29,13 +29,13 @@ jobs:
         run: echo "build_from=$(jq -r '.build_from.amd64' build.json)" >> "$GITHUB_OUTPUT"
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
 
       # The unit tests import pjsua2, which only exists inside the image -- so build
       # it (amd64 only, kept local) and run them there. The cache scope is the one the
       # amd64 build job below reads, so on `next` this build is not repeated.
       - name: Build test image
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: ha-sip
           file: ha-sip/Dockerfile
@@ -66,7 +66,7 @@ jobs:
     runs-on: ${{ matrix.runner }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Read BUILD_FROM base image + app image/version
         id: manifest
@@ -80,16 +80,16 @@ jobs:
           echo "image=$(jq -r '.image' config.json | sed 's/{arch}/${{ matrix.arch }}/')" >> "$GITHUB_OUTPUT"
 
       - name: Log in to Docker Hub
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           username: agellhaus
           password: ${{ secrets.DOCKER_HUB_PASSWORD }}
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
 
       - name: Build and push ${{ matrix.arch }} image
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: ha-sip
           file: ha-sip/Dockerfile

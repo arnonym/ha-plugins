@@ -77,6 +77,7 @@ COPY settings.gradle.kts build.gradle.kts gradlew ./
 COPY gradle ./gradle
 COPY core ./core
 COPY app ./app
+COPY integration-test/build.gradle.kts ./integration-test/build.gradle.kts
 COPY --from=pjsip-bindings /out/pjsua2.jar ./app/libs/pjsua2.jar
 
 RUN ./gradlew :app:shadowJar --no-daemon --console=plain
