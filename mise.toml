@@ -3,44 +3,210 @@ java = "temurin-25"
 # Used by the `mqtt-cli` task (scripts/hasip_mqtt_cli.py) -- uv reads that script's
 # inline PEP 723 dependency block and manages its own ephemeral venv, so no
 # requirements.txt/pyproject.toml is needed for this single-file utility.
-python = "3.12"
+# Python itself is deliberately not pinned: the Python app's venv (`ha-sip:setup`)
+# is built with whatever `python3` the host provides, as it always was.
 uv = "latest"
 
-[tasks.extract-bindings]
+# ---------------------------------------------------------------------------------
+# Both apps
+# ---------------------------------------------------------------------------------
+
+[tasks.test]
+description = "Run the unit tests of both apps"
+depends = ["ha-sip:test", "ha-sip-kt:test"]
+
+[tasks.mqtt-cli]
+description = "Send ha-sip commands over MQTT; no args starts an interactive REPL"
+run = '''
+#!/usr/bin/env bash
+set -euo pipefail
+exec uv run scripts/hasip_mqtt_cli.py "$@"
+'''
+
+[tasks.update-next-repo]
+description = "Publish the `next` branch to the beta repository (ha-plugins-next), with both apps renamed for the beta channel"
+usage = '''
+arg "[version]" help="Override ha-sip's version in the beta repository"
+flag "--kt-version <kt_version>" help="Override ha-sip-kt's version in the beta repository"
+'''
+run = '''
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Mirrors the `next` branch of this repo into a *separate* Home Assistant app
+# repository, with every app's identity rewritten for the beta channel so testers can
+# install it side by side with the regular one. The mirror is a force-pushed copy --
+# never commit to ha-plugins-next directly, it gets overwritten on every run.
+REPO_URL="${REPO_URL:-https://github.com/arnonym/ha-plugins}"
+NEXT_REPO_URL="${NEXT_REPO_URL:-https://github.com/arnonym/ha-plugins-next}"
+NEXT_REPO_SSH="${NEXT_REPO_SSH:-git@github.com:arnonym/ha-plugins-next.git}"
+TMP_DIR="${TMP_DIR:-$HOME/tmp/ha-plugins-next}"
+export NEXT_REPO_URL
+
+for tool in git jq sed; do
+    command -v "$tool" >/dev/null || { echo "error: $tool not found on PATH" >&2; exit 1; }
+done
+
+echo "Cloning $REPO_URL (branch next) into $TMP_DIR..."
+rm -rf "$TMP_DIR"
+git clone -b next "$REPO_URL" "$TMP_DIR"
+
+# jq can't edit in place, and `jq ... f > f` would truncate before reading.
+jq_edit() {
+    local file="$1" filter="$2" contents
+    contents="$(jq --indent 4 "$filter" "$file")"
+    printf '%s\n' "$contents" > "$file"
+}
+
+echo "Rewriting the repository and app identities for the beta channel..."
+REPO_JSON="$TMP_DIR/repository.json"
+jq_edit "$REPO_JSON" '.name = "Home Assistant addons by Arne Gellhaus (next version)"'
+jq_edit "$REPO_JSON" '.url = env.NEXT_REPO_URL'
+
+# Each image must get its own -next name: the build workflows publish from `next` in
+# the mirror too, and would otherwise overwrite the production images.
+CONFIG_JSON="$TMP_DIR/ha-sip/config.json"
+jq_edit "$CONFIG_JSON" '.name = "ha-sip-next"'
+jq_edit "$CONFIG_JSON" '.slug = "ha-sip-next"'
+jq_edit "$CONFIG_JSON" '.url = env.NEXT_REPO_URL'
+jq_edit "$CONFIG_JSON" '.description = "Home-Assistant SIP Gateway (next version)"'
+jq_edit "$CONFIG_JSON" '.image = "agellhaus/{arch}-ha-sip-next"'
+
+KT_CONFIG_JSON="$TMP_DIR/ha-sip-kt/config.json"
+jq_edit "$KT_CONFIG_JSON" '.name = "ha-sip-kt-next"'
+jq_edit "$KT_CONFIG_JSON" '.slug = "ha-sip-kt-next"'
+jq_edit "$KT_CONFIG_JSON" '.url = env.NEXT_REPO_URL'
+jq_edit "$KT_CONFIG_JSON" '.description = "Home-Assistant SIP Gateway (Kotlin/JVM port, next version)"'
+jq_edit "$KT_CONFIG_JSON" '.image = "ghcr.io/arnonym/{arch}-ha-sip-kt-next"'
+
+# Docs: repo URLs, install badge, app slugs and image names. The optional `-next` in the
+# patterns keeps this idempotent, and `ha-sip-kt` followed by `/` is a directory path,
+# not the slug, so it stays.
+sed -i \
+    -e 's/ha-plugins\(-next\)\?/ha-plugins-next/g' \
+    -e 's/c7744bff_ha-sip/8cd50eef_ha-sip-next/g' \
+    "$TMP_DIR/README.md"
+sed -i -E \
+    -e 's/ha-plugins(-next)?/ha-plugins-next/g' \
+    -e 's/c7744bff_ha-sip-kt/8cd50eef_ha-sip-kt/g' \
+    -e 's#ha-sip-kt(-next)?([^/]|$)#ha-sip-kt-next\2#g' \
+    "$TMP_DIR/ha-sip-kt/README.md"
+
+if [ -n "${usage_version:-}" ]; then
+    echo "Setting ha-sip version to $usage_version"
+    export OVERWRITE_VERSION="$usage_version"
+    jq_edit "$CONFIG_JSON" '.version = env.OVERWRITE_VERSION'
+else
+    echo "Keeping ha-sip version $(jq -r '.version' "$CONFIG_JSON")."
+fi
+if [ -n "${usage_kt_version:-}" ]; then
+    echo "Setting ha-sip-kt version to $usage_kt_version"
+    export OVERWRITE_VERSION="$usage_kt_version"
+    jq_edit "$KT_CONFIG_JSON" '.version = env.OVERWRITE_VERSION'
+else
+    echo "Keeping ha-sip-kt version $(jq -r '.version' "$KT_CONFIG_JSON")."
+fi
+
+cd "$TMP_DIR"
+git commit -a -m "Changes for next repository."
+git remote set-url origin "$NEXT_REPO_SSH"
+git push --force
+echo "Pushed to $NEXT_REPO_URL (branch next)."
+'''
+
+# ---------------------------------------------------------------------------------
+# ha-sip (Python)
+# ---------------------------------------------------------------------------------
+
+[tasks."ha-sip:setup"]
+description = "Create venv/ with the Python dependencies and pjsip's Python bindings (built into deps/pjproject)"
+run = '''
+#!/usr/bin/env bash
+set -euo pipefail
+root="$PWD"
+rm -rf "$root/venv" "$root/deps/pjproject"
+python3 -m venv "$root/venv"
+source "$root/venv/bin/activate"
+pip3 install -r "$root/ha-sip/requirements.txt"
+mkdir -p "$root/deps"
+git clone --depth 1 --branch 2.17 https://github.com/pjsip/pjproject.git "$root/deps/pjproject"
+cd "$root/deps/pjproject"
+./configure CFLAGS="-O3 -DNDEBUG -fPIC" --enable-shared --disable-libwebrtc --with-ssl --with-opus=/usr --prefix "$root/venv"
+make
+make dep
+make install
+cd pjsip-apps/src/swig
+make python
+cd python
+python setup.py install
+'''
+
+[tasks."ha-sip:test"]
+description = "Run the Python unit tests and the type-check (needs `mise run ha-sip:setup` first)"
+env = { LD_LIBRARY_PATH = "{{config_root}}/venv/lib" }
+run = '''
+#!/usr/bin/env bash
+set -euo pipefail
+source venv/bin/activate
+echo "Running unit tests..."
+python3 -m unittest discover -s ha-sip/src
+echo "Running type-check..."
+pyright ha-sip
+'''
+
+[tasks."ha-sip:run"]
+description = "Run the Python app locally against .env; arguments are passed on, e.g. `mise run ha-sip:run -- --help`"
+env = { LD_LIBRARY_PATH = "{{config_root}}/venv/lib" }
+run = '''
+#!/usr/bin/env bash
+set -euo pipefail
+source venv/bin/activate
+exec ha-sip/src/main.py "$@"
+'''
+
+[tasks."ha-sip:image"]
+description = "Build the Python app's container image for this machine's architecture"
+run = "scripts/build-image.sh ha-sip"
+
+# ---------------------------------------------------------------------------------
+# ha-sip-kt (Kotlin/JVM)
+# ---------------------------------------------------------------------------------
+
+[tasks."ha-sip-kt:setup"]
 description = "Build the PJSIP Java SWIG bindings natively (no Docker/Podman) -- run once, or whenever pjproject's pinned version changes"
 run = "scripts/build-pjsua2-bindings-native.sh"
 
-[tasks."extract-bindings:docker"]
+[tasks."ha-sip-kt:setup:docker"]
 description = "Build the PJSIP Java SWIG bindings via podman/docker instead of natively"
 run = "scripts/extract-pjsua2-bindings.sh"
 
-[tasks.build]
-description = "Compile the Kotlin app (ha-sip-kt) and run all its tests"
-run = "./gradlew build"
-dir = "ha-sip-kt"
-
-[tasks.test]
+[tasks."ha-sip-kt:test"]
 description = "Run just the fast, pjsip-free :core tests (no native bindings needed at all)"
 run = "./gradlew :core:test"
 dir = "ha-sip-kt"
 
-[tasks.integration-test]
-description = "Run the two-instance direct-IP SIP suite (needs `mise run extract-bindings` + ffmpeg on PATH)"
+[tasks."ha-sip-kt:build"]
+description = "Compile the Kotlin app and run all its tests"
+run = "./gradlew build"
+dir = "ha-sip-kt"
+
+[tasks."ha-sip-kt:integration-test"]
+description = "Run the two-instance direct-IP SIP suite (needs `mise run ha-sip-kt:setup` + ffmpeg on PATH)"
 run = "./gradlew :integration-test:test -PintegrationTests"
 dir = "ha-sip-kt"
 
-[tasks.format]
+[tasks."ha-sip-kt:format"]
 description = "Auto-format Kotlin sources (ktlint)"
 run = "./gradlew ktlintFormat"
 dir = "ha-sip-kt"
 
-[tasks.lint]
+[tasks."ha-sip-kt:lint"]
 description = "Check Kotlin formatting without modifying files (ktlint)"
 run = "./gradlew ktlintCheck"
 dir = "ha-sip-kt"
 
-[tasks.run]
-description = "Run the Kotlin app locally against .env (needs `mise run extract-bindings` first)"
+[tasks."ha-sip-kt:run"]
+description = "Run the Kotlin app locally against .env (needs `mise run ha-sip-kt:setup` and `ha-sip-kt:build` first)"
 run = '''
 #!/usr/bin/env bash
 set -euo pipefail
@@ -52,20 +218,16 @@ case "$arch" in
 esac
 native_dir="ha-sip-kt/app/native/$out_arch"
 if [ ! -f "$native_dir/jni/libpjsua2.so" ]; then
-    echo "error: $native_dir/jni/libpjsua2.so not found -- run 'mise run extract-bindings' first" >&2
+    echo "error: $native_dir/jni/libpjsua2.so not found -- run 'mise run ha-sip-kt:setup' first" >&2
     exit 1
 fi
 set -a
 [ -f .env ] && source .env
 set +a
 export LD_LIBRARY_PATH="$native_dir/runtime"
-exec java -Djava.library.path="$native_dir/jni" -jar ha-sip-kt/app/build/libs/ha-sip.jar
+exec java -Djava.library.path="$native_dir/jni" -jar ha-sip-kt/app/build/libs/ha-sip.jar "$@"
 '''
 
-[tasks.mqtt-cli]
-description = "Send ha-sip commands over MQTT; no args starts an interactive REPL"
-run = '''
-#!/usr/bin/env bash
-set -euo pipefail
-exec uv run scripts/hasip_mqtt_cli.py "$@"
-'''
+[tasks."ha-sip-kt:image"]
+description = "Build the Kotlin app's container image for this machine's architecture"
+run = "scripts/build-image.sh ha-sip-kt"

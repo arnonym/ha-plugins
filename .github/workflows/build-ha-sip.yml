@@ -1,0 +1,109 @@
+name: Build ha-sip
+
+# Same shape as build-ha-sip-kt.yml: tests on every push to main/next that touches
+# the app, images built and pushed only from `next`. That holds here (production
+# images, released to users by merging next into main) as well as in the beta mirror
+# ha-plugins-next (where `mise run update-next-repo` renames the image to -next).
+on:
+  push:
+    branches: [ main, next ]
+    paths:
+      - 'ha-sip/**'
+      - '.github/workflows/build-ha-sip.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Read BUILD_FROM base image
+        id: manifest
+        working-directory: ha-sip
+        run: echo "build_from=$(jq -r '.build_from.amd64' build.json)" >> "$GITHUB_OUTPUT"
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # The unit tests import pjsua2, which only exists inside the image -- so build
+      # it (amd64 only, kept local) and run them there. The cache scope is the one the
+      # amd64 build job below reads, so on `next` this build is not repeated.
+      - name: Build test image
+        uses: docker/build-push-action@v6
+        with:
+          context: ha-sip
+          file: ha-sip/Dockerfile
+          platforms: linux/amd64
+          load: true
+          build-args: |
+            BUILD_FROM=${{ steps.manifest.outputs.build_from }}
+          cache-from: type=gha,scope=ha-sip-amd64
+          cache-to: type=gha,scope=ha-sip-amd64,mode=max
+          tags: ha-sip:test
+
+      - name: Run unit tests
+        run: docker run --rm --entrypoint python3 ha-sip:test -m unittest discover -s /ha-sip
+
+  build:
+    needs: test
+    if: github.ref_name == 'next'
+    environment: next
+    strategy:
+      matrix:
+        include:
+          - arch: amd64
+            platform: linux/amd64
+            runner: ubuntu-latest
+          - arch: aarch64
+            platform: linux/arm64
+            runner: ubuntu-24.04-arm
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Read BUILD_FROM base image + app image/version
+        id: manifest
+        working-directory: ha-sip
+        run: |
+          echo "build_from=$(jq -r '.build_from.${{ matrix.arch }}' build.json)" >> "$GITHUB_OUTPUT"
+          echo "version=$(jq -r '.version' config.json)" >> "$GITHUB_OUTPUT"
+          echo "name=$(jq -r '.name' config.json)" >> "$GITHUB_OUTPUT"
+          # From config.json rather than hard-coded, so the beta mirror pushes to
+          # agellhaus/<arch>-ha-sip-next with this same workflow file.
+          echo "image=$(jq -r '.image' config.json | sed 's/{arch}/${{ matrix.arch }}/')" >> "$GITHUB_OUTPUT"
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: agellhaus
+          password: ${{ secrets.DOCKER_HUB_PASSWORD }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push ${{ matrix.arch }} image
+        uses: docker/build-push-action@v6
+        with:
+          context: ha-sip
+          file: ha-sip/Dockerfile
+          platforms: ${{ matrix.platform }}
+          push: true
+          build-args: |
+            BUILD_FROM=${{ steps.manifest.outputs.build_from }}
+          cache-from: type=gha,scope=ha-sip-${{ matrix.arch }}
+          cache-to: type=gha,scope=ha-sip-${{ matrix.arch }},mode=max
+          labels: |
+            io.hass.name=${{ steps.manifest.outputs.name }}
+            io.hass.version=${{ steps.manifest.outputs.version }}
+            io.hass.arch=${{ matrix.arch }}
+            io.hass.type=addon
+          tags: |
+            ${{ steps.manifest.outputs.image }}:${{ steps.manifest.outputs.version }}
+            ${{ steps.manifest.outputs.image }}:latest
