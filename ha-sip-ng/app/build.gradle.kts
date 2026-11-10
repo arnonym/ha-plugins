@@ -68,6 +68,13 @@ tasks.shadowJar {
     archiveBaseName.set("ha-sip")
     archiveClassifier.set("")
     archiveVersion.set("")
+    // JEP 472: loading native code (pjsip's libpjsua2 via System.loadLibrary, and JNA,
+    // which Clikt's terminal library pulls in) needs explicit permission since JDK 24 --
+    // a warning for now, blocked in a future release. This manifest attribute grants it
+    // to everything launched as `java -jar ha-sip.jar`, with no extra command-line flag.
+    manifest {
+        attributes("Enable-Native-Access" to "ALL-UNNAMED")
+    }
     // Shadow 9 excludes duplicate paths by default, which would hand only the first
     // copy of each META-INF/services file to the merging transformer -- dropping e.g.
     // ktor's engine or slf4j's provider registrations. Let duplicates through to the
