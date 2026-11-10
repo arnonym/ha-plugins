@@ -10,6 +10,11 @@
 - record calls into .wav files
 - [speak to Home Assistant Voice Assist without special hardware](VOICE-ASSISTANT.md)
 
+> **Kotlin/JVM version:**
+> This repository also contains `ha-sip-kt`, a Kotlin/JVM port of this app with the same
+> configuration, commands, web-hooks and menu files. It can be installed side by side with
+> `ha-sip` from the same repository; see [ha-sip-kt/README.md](ha-sip-kt/README.md).
+
 ## Installation
 
 [![Open your Home Assistant instance and show the add app repository dialog with a specific repository URL pre-filled.](https://my.home-assistant.io/badges/supervisor_add_addon_repository.svg)](https://my.home-assistant.io/redirect/supervisor_add_addon_repository/?repository_url=https%3A%2F%2Fgithub.com%2Farnonym%2Fha-plugins)

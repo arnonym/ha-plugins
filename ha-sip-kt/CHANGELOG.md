@@ -1,0 +1,197 @@
+# Changelog
+
+If you find ha-sip useful, consider starring ⭐ the [GitHub repo](https://github.com/arnonym/ha-plugins)!
+
+## 10.0
+
+- Ported to Kotlin to overcome single thread limitations of Python which caused issues
+  with e.g. recordings.
+- Fix crash when using wrong SIP URI format
+- Allow disabling of unused codecs
+- Allow specifying a RTP port range in `global_options` via `--rtp-port-range`
+
+## 5.6
+
+- Allow to specify a SIP status code in the `hangup` command for unanswered calls
+- Add "reject" mode for SIP accounts to reject incoming calls by default
+- Add `call_direction` field to all webhook payloads to distinguish between `"incoming"` and `"outgoing"` calls
+- Fix not able to jump to certain menu IDs (thanks nbe95@github for the fix!)
+- Allow use of MQTT also inside supervisor mode
+- Update pjsip to latest version
+- Remove unsupported architectures i386, armhf and armv7
+
+> **Deprecation notice**: `caller`, `called`, `parsed_caller`, and `parsed_called` webhook and sensor fields are deprecated and will be removed in a future version
+> as those were interchanged in outgoing calls.
+>
+> Use `remote_uri`, `local_uri`, `parsed_remote_uri`, and `parsed_local_uri` instead.
+
+> **Backward incompatible changes for stand-alone mode**:
+> use `GLOBAL_OPTIONS` instead of individual environment variables to configure MQTT.
+
+## 5.5
+- Add sensors for call and account state
+- Fix bug with post_action for play_message and play_audio_file not working for incoming calls
+
+## 5.4.1
+- Fix crash for outgoing calls
+
+## 5.4
+- Allow templating of messages in `incoming_call_file` or from MQTT (thanks nbe95@github for implementing this!)
+- Add option to extract SIP headers and receive them in webhooks
+- Allow post_action `hangup` for direct messages or audio file playback
+- Improve identification of calls from commands
+- Add incoming number to webhook payload (thanks marn-x@github for the initial implementation!)
+
+## 5.3
+- Make entity_id optional for home-assistant service calls
+- Fix bug with jump action from manually answered calls
+
+## 5.2
+- Add recording support for calls (thanks dirtyharryiv@github for implementing this!)
+- Allow /media to be used inside app
+- Bugfix for Python 3.13
+- Update pjsip to latest version
+
+## 5.1
+- Allow setting voice and other options for TTS messages
+- Add opus codec support for home-assistant VoIP integration
+- Add webhook overwrite option for 'answer' command
+> **Deprecation notice**: `platform` in TTS options is replaced by `engine_id`
+
+## 5.0
+- Add MQTT topic for call state events
+- Add options for proxy, stun, and turn servers
+- Allow TLS connections to SIP servers
+- Removed long deprecated `webhook_to_call_after_call_was_established` option.
+  See version 2.6 for migration instructions.
+
+## 4.1
+- Update pjsip to latest version
+- Move base image to debian
+
+## 3.9
+- Add option to ignore DTMF tones until message/audio file has finished to play
+
+## 3.8
+- Add option to cache TTS messages and converted audio files
+- Stability fixes
+
+## 3.7
+- Add stand-alone mode with MQTT support for running ha-sip outside
+  of Home Assistant OS (thanks eporsche@github for implementing this!)
+
+## 3.6
+- update to the latest stable version of pjsip
+
+## 3.5.1
+- Add error handling for getting TTS messages
+
+## 3.5
+- Add command to `stop_playback`
+- Add command to play audio file or message
+- New webhooks for playback done, ring timeout, and menu timeout
+
+## 3.4
+- Add additional data to home-assistant service calls (e.g. add variables to script calls)
+- Additional logging for troubleshooting
+
+## 3.3
+- Disable debug mode for pjsip
+
+## 3.2
+- Updated pjsip to latest version
+
+## 3.1
+- Reverted slug change because requirements where changed again in 2023.9.2 and created issues.
+  If you already changed the slug in your automations you need to redo that. Sorry for any inconvenience
+
+## 3.0
+- Changed slug to new requirements in home-assistant 2023.9
+- Added option to call commands directly from menu
+  (previously only possible through stdin action in home-assistant)
+- Updated pjsip to latest version
+
+## 2.9
+- Allow transfer of calls
+- Bridge audio streams between calls
+- Add handling of wav files returned from TTS services
+- Allow three SIP accounts
+
+## 2.8
+- Add fault-handler
+- Upgrade to python 3.10
+- Use alpine image instead of ubuntu
+
+## 2.7
+- More flexible `return` post action: specify how many levels to go back from the sub-menu
+- Added `jump` post action to jump to any menu with an id
+- Add wildcard support for incoming call `allowed_numbers` and `blocked_numbers` filter
+- Bugfix: time-out not reset when returning to parent menu
+
+## 2.6
+- Call additional web-hooks for incoming and outgoing calls
+> **Deprecation notice**: `webhook_to_call_after_call_was_established` will be removed in the next release and is replaced by the more granular `webhook_to_call`.
+
+The old config option can be converted from
+
+```yaml
+webhook_to_call_after_call_was_established: another_webhook_id
+```
+
+to
+
+```yaml
+webhook_to_call:
+    call_established: another_webhook_id
+```
+
+
+## 2.5
+- Add option to repeat message until timeout is reached
+
+## 2.4
+- add name server config for SIP servers that must be resolved via SRV record
+- improve logging
+
+## 2.3
+- add account index to web-hook calls
+- update to the latest stable version of pjsip
+
+## 2.2
+- add ability to play sound files (.wav, .mp3) instead of TTS message
+
+## 2.1
+- Bugfix: incoming number could not be found from a stdin action under certain circumstances
+- Bugfix: `post_action` failed to run when keys are prematurely pressed
+
+## 2.0
+#### Breaking change: if you are not using 5060 as your sip port, you need to set it in global SIP options again
+- allow two SIP accounts
+- accept calls and define own menu for incoming calls (configurable by SIP account)
+- menu choices can consist of more than one digit
+- add option to handle menu digits as PIN
+- allow sending of DTMF digits to an established call
+- introduce `post_action` to hang up or return after menu was selected
+- add option to call webhook after menu is selected
+- add `timeout` option (defaults to 300 seconds) to menu entries
+- Add more web-hooks to control ha-sip from home-assistant
+- update to the latest stable version of pjsip
+- Revamped docs on GitHub
+
+## 1.5
+- add language option for TTS
+
+## 1.4
+- call webhook on incoming calls
+- update to the latest stable version of pjsip
+- Use docker hub images, instead of local build to reduce installation time and allow installation of devices with little memory
+- Add icon
+
+## 1.3
+- fix build on aarch64 cpu architecture
+
+## 1.2
+- use fixed commit for known working pjsip
+
+## 1.1
+- fix wrong build image for `aarch64`

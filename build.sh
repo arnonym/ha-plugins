@@ -27,10 +27,20 @@ case "$1" in
         contents="$(jq --indent 4 '.url = env.NEXT_REPO_URL' $CONFIG_JSON)" && echo -E "${contents}" > $CONFIG_JSON
         contents="$(jq --indent 4 '.description = "Home-Assistant SIP Gateway (next version)"' $CONFIG_JSON)" && echo -E "${contents}" > $CONFIG_JSON
         contents="$(jq --indent 4 '.image = "agellhaus/{arch}-ha-sip-next"' $CONFIG_JSON)" && echo -E "${contents}" > $CONFIG_JSON
+        # Change config of the Kotlin app. The image must get its own name: the ha-sip-kt
+        # workflows publish whenever they run in the -next mirror.
+        KT_CONFIG_JSON=$TMP_URL/ha-sip-kt/config.json
+        contents="$(jq --indent 4 '.name = "ha-sip-kt-next"' $KT_CONFIG_JSON)" && echo -E "${contents}" > $KT_CONFIG_JSON
+        contents="$(jq --indent 4 '.slug = "ha-sip-kt-next"' $KT_CONFIG_JSON)" && echo -E "${contents}" > $KT_CONFIG_JSON
+        contents="$(jq --indent 4 '.url = env.NEXT_REPO_URL' $KT_CONFIG_JSON)" && echo -E "${contents}" > $KT_CONFIG_JSON
+        contents="$(jq --indent 4 '.description = "Home-Assistant SIP Gateway (Kotlin/JVM port, next version)"' $KT_CONFIG_JSON)" && echo -E "${contents}" > $KT_CONFIG_JSON
+        contents="$(jq --indent 4 '.image = "ghcr.io/arnonym/{arch}-ha-sip-kt-next"' $KT_CONFIG_JSON)" && echo -E "${contents}" > $KT_CONFIG_JSON
         # Change readme
         README=$TMP_URL/README.md
         sed -i -e 's/ha-plugins/ha-plugins-next/g' $README
         sed -i -e 's/c7744bff_ha-sip/8cd50eef_ha-sip-next/g' $README
+        KT_README=$TMP_URL/ha-sip-kt/README.md
+        sed -i -e 's/ha-plugins\(-next\)\?/ha-plugins-next/g' -e 's/ha-sip-kt\(-next\)\?/ha-sip-kt-next/g' $KT_README
         if [ -z "$2" ]
           then
             echo "Don't overwrite version."

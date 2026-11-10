@@ -1,0 +1,51 @@
+[versions]
+clikt = "4.4.0"
+kotlin = "2.4.21"
+kotlinx-coroutines = "1.8.1"
+kotlinx-serialization = "1.6.3"
+snakeyaml = "2.2"
+dotenv-java = "3.2.0"
+ktor = "2.3.12"
+hivemq-mqtt-client = "1.3.3"
+slf4j = "2.0.13"
+logback = "1.5.6"
+junit = "5.10.2"
+kotest = "5.9.1"
+shadow = "9.6.1"
+ktlint-gradle = "14.2.0"
+# The ktlint engine itself, pinned so a plugin upgrade never silently changes the
+# style rules (and with them, what `ktlintCheck` rejects).
+ktlint-engine = "1.0.1"
+
+[libraries]
+kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinx-coroutines" }
+kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinx-serialization" }
+# Used only as a plain YAML -> Map/List/primitive tree parser (bridged into
+# kotlinx.serialization's JsonElement, see YamlToJson.kt) rather than kaml's
+# typed-class approach -- see PLAN.md "Menu/Command representation" note for why.
+snakeyaml = { module = "org.yaml:snakeyaml", version.ref = "snakeyaml" }
+dotenv-java = { module = "io.github.cdimascio:dotenv-java", version.ref = "dotenv-java" }
+
+ktor-client-core = { module = "io.ktor:ktor-client-core", version.ref = "ktor" }
+ktor-client-cio = { module = "io.ktor:ktor-client-cio", version.ref = "ktor" }
+ktor-client-content-negotiation = { module = "io.ktor:ktor-client-content-negotiation", version.ref = "ktor" }
+ktor-serialization-kotlinx-json = { module = "io.ktor:ktor-serialization-kotlinx-json", version.ref = "ktor" }
+ktor-client-websockets = { module = "io.ktor:ktor-client-websockets", version.ref = "ktor" }
+ktor-client-logging = { module = "io.ktor:ktor-client-logging", version.ref = "ktor" }
+
+hivemq-mqtt-client = { module = "com.hivemq:hivemq-mqtt-client", version.ref = "hivemq-mqtt-client" }
+
+slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
+logback-classic = { module = "ch.qos.logback:logback-classic", version.ref = "logback" }
+
+clikt = { module = "com.github.ajalt.clikt:clikt", version.ref = "clikt" }
+
+junit-jupiter = { module = "org.junit.jupiter:junit-jupiter", version.ref = "junit" }
+junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher" }
+kotest-assertions-core = { module = "io.kotest:kotest-assertions-core", version.ref = "kotest" }
+
+[plugins]
+kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
+kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
+shadow = { id = "com.gradleup.shadow", version.ref = "shadow" }
+ktlint = { id = "org.jlleitschuh.gradle.ktlint", version.ref = "ktlint-gradle" }
