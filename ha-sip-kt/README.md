@@ -919,7 +919,7 @@ There are two ways to get this build running against a real Home Assistant insta
 1. Add `https://github.com/arnonym/ha-plugins` as a custom add-on repository (badge above), then install
    "ha-sip-kt" from the store.
 2. Home Assistant Supervisor reads `ha-sip-kt/config.json`'s `image` field
-   (`ghcr.io/arnonym/{arch}-ha-sip-kt`) and **pulls that pre-built image from the GitHub
+   (`ghcr.io/arnonym/ha-plugins/{arch}-ha-sip-kt`) and **pulls that pre-built image from the GitHub
    Container Registry instead of building from source** — this is standard Supervisor
    behavior for any add-on that declares an `image`. That means the image must already
    have been built and pushed by [`.github/workflows/build-ha-sip-kt.yml`](../.github/workflows/build-ha-sip-kt.yml)
@@ -931,9 +931,12 @@ There are two ways to get this build running against a real Home Assistant insta
    `next`, let the images build, then merge into `main` to release. The image name is
    read from `config.json`'s `image` field rather than hard-coded, which is what lets the
    [beta mirror](#beta-channel-the-next-repository) reuse the same workflow file.
-3. These test images live under `ghcr.io/arnonym/{arch}-ha-sip-kt` — completely separate
+3. These test images live under `ghcr.io/arnonym/ha-plugins/{arch}-ha-sip-kt` — completely separate
    from the production `agellhaus/{arch}-ha-sip` Docker Hub images used by the Python
    add-on, so testing this port can never overwrite what existing users are running.
+   The `ha-plugins/` part of the name gives this repository packages of its own: a GHCR
+   package belongs to the repository whose workflow pushed it first, and only that
+   repository's `GITHUB_TOKEN` may push to it afterwards.
 
 > **Note:**
 > A GHCR package is **private** when it is first created, and Supervisor pulls
@@ -949,7 +952,7 @@ required, and you always get exactly what's in your working tree):
 
 1. Copy (or symlink) the `ha-sip-kt/` directory into Home Assistant's `/addons/local/`
    folder (e.g. via the Samba or SSH/Terminal add-on) — as `/addons/local/ha-sip-kt`.
-2. Remove the `"image": "ghcr.io/arnonym/{arch}-ha-sip-kt",` line from the copy's
+2. Remove the `"image": "ghcr.io/arnonym/ha-plugins/{arch}-ha-sip-kt",` line from the copy's
    `config.json`. As long as `image` is set, Supervisor always pulls from the registry
    instead of building — removing it is what makes Supervisor build locally from the
    `Dockerfile` in that folder instead.
@@ -964,7 +967,7 @@ Either way, once installed you configure it exactly like described above in
 ## Beta channel (the `next` repository)
 
 The beta repository [`https://github.com/arnonym/ha-plugins-next`](https://github.com/arnonym/ha-plugins-next)
-carries this app too, as `ha-sip-kt-next` with the images `ghcr.io/arnonym/{arch}-ha-sip-kt-next`,
+carries this app too, as `ha-sip-kt-next` with the images `ghcr.io/arnonym/ha-plugins-next/{arch}-ha-sip-kt-next`,
 so testers can install it **alongside** the regular one — just don't run both against the
 same SIP account/port at once.
 

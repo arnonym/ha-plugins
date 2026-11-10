@@ -8,7 +8,7 @@
         "aarch64",
         "amd64"
     ],
-    "image": "ghcr.io/arnonym/{arch}-ha-sip-kt",
+    "image": "ghcr.io/arnonym/ha-plugins/{arch}-ha-sip-kt",
     "init": "false",
     "startup": "application",
     "boot": "auto",
