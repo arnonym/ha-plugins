@@ -79,18 +79,20 @@ jq_edit "$KT_CONFIG_JSON" '.url = env.NEXT_REPO_URL'
 jq_edit "$KT_CONFIG_JSON" '.description = "Home-Assistant SIP Gateway (Kotlin/JVM port, next version)"'
 jq_edit "$KT_CONFIG_JSON" '.image = "ghcr.io/arnonym/ha-plugins-next/{arch}-ha-sip-kt-next"'
 
-# Docs: repo URLs, install badge, app slugs and image names. The optional `-next` in the
-# patterns keeps this idempotent, and `ha-sip-kt` followed by `/` is a directory path,
-# not the slug, so it stays.
-sed -i \
-    -e 's/ha-plugins\(-next\)\?/ha-plugins-next/g' \
-    -e 's/c7744bff_ha-sip/8cd50eef_ha-sip-next/g' \
-    "$TMP_DIR/README.md"
+# Docs: repo URLs, install badge, app slugs and image names. README.md documents the
+# Kotlin app, README-PYTHON.md the Python one -- each gets its own app's rewrite, since
+# the Python app's `c7744bff_ha-sip` is a prefix of the Kotlin app's `c7744bff_ha-sip-kt`.
+# The optional `-next` in the patterns keeps this idempotent, and `ha-sip-kt` followed by
+# `/` is a directory path, not the slug, so it stays.
 sed -i -E \
     -e 's/ha-plugins(-next)?/ha-plugins-next/g' \
     -e 's/c7744bff_ha-sip-kt/8cd50eef_ha-sip-kt/g' \
     -e 's#ha-sip-kt(-next)?([^/]|$)#ha-sip-kt-next\2#g' \
-    "$TMP_DIR/ha-sip-kt/README.md"
+    "$TMP_DIR/README.md"
+sed -i -E \
+    -e 's/ha-plugins(-next)?/ha-plugins-next/g' \
+    -e 's/c7744bff_ha-sip/8cd50eef_ha-sip-next/g' \
+    "$TMP_DIR/README-PYTHON.md"
 
 if [ -n "${usage_version:-}" ]; then
     echo "Setting ha-sip version to $usage_version"

@@ -1,7 +1,19 @@
-# ![logo](icon.png) ha-sip 
+# ![logo](icon.png) ha-sip
 
-### Home Assistant SIP/VoIP Gateway is a Home Assistant app which 
-- allows the dialing and hanging up of phone numbers through a SIP end-point 
+This repository contains two versions of the ha-sip app:
+
+- **`ha-sip-kt`** — the **Kotlin/JVM** version, documented here. It is a from-scratch
+  reimplementation that runs on the JVM against PJSIP's Java SWIG bindings, which also
+  removes the single-thread limitations of the Python version (e.g. with recordings). It
+  already has features the Python version lacks: limiting the offered codecs
+  (`--codecs`), RTP port ranges (`--rtp-port`, `--rtp-port-range`), `m=text` media
+  (`--text-media`) and resampling of audio (`--audio-sample-rate`).
+- **`ha-sip`** — the original **Python** version, documented in [README-PYTHON.md](README-PYTHON.md).
+
+The Kotlin version is expected to be compatible with the python version.
+
+### Home Assistant SIP/VoIP Gateway is a Home Assistant app which
+- allows the dialing and hanging up of phone numbers through a SIP end-point
 - triggering of services through dial tones (DTMF) after the call was established.
 - listens for incoming calls and can trigger actions through a web-hook (the call is not picked up)
 - accepting calls (optionally filtered by number)
@@ -9,11 +21,6 @@
 - send DTMF digits to an established call (incoming or outgoing)
 - record calls into .wav files
 - [speak to Home Assistant Voice Assist without special hardware](VOICE-ASSISTANT.md)
-
-> **Kotlin/JVM version:**
-> This repository also contains `ha-sip-kt`, a Kotlin/JVM port of this app with the same
-> configuration, commands, web-hooks and menu files. It can be installed side by side with
-> `ha-sip` from the same repository; see [ha-sip-kt/README.md](ha-sip-kt/README.md).
 
 ## Installation
 
@@ -25,8 +32,14 @@ https://www.home-assistant.io/common-tasks/os#installing-a-third-party-app-repos
 `https://github.com/arnonym/ha-plugins`.
 
 > **Note:**
-> Alternatively you can run ha-sip in a stand-alone mode (for Home Assistant Container installations). 
-> In that mode the communication to ha-sip will be handled by MQTT. You can find the installation steps at 
+> This add-on's slug is `ha-sip-kt` (distinct from the production `ha-sip` add-on), so it
+> can be installed side by side with the Python version for comparison. If you enable both
+> at once, make sure they don't share the same SIP account/port. See
+> [Testing this Kotlin port in Home Assistant](#testing-this-kotlin-port-in-home-assistant).
+
+> **Note:**
+> Alternatively you can run ha-sip in a stand-alone mode (for Home Assistant Container installations).
+> In that mode the communication to ha-sip will be handled by MQTT. You can find the installation steps at
 > the end of this document.
 
 After that you need to configure your SIP account(s), TTS parameters and webhook ID. The default configuration looks like this:
@@ -73,14 +86,14 @@ webhook:
 > **Note:**
 > When your `user_name` or `password` starts with a number, you need to put it in quotes like `"1234"`.
 
-> **Note** 
-> For TTS you need to install one of the [TTS integrations](https://www.home-assistant.io/integrations/#text-to-speech). 
+> **Note**
+> For TTS you need to install one of the [TTS integrations](https://www.home-assistant.io/integrations/#text-to-speech).
 > If you're unsure about the entity id used for `engine_id`, set `debug_print` to `true` and restart the app.
 > The app will output a list of all available engines and languages into the log. If the configured engine and language
 > is valid, it will also log the available voices (if the engine supports it).
 
-> **Note** 
-> You are able to access the /config and /media directory inside the app for config files, audio files, cache and recordings. 
+> **Note**
+> You are able to access the /config and /media directory inside the app for config files, audio files, cache and recordings.
 
 #### For `global_options` you can specify the following options
 
@@ -94,8 +107,25 @@ webhook:
   --tls {enabled,enable,true,yes,on,1,disabled,disable,false,no,off,0}
                         Enable or disable TLS transport (default: disabled)
   --tls-port TLS_PORT   Port to use for TLS transport (default: 5061)
+  --rtp-port RTP_PORT   First port used for RTP/RTCP media sockets (default: 4000)
+  --rtp-port-range RTP_PORT_RANGE
+                        Number of additional ports usable for RTP/RTCP media sockets,
+                        starting at --rtp-port, e.g. a range of 100 with the default
+                        --rtp-port allows 4000-4100 (default: 0, i.e. only --rtp-port
+                        itself is used).
   --debug-headers {enabled,enable,true,yes,on,1,disabled,disable,false,no,off,0}
                         Enable debug printing of all available SIP headers (default: disabled)
+  --codecs CODECS       Comma-separated list of audio codecs to offer, highest priority
+                        first, e.g. "PCMU,PCMA".
+                        (default: offer everything pjsip supports)
+  --text-media {enabled,enable,true,yes,on,1,disabled,disable,false,no,off,0}
+                        Enable or disable the "m=text" (RFC 4103) line in the SDP.
+                        (default: disabled)
+  --audio-sample-rate AUDIO_SAMPLE_RATE
+                        Resample every message and audio file to this rate, in Hz, e.g.
+                        "8000". Only needed where pjsip's own resampling misbehaves;
+                        leaving it unset keeps each file at its original rate.
+                        (default: unset)
   --enable-mqtt         Enable MQTT as a command source (default: disabled)
   --mqtt-address MQTT_ADDRESS
                         MQTT broker address (default: empty)
@@ -145,22 +175,29 @@ webhook:
 
 ## Usage
 
+> **Note:**
+> All examples below use `c7744bff_ha-sip-kt` as a placeholder for the `addon:` field. Look
+> up the real value in Home Assistant under Settings → Add-ons → ha-sip (Kotlin) →
+> Info, or Developer Tools → Actions (search for `hassio.addon_stdin` and check the
+> `addon` field's autocomplete) — it's a `<repository_hash>_ha-sip-kt` style id assigned
+> by Supervisor when it adds this repository, and can't be predicted ahead of time.
+
 ### Outgoing calls
 
 Outgoing calls are made via the `hassio.addon_stdin` service in the action part of an automation.
 To be able to enter the full command, you must switch to YAML mode by clicking on the menu with the triple dot and
 selecting `Edit in YAML`.
 
-You can use `dial` and `hangup` with the `hassio.addon_stdin` service to control outgoing calls in an action in 
+You can use `dial` and `hangup` with the `hassio.addon_stdin` service to control outgoing calls in an action in
 your automation:
 
 ```yaml
 service: hassio.addon_stdin
 data:
-    addon: c7744bff_ha-sip
+    addon: c7744bff_ha-sip-kt
     input:
         command: dial
-        number: sip:**620@fritz.box # number to call. Format depends on your SIP provider, 
+        number: sip:**620@fritz.box # number to call. Format depends on your SIP provider,
                                     # but might look like 'sip:+49123456789@fritz.box' for external calls
         webhook_to_call: # web-hook IDs which you can listen on in your actions (additional to the global web-hook)
             ring_timeout: another_webhook_id # can be all the same, or different
@@ -171,7 +208,7 @@ data:
             call_disconnected: another_webhook_id
             playback_done: another_webhook_id # is called after playback of message or audio file is done
         ring_timeout: 15 # time to ring in seconds (optional, defaults to 300)
-        sip_account: 1 # number of configured sip account: 1, 2, or 3 
+        sip_account: 1 # number of configured sip account: 1, 2, or 3
                        # (optional, defaults to first enabled sip account)
         menu:
             message: There's a burglar in da house.
@@ -184,7 +221,7 @@ If there is already an outgoing call to the same number active, the request will
 ```yaml
 service: hassio.addon_stdin
 data:
-    addon: c7744bff_ha-sip
+    addon: c7744bff_ha-sip-kt
     input:
         command: hangup
         number: sip:**620@fritz.box
@@ -198,7 +235,7 @@ data:
 ```yaml
 service: hassio.addon_stdin
 data:
-    addon: c7744bff_ha-sip
+    addon: c7744bff_ha-sip-kt
     input:
         command: send_dtmf
         number: sip:**620@fritz.box
@@ -210,14 +247,14 @@ data:
 > When using a `#` digit, you need to put the whole sequence in quotes, eg. `"#5"`.
 
 > **Warning**
-> You can't use the `post_action` with `send_dtmf` because I don't see a way to know when PJSIP is done sending the tones.
+> You can't use the `post_action` with `send_dtmf` because there's no way to know when PJSIP is done sending the tones.
 
 #### To transfer a call to a different SIP URI:
 
 ```yaml
 service: hassio.addon_stdin
 data:
-    addon: c7744bff_ha-sip
+    addon: c7744bff_ha-sip-kt
     input:
         command: transfer
         number: sip:**620@fritz.box
@@ -229,7 +266,7 @@ data:
 ```yaml
 service: hassio.addon_stdin
 data:
-    addon: c7744bff_ha-sip
+    addon: c7744bff_ha-sip-kt
     input:
         command: bridge_audio
         number: sip:**620@fritz.box
@@ -241,17 +278,17 @@ data:
 ```yaml
 service: hassio.addon_stdin
 data:
-    addon: c7744bff_ha-sip
+    addon: c7744bff_ha-sip-kt
     input:
         command: play_message
         number: sip:**620@fritz.box
         message: hello!
         tts_language: en
-        cache_audio: true # If message should be cached in `cache_dir`. 
+        cache_audio: true # If message should be cached in `cache_dir`.
                           # Defaults to false. `cache_dir` must be configured in ha-sip config.
                           # Don't enable this for dynamic messages, you'll just fill your storage.
         wait_for_audio_to_finish: true # Do not accept DTMF tones until the message has been played
-        post_action: hangup # hang up the call after the message has been played, only "noop" (default) 
+        post_action: hangup # hang up the call after the message has been played, only "noop" (default)
                             # and "hangup" are supported in this context
 ```
 
@@ -260,15 +297,15 @@ data:
 ```yaml
 service: hassio.addon_stdin
 data:
-    addon: c7744bff_ha-sip
+    addon: c7744bff_ha-sip-kt
     input:
         command: play_audio_file
         number: sip:**620@fritz.box
         audio_file: '/config/audio/welcome.mp3'
-        cache_audio: true # If converted file should be cached in `cache_dir`. 
+        cache_audio: true # If converted file should be cached in `cache_dir`.
                           # Defaults to false. `cache_dir` must be configured in ha-sip config
         wait_for_audio_to_finish: true # Do not accept DTMF tones until the audio file has been played
-        post_action: hangup # hang up the call after the message has been played, only "noop" (default) 
+        post_action: hangup # hang up the call after the message has been played, only "noop" (default)
         # and "hangup" are supported in this context
 ```
 
@@ -277,7 +314,7 @@ data:
 ```yaml
 service: hassio.addon_stdin
 data:
-    addon: c7744bff_ha-sip
+    addon: c7744bff_ha-sip-kt
     input:
         command: stop_playback
         number: sip:**620@fritz.box
@@ -288,7 +325,7 @@ data:
 ```yaml
 service: hassio.addon_stdin
 data:
-    addon: c7744bff_ha-sip
+    addon: c7744bff_ha-sip-kt
     input:
         command: start_recording
         number: sip:**620@fritz.box
@@ -303,7 +340,7 @@ data:
 ```yaml
 service: hassio.addon_stdin
 data:
-    addon: c7744bff_ha-sip
+    addon: c7744bff_ha-sip-kt
     input:
         command: stop_recording
         number: sip:**620@fritz.box
@@ -316,7 +353,7 @@ data:
 In `listen` mode no call will be answered (picked up) but you can trigger an automation through a [Webhook trigger](https://www.home-assistant.io/docs/automation/trigger/#webhook-trigger) for every incoming call.
 The webhook ID must match the ID set in the configuration.
 
-You can get the remote from `{{trigger.json.remote_uri}}` or `{{trigger.json.parsed_remote_uri}}` for usage in e.g. the action of your automation. 
+You can get the remote from `{{trigger.json.remote_uri}}` or `{{trigger.json.parsed_remote_uri}}` for usage in e.g. the action of your automation.
 If you want to react on a webhook message with another command you should use `{{ trigger.json.internal_id }}` as the number.
 If you also use the menu ID webhook you need to check for `{{ trigger.json.event == "incoming_call" }}` e.g. in a "Choose" action type.
 
@@ -338,7 +375,7 @@ You can also answer an incoming call from home assistant by using the `hassio.ad
 ```yaml
 service: hassio.addon_stdin
 data:
-    addon: c7744bff_ha-sip
+    addon: c7744bff_ha-sip-kt
     input:
         command: answer
         number: "{{ trigger.json.internal_id }}" # if this is unclear, you can look that up in the logs ("Registering call with id <number>")
@@ -418,9 +455,9 @@ menu:
     language: en # TTS language (optional, defaults to the global language from app config)
     choices_are_pin: true # If the choices should be handled like PINs (optional, defaults to false)
     timeout: 10 # time in seconds before "timeout" choice is triggered (optional, defaults to 300)
-    post_action: noop # this action will be triggered after the message was played. Can be 
-                      # "noop" (do nothing), 
-                      # "return <level>" (makes only sense in a sub-menu, returns <level> levels, defaults to 1), 
+    post_action: noop # this action will be triggered after the message was played. Can be
+                      # "noop" (do nothing),
+                      # "return <level>" (makes only sense in a sub-menu, returns <level> levels, defaults to 1),
                       # "hangup" (hang-up the call) and
                       # "repeat_message" (repeat the message until the time-out is reached)
                       # "jump <menu-id>" (jumps to menu with id <menu-id>)
@@ -433,20 +470,20 @@ menu:
     choices: # the list of actions available through DTMF (optional)
         '1234': # DTMF sequence, and definition of a sub-menu
             id: owner # same as above, also any other option from above can be used in this sub-menu
-            handle_as_template: true # if true, the message will be rendered as a template and dynamic content can be 
-                                     # used. Useful for messages in incoming_call_file or from MQTT. 
+            handle_as_template: true # if true, the message will be rendered as a template and dynamic content can be
+                                     # used. Useful for messages in incoming_call_file or from MQTT.
                                      # (optional, defaults to false)
-            message: > 
+            message: >
                 Welcome beautiful.
                 {% set temp = state_attr("climate.my_room", "current_temperature")|round(1) %}
                 There are {{ states.zone.home.state }} people home.
                 Current temperature is {{ temp }} degrees.
                 {% if temp >= 20 %}Come in, it's cozy!{% endif %}
-            cache_audio: true # If message should be cached in `cache_dir`. 
+            cache_audio: true # If message should be cached in `cache_dir`.
                               # Defaults to false. `cache_dir` must be configured in ha-sip config.
                               # Don't enable this for dynamic messages, you'll just fill your storage.
             wait_for_audio_to_finish: true # Do not accept DTMF tones until the message/audio file has been played
-            post_action: hangup 
+            post_action: hangup
         '5432':
             id: maintenance
             message: Your entrance has been logged.
@@ -458,18 +495,18 @@ menu:
             id: wrong_code
             message: Wrong code, please try again
             post_action: return
-        'timeout': # this will be triggered when there is no input 
+        'timeout': # this will be triggered when there is no input
             id: timeout
             message: Bye.
             post_action: hangup
 ```
 
-> **Note:** 
+> **Note:**
 > The audio files need to reside in your home-assistant `config` or `media` directory, as these are the only directory accessible inside the app.
 
 ## Web-hooks
 
-For most events in ha-sip there's a web-hook triggered. The property `internal_id` is the number you can use 
+For most events in ha-sip there's a web-hook triggered. The property `internal_id` is the number you can use
 to identify the call in your automations.
 
 These are the common fields available in all webhook events:
@@ -490,7 +527,7 @@ These are the common fields available in all webhook events:
 
 `call_direction` is either `"incoming"` or `"outgoing"`.
 
-> **Note:** The `headers` field contains extracted SIP headers if `--extract-headers` is configured on the SIP account, 
+> **Note:** The `headers` field contains extracted SIP headers if `--extract-headers` is configured on the SIP account,
 > otherwise it's an empty object. See [SIP Header Extraction](#sip-header-extraction) for more details.
 
 Additionally, the event name and event specific fields are available:
@@ -602,7 +639,7 @@ Additionally, the event name and event specific fields are available:
 
 ## Sensors
 
-ha-sip can expose sensor entities to Home Assistant for monitoring SIP account status and call activity. 
+ha-sip can expose sensor entities to Home Assistant for monitoring SIP account status and call activity.
 These only show information regarding ha-sip itself, not the SIP provider (you cannot see calls that are
 answered on other SIP devices, as this is not supported by the SIP protocol).
 
@@ -752,7 +789,7 @@ This will log all SIP headers for each incoming and outgoing call to help you id
 ```yaml
 service: hassio.addon_stdin
 data:
-    addon: c7744bff_ha-sip
+    addon: c7744bff_ha-sip-kt
     input:
         command: dial
         number: sip:**620@fritz.box
@@ -787,7 +824,7 @@ data:
 ```yaml
 service: hassio.addon_stdin
 data:
-    addon: c7744bff_ha-sip
+    addon: c7744bff_ha-sip-kt
     input:
         command: dial
         number: sip:**620@fritz.box
@@ -802,7 +839,7 @@ data:
 ```yaml
 service: hassio.addon_stdin
 data:
-    addon: c7744bff_ha-sip
+    addon: c7744bff_ha-sip-kt
     input:
         command: dial
         number: sip:**620@fritz.box
@@ -838,18 +875,31 @@ ha-sip itself (prefixed with "|").
 
 ## Stand-alone mode
 
-The stand-alone mode can be used if you run home assistant in a docker environment and you don't have access to the hassio.addon_stdin service. 
+The stand-alone mode can be used if you run home assistant in a docker environment and you don't have access to the hassio.addon_stdin service.
 Instead of stdin - MQTT will be used for communication.
 
-1. Follow the instructions from home assistant to set up a working MQTT broker and install the MQTT integration [MQTT Broker](https://www.home-assistant.io/integrations/mqtt/)
+1. `docker-compose.yaml` already includes a `mosquitto` broker (config in
+   `mosquitto/mosquitto.conf`), published to `127.0.0.1:1883` on the Docker
+   host and reachable from `ha-sip` there too (it runs with `network_mode:
+   host`). Point Home Assistant's [MQTT integration](https://www.home-assistant.io/integrations/mqtt/)
+   at that same broker/port so it can publish to and read from the topics
+   below. If you'd rather use your own broker instead, remove the
+   `mosquitto` service from `docker-compose.yaml` and point step 3 below at
+   it instead.
 2. Copy `.env.example` to `.env` and replace the variable place-holders with your real configuration.
 3. In your `.env` file, enable MQTT through `GLOBAL_OPTIONS` and point it at your broker, for example:
 
    ```
-   GLOBAL_OPTIONS="--enable-mqtt --mqtt-address 192.168.1.1 --mqtt-port 1883 --mqtt-username admin --mqtt-password secret --mqtt-topic hasip/execute --mqtt-state-topic hasip/state"
+   GLOBAL_OPTIONS="--enable-mqtt --mqtt-address 127.0.0.1 --mqtt-port 1883 --mqtt-topic hasip/execute --mqtt-state-topic hasip/state"
    ```
+
+   (add `--mqtt-username`/`--mqtt-password` if your broker requires
+   authentication -- the bundled `mosquitto` service allows anonymous
+   connections since it's only published to localhost)
 4. Install [docker compose plugin](https://docs.docker.com/compose/install/linux/#install-using-the-repository)
-5. Run `docker compose up -d` in the main folder of the application to run the ha-sip service
+5. Run `docker compose --profile kt up -d` in the main folder of the repository to run the Kotlin
+   ha-sip service together with the `mosquitto` broker (a bare `docker compose up` starts
+   the Python app instead)
 6. Now you can use the `mqtt.publish` service in home assistant to send commands as json to the topic configured in `--mqtt-topic` (defaults to `hasip/execute`) from your automations
 
    Example:
@@ -860,8 +910,92 @@ Instead of stdin - MQTT will be used for communication.
             { "command": "dial", "number": "sip:**620@fritz.box", "menu": { "message": "Hello from ha-sip.", "language": "en" } }
         topic: hasip/execute
     ```
-   
+
 7. You can listen to call state events on the topic configured in `--mqtt-state-topic` (defaults to `hasip/state`).
+
+## Testing this Kotlin port in Home Assistant
+
+There are two ways to get this build running against a real Home Assistant instance:
+
+### Option A — install via the add-on store (uses a pre-built image)
+
+1. Add `https://github.com/arnonym/ha-plugins` as a custom add-on repository (badge above), then install
+   "ha-sip-kt" from the store.
+2. Home Assistant Supervisor reads `ha-sip-kt/config.json`'s `image` field
+   (`ghcr.io/arnonym/ha-plugins/{arch}-ha-sip-kt`) and **pulls that pre-built image from the GitHub
+   Container Registry instead of building from source** — this is standard Supervisor
+   behavior for any add-on that declares an `image`. That means the image must already
+   have been built and pushed by [`.github/workflows/build-ha-sip-kt.yml`](.github/workflows/build-ha-sip-kt.yml)
+   for the tag matching `config.json`'s `version` before installing this way. That
+   workflow authenticates to `ghcr.io` with the built-in `GITHUB_TOKEN` (via the job's
+   `packages: write` permission), so **no registry secret has to be configured**. Like
+   the Python app's workflow, it runs the tests on `main` and `next` and builds and
+   pushes the images (amd64 and aarch64) only from `next` — so bump the `version` on
+   `next`, let the images build, then merge into `main` to release. The image name is
+   read from `config.json`'s `image` field rather than hard-coded, which is what lets the
+   [beta mirror](#beta-channel-the-next-repository) reuse the same workflow file.
+3. These test images live under `ghcr.io/arnonym/ha-plugins/{arch}-ha-sip-kt` — completely separate
+   from the production `agellhaus/{arch}-ha-sip` Docker Hub images used by the Python
+   add-on, so testing this port can never overwrite what existing users are running.
+   The `ha-plugins/` part of the name gives this repository packages of its own: a GHCR
+   package belongs to the repository whose workflow pushed it first, and only that
+   repository's `GITHUB_TOKEN` may push to it afterwards.
+
+> **Note:**
+> A GHCR package is **private** when it is first created, and Supervisor pulls
+> anonymously. After the very first successful push of a new image name, open the
+> package under https://github.com/users/arnonym/packages, then *Package settings →
+> Change visibility → Public* (once per package, i.e. per architecture and per channel).
+> Installing while the package is private fails with a manifest/authentication error.
+
+### Option B — local add-on (Supervisor builds from source on your machine)
+
+If you'd rather Supervisor build the image itself from this checkout (no registry push
+required, and you always get exactly what's in your working tree):
+
+1. Copy (or symlink) the `ha-sip-kt/` directory into Home Assistant's `/addons/local/`
+   folder (e.g. via the Samba or SSH/Terminal add-on) — as `/addons/local/ha-sip-kt`.
+2. Remove the `"image": "ghcr.io/arnonym/ha-plugins/{arch}-ha-sip-kt",` line from the copy's
+   `config.json`. As long as `image` is set, Supervisor always pulls from the registry
+   instead of building — removing it is what makes Supervisor build locally from the
+   `Dockerfile` in that folder instead.
+3. In the Supervisor add-on store, find "ha-sip-kt" under "Local add-ons" and install
+   it — this triggers an on-device build (multi-stage: pjproject + Java SWIG bindings,
+   then the Kotlin app, then the runtime image), which will take a while the first
+   time.
+
+Either way, once installed you configure it exactly like described above in
+[Installation](#installation) — same options schema as the Python add-on.
+
+## Beta channel (the `next` repository)
+
+The beta repository [`https://github.com/arnonym/ha-plugins-next`](https://github.com/arnonym/ha-plugins-next)
+carries this app too, as `ha-sip-kt-next` with the images `ghcr.io/arnonym/ha-plugins-next/{arch}-ha-sip-kt-next`,
+so testers can install it **alongside** the regular one — just don't run both against the
+same SIP account/port at once.
+
+**For testers:** add that repository URL in Home Assistant exactly like in
+[Installation](#installation) and install "ha-sip-kt-next".
+
+**For releasing a beta:** push `next`, then run from the repository root:
+
+```bash
+mise run update-next-repo                            # keep both apps' versions
+mise run update-next-repo 5.7-beta1 --kt-version 10.0-beta1  # or override them
+```
+
+Besides the Python app, it rewrites `ha-sip-kt/config.json` (name, slug, URL,
+description, `image`, optionally `version`) and the repo/slug names in
+`README.md`, then force-pushes the result to the beta repository's `next`
+branch. Anything committed there directly is overwritten on the next run.
+
+The `build-ha-sip-kt.yml` workflow is copied along and runs in the beta repository too.
+It publishes images from `next` in both repositories, taking the image name from
+`config.json`'s `image` — which is why no separate workflow file is needed for the beta.
+Because they push to `ghcr.io` with the built-in `GITHUB_TOKEN`, the beta repository needs
+no secrets of its own; its first build does need the two new `-ha-sip-kt-next` packages
+[switched to public](#option-a--install-via-the-add-on-store-uses-a-pre-built-image),
+though.
 
 ## Support
 
@@ -870,30 +1004,31 @@ Your support helps others discover the project and keeps me motivated.
 
 ## Development
 
-Development tasks for both apps are [mise](https://mise.jdx.dev/) tasks, run from the root directory of the
-repo (`mise tasks` lists them all). The ones for this app are prefixed `ha-sip:`, the Kotlin app's
-`ha-sip-kt:` (see [its development section](ha-sip-kt/README.md#development)).
+This is a Gradle (Kotlin DSL) multi-module project — `:core` (pure Kotlin, no pjsip
+dependency, host-testable) and `:app` (depends on `:core` plus the PJSIP Java SWIG
+bindings).
 
-1. Create a virtual environment `venv/` with pjsip and dependencies installed by running `mise run ha-sip:setup`
-2. Copy `.env.example` to `.env` and replace the variable place-holders with your real configuration.
-
-   `HA_BASE_URL` is something like "http://homeassistant.local:8123/api"
-
-   The access token is created from http://homeassistant.local:8123/profile
-3. Run `mise run ha-sip:test` to run the unit tests and the type-check (`mise run test` runs the tests of both apps)
-4. Run `mise run ha-sip:run` to run the app locally (`mise run ha-sip:run -- --help` lists its options)
-5. Paste commands as json (without line-breaks) into stdin of the running app:
+1. Get pjsip's Java SWIG bindings (`pjsua2.jar` + `libpjsua2.so`), either:
+   - `mise run ha-sip-kt:setup:docker` (or `./gradlew :app:extractPjsua2Bindings`) —
+     builds the `pjsip-bindings` stage of `ha-sip-kt/Dockerfile` in a container and copies
+     the artifacts out (needs Docker/Podman), or
+   - `mise run ha-sip-kt:setup` (`scripts/build-pjsua2-bindings-native.sh`) — builds
+     pjproject + the Java SWIG module directly on the host into an isolated `deps/kt/`
+     prefix (needs `gcc`/`swig`/`libssl-dev`/`libopus-dev` installed locally, no
+     Docker/Podman involved).
+2. `mise install` — installs the pinned JDK (Temurin 25, matching the shipped runtime,
+   see `mise.toml`).
+3. Copy `.env.example` to `.env` and replace the placeholders with your real
+   configuration (`HA_BASE_URL` is something like `http://homeassistant.local:8123/api`;
+   the access token is created from `http://homeassistant.local:8123/profile`).
+4. `mise run ha-sip-kt:test` (or `./gradlew :core:test` from `ha-sip-kt/`) — runs the `:core` test
+   suite, no Docker/pjsip involvement at all.
+5. `mise run ha-sip-kt:build` (or `./gradlew build` from `ha-sip-kt/`) — full build including `:app`.
+6. `mise run ha-sip-kt:run` — runs the built jar locally with the correct
+   `LD_LIBRARY_PATH`/`-Djava.library.path` set automatically.
+7. Paste commands as JSON (without line-breaks) into stdin of the running app:
 
    Example:
    ```json
    { "command": "dial", "number": "sip:**620@fritz.box", "menu": { "message": "Hello from ha-sip.", "language": "en" } }
    ```
-
-`mise run ha-sip:image` builds the app's container image locally. Images for Home Assistant are built by
-[the `build-ha-sip.yml` workflow](.github/workflows/build-ha-sip.yml): it runs the unit tests on every push to
-`main` and `next`, and builds and pushes the images only from `next`. To release, bump the `version` in
-`ha-sip/config.json` on `next`, let the images build, then merge into `main`.
-
-To publish a beta, push `next` and run `mise run update-next-repo [version] [--kt-version <version>]`. It
-copies `next` to [ha-plugins-next](https://github.com/arnonym/ha-plugins-next) with both apps renamed for the
-beta channel (`ha-sip-next`, `ha-sip-kt-next`) and force-pushes it there.
