@@ -140,15 +140,16 @@ webhook:
 
 ## Usage
 
-### Finding the add-on ID 
+### Finding the App-on ID 
 
-It could be that addon is installed with a different slug ID. In that case you need to find the new ID.
+It could be that the App is installed with a different slug ID. In that case you need to find the new ID.
 To look it up, open SSH and type:
 
 ```Shell
-ha addons list
+ha apps list
 ```
-which will show you the current addon ID.
+which will show you the current app ID.
+
 
 ### Outgoing calls
 
