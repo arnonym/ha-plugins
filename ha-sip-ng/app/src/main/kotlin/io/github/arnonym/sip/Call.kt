@@ -205,9 +205,11 @@ class Call(
             return
         }
         if (!connected) return
-        val timeoutSeconds = menu?.timeout ?: Constants.DEFAULT_RING_TIMEOUT
+        val timeoutSeconds = menu?.timeout ?: MENU_LESS_IDLE_TIMEOUT_SECONDS
         if (now - lastSeenMillis > (timeoutSeconds * 1000).toLong()) {
             log("Timeout of $timeoutSeconds triggered")
+            /* reset the time-out, so it doesn't keep firing every tick for menu-less calls */
+            resetTimeout()
             menu?.let {
                 handleMenu(it.timeoutChoice)
                 sendEvent(Event.Timeout(it.id))
@@ -858,6 +860,11 @@ class Call(
 
     companion object {
         private const val BRIDGE_LOCK_TIMEOUT_SECONDS = 2L
+
+        /* for testing */
+        private val MENU_LESS_IDLE_TIMEOUT_SECONDS: Double =
+            System.getProperty("hasip.menuLessIdleTimeoutSeconds")?.toDoubleOrNull()
+                ?: Constants.DEFAULT_RING_TIMEOUT
 
         fun parseSipUri(sipUri: String): String? {
             val match = Regex("<sip:(.+?)[@;>]").find(sipUri)

@@ -131,6 +131,42 @@ class TimeoutTest {
             collector.stallTts(0)
         }
     }
+
+    @Test
+    @DisplayName("a call without a menu restarts its idle timeout instead of spinning on it")
+    fun menuLessIdleTimeoutDoesNotSpin() {
+        // Issue 212: with no menu, nothing reset the idle timer once it expired, so every
+        // 10 ms tick logged the timeout again and returned before doing anything else.
+        // Answered with no incoming-call menu, the callee's call is menu-less; the test
+        // hook shortens its idle period from 300 s to 1 s.
+        val callee =
+            stack.callee(
+                CalleeConfig(menuYaml = null, jvmOptions = "-Dhasip.menuLessIdleTimeoutSeconds=1"),
+            )
+        stack.caller.dial()
+        val incoming = collector.await(DirectIpStack.CALLEE, "incoming_call")
+        val calleeCallId = requireNotNull(incoming.internalId) { "incoming_call carried no internal_id" }
+        collector.await(DirectIpStack.CALLEE, "call_established")
+
+        val mark = callee.logMark()
+        Thread.sleep(3_500)
+        // Once per period: ~3 in 3.5 s. Spinning, it was one per tick -- hundreds.
+        val fired = callee.logLinesFrom(mark).count { it.contains("Timeout of 1.0 triggered") }
+        check(fired in 2..5) { "expected the 1 s idle timeout to fire about 3 times in 3.5 s, got $fired" }
+
+        // The work the spinning tick returned before: synthesized audio is only started
+        // from the tick, and play_message doesn't touch the idle timer itself.
+        callee.send("""{"command": "play_message", "number": ${calleeCallId.jsonString()}, "message": "still here"}""")
+        collector.await(DirectIpStack.CALLEE, "playback_done")
+
+        // The timeout restarts the period; it does not end a call nobody asked to end.
+        check(collector.events(DirectIpStack.CALLEE).none { it.eventName == "call_disconnected" }) {
+            "the menu-less call was hung up by its idle timeout"
+        }
+        stack.caller.hangup()
+        collector.await(DirectIpStack.CALLER, "call_disconnected")
+        collector.await(DirectIpStack.CALLEE, "call_disconnected")
+    }
 }
 
 /** Long enough to dwarf the 2 s ring timeout it runs alongside, short enough to keep the suite quick. */

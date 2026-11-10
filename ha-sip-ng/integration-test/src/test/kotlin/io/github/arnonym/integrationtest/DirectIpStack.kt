@@ -12,6 +12,8 @@ data class CalleeConfig(
     val sipOptions: String = "",
     /** Appended to `GLOBAL_OPTIONS`, e.g. `--codecs PCMA`. */
     val globalOptions: String = "",
+    /** JVM options for the callee process, e.g. `-Dhasip.menuLessIdleTimeoutSeconds=1` (passed as `JAVA_TOOL_OPTIONS`). */
+    val jvmOptions: String = "",
 )
 
 /**
@@ -143,6 +145,7 @@ object DirectIpStack {
                     incomingCallFile = menuFile?.absolutePath,
                     extraSipOptions = config.sipOptions,
                     extraGlobalOptions = config.globalOptions,
+                    jvmOptions = config.jvmOptions,
                 ),
             )
         instance.awaitReady()
@@ -197,9 +200,13 @@ object DirectIpStack {
         incomingCallFile: String? = null,
         extraSipOptions: String = "",
         extraGlobalOptions: String = "",
+        jvmOptions: String = "",
     ): Map<String, String> =
         buildMap {
             put("PORT", port.toString())
+            // Read by the JVM itself at startup, so test-only system properties reach the
+            // instance without a launcher change.
+            if (jvmOptions.isNotBlank()) put("JAVA_TOOL_OPTIONS", jvmOptions)
             if (instance == CALLER) put("CACHE_DIR", callerCacheDir.absolutePath)
             put(
                 "GLOBAL_OPTIONS",

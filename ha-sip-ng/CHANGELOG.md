@@ -13,6 +13,10 @@ If you find ha-sip useful, consider starring ⭐ the [GitHub repo](https://githu
   `sip`, `sip_2` and `sip_3` sections; an account's number is its position in the list.
   Existing configurations need to be moved into the list once.
 - Allow resampling all audio to a fixed rate via `--audio-sample-rate` in `global_options`
+- Fix a call without a menu (e.g. answered just to bridge audio) logging its idle timeout
+  continuously once it expired, which also kept prompts and post actions on that call
+  from running ([#212](https://github.com/arnonym/ha-plugins/issues/212)). The call is
+  left up, as before.
 
 ## 5.6
 
