@@ -2,8 +2,8 @@
 
 This repository contains two versions of the ha-sip app:
 
-- **`ha-sip-kt`** — the **Kotlin/JVM** version, documented here. It is a from-scratch
-  reimplementation that runs on the JVM against PJSIP's Java SWIG bindings, which also
+- **`ha-sip-ng`** — the **next generation** of ha-sip, documented here. It is a from-scratch
+  Kotlin/JVM reimplementation that runs on the JVM against PJSIP's Java SWIG bindings, which also
   removes the single-thread limitations of the Python version (e.g. with recordings). It
   already has features the Python version lacks: limiting the offered codecs
   (`--codecs`), RTP port ranges (`--rtp-port`, `--rtp-port-range`), `m=text` media
@@ -32,7 +32,7 @@ https://www.home-assistant.io/common-tasks/os#installing-a-third-party-app-repos
 `https://github.com/arnonym/ha-plugins`.
 
 > **Note:**
-> This add-on's slug is `ha-sip-kt` (distinct from the production `ha-sip` add-on), so it
+> This add-on's slug is `ha-sip-ng` (distinct from the production `ha-sip` add-on), so it
 > can be installed side by side with the Python version for comparison. If you enable both
 > at once, make sure they don't share the same SIP account/port. See
 > [Testing this Kotlin port in Home Assistant](#testing-this-kotlin-port-in-home-assistant).
@@ -176,10 +176,10 @@ webhook:
 ## Usage
 
 > **Note:**
-> All examples below use `c7744bff_ha-sip-kt` as a placeholder for the `addon:` field. Look
+> All examples below use `c7744bff_ha-sip-ng` as a placeholder for the `addon:` field. Look
 > up the real value in Home Assistant under Settings → Add-ons → ha-sip (Kotlin) →
 > Info, or Developer Tools → Actions (search for `hassio.addon_stdin` and check the
-> `addon` field's autocomplete) — it's a `<repository_hash>_ha-sip-kt` style id assigned
+> `addon` field's autocomplete) — it's a `<repository_hash>_ha-sip-ng` style id assigned
 > by Supervisor when it adds this repository, and can't be predicted ahead of time.
 
 ### Outgoing calls
@@ -194,7 +194,7 @@ your automation:
 ```yaml
 service: hassio.addon_stdin
 data:
-    addon: c7744bff_ha-sip-kt
+    addon: c7744bff_ha-sip-ng
     input:
         command: dial
         number: sip:**620@fritz.box # number to call. Format depends on your SIP provider,
@@ -221,7 +221,7 @@ If there is already an outgoing call to the same number active, the request will
 ```yaml
 service: hassio.addon_stdin
 data:
-    addon: c7744bff_ha-sip-kt
+    addon: c7744bff_ha-sip-ng
     input:
         command: hangup
         number: sip:**620@fritz.box
@@ -235,7 +235,7 @@ data:
 ```yaml
 service: hassio.addon_stdin
 data:
-    addon: c7744bff_ha-sip-kt
+    addon: c7744bff_ha-sip-ng
     input:
         command: send_dtmf
         number: sip:**620@fritz.box
@@ -254,7 +254,7 @@ data:
 ```yaml
 service: hassio.addon_stdin
 data:
-    addon: c7744bff_ha-sip-kt
+    addon: c7744bff_ha-sip-ng
     input:
         command: transfer
         number: sip:**620@fritz.box
@@ -266,7 +266,7 @@ data:
 ```yaml
 service: hassio.addon_stdin
 data:
-    addon: c7744bff_ha-sip-kt
+    addon: c7744bff_ha-sip-ng
     input:
         command: bridge_audio
         number: sip:**620@fritz.box
@@ -278,7 +278,7 @@ data:
 ```yaml
 service: hassio.addon_stdin
 data:
-    addon: c7744bff_ha-sip-kt
+    addon: c7744bff_ha-sip-ng
     input:
         command: play_message
         number: sip:**620@fritz.box
@@ -297,7 +297,7 @@ data:
 ```yaml
 service: hassio.addon_stdin
 data:
-    addon: c7744bff_ha-sip-kt
+    addon: c7744bff_ha-sip-ng
     input:
         command: play_audio_file
         number: sip:**620@fritz.box
@@ -314,7 +314,7 @@ data:
 ```yaml
 service: hassio.addon_stdin
 data:
-    addon: c7744bff_ha-sip-kt
+    addon: c7744bff_ha-sip-ng
     input:
         command: stop_playback
         number: sip:**620@fritz.box
@@ -325,7 +325,7 @@ data:
 ```yaml
 service: hassio.addon_stdin
 data:
-    addon: c7744bff_ha-sip-kt
+    addon: c7744bff_ha-sip-ng
     input:
         command: start_recording
         number: sip:**620@fritz.box
@@ -340,7 +340,7 @@ data:
 ```yaml
 service: hassio.addon_stdin
 data:
-    addon: c7744bff_ha-sip-kt
+    addon: c7744bff_ha-sip-ng
     input:
         command: stop_recording
         number: sip:**620@fritz.box
@@ -375,7 +375,7 @@ You can also answer an incoming call from home assistant by using the `hassio.ad
 ```yaml
 service: hassio.addon_stdin
 data:
-    addon: c7744bff_ha-sip-kt
+    addon: c7744bff_ha-sip-ng
     input:
         command: answer
         number: "{{ trigger.json.internal_id }}" # if this is unclear, you can look that up in the logs ("Registering call with id <number>")
@@ -789,7 +789,7 @@ This will log all SIP headers for each incoming and outgoing call to help you id
 ```yaml
 service: hassio.addon_stdin
 data:
-    addon: c7744bff_ha-sip-kt
+    addon: c7744bff_ha-sip-ng
     input:
         command: dial
         number: sip:**620@fritz.box
@@ -824,7 +824,7 @@ data:
 ```yaml
 service: hassio.addon_stdin
 data:
-    addon: c7744bff_ha-sip-kt
+    addon: c7744bff_ha-sip-ng
     input:
         command: dial
         number: sip:**620@fritz.box
@@ -839,7 +839,7 @@ data:
 ```yaml
 service: hassio.addon_stdin
 data:
-    addon: c7744bff_ha-sip-kt
+    addon: c7744bff_ha-sip-ng
     input:
         command: dial
         number: sip:**620@fritz.box
@@ -897,7 +897,7 @@ Instead of stdin - MQTT will be used for communication.
    authentication -- the bundled `mosquitto` service allows anonymous
    connections since it's only published to localhost)
 4. Install [docker compose plugin](https://docs.docker.com/compose/install/linux/#install-using-the-repository)
-5. Run `docker compose --profile kt up -d` in the main folder of the repository to run the Kotlin
+5. Run `docker compose --profile ng up -d` in the main folder of the repository to run the Kotlin
    ha-sip service together with the `mosquitto` broker (a bare `docker compose up` starts
    the Python app instead)
 6. Now you can use the `mqtt.publish` service in home assistant to send commands as json to the topic configured in `--mqtt-topic` (defaults to `hasip/execute`) from your automations
@@ -920,12 +920,12 @@ There are two ways to get this build running against a real Home Assistant insta
 ### Option A — install via the add-on store (uses a pre-built image)
 
 1. Add `https://github.com/arnonym/ha-plugins` as a custom add-on repository (badge above), then install
-   "ha-sip-kt" from the store.
-2. Home Assistant Supervisor reads `ha-sip-kt/config.json`'s `image` field
-   (`ghcr.io/arnonym/ha-plugins/{arch}-ha-sip-kt`) and **pulls that pre-built image from the GitHub
+   "ha-sip-ng" from the store.
+2. Home Assistant Supervisor reads `ha-sip-ng/config.json`'s `image` field
+   (`ghcr.io/arnonym/ha-plugins/{arch}-ha-sip-ng`) and **pulls that pre-built image from the GitHub
    Container Registry instead of building from source** — this is standard Supervisor
    behavior for any add-on that declares an `image`. That means the image must already
-   have been built and pushed by [`.github/workflows/build-ha-sip-kt.yml`](.github/workflows/build-ha-sip-kt.yml)
+   have been built and pushed by [`.github/workflows/build-ha-sip-ng.yml`](.github/workflows/build-ha-sip-ng.yml)
    for the tag matching `config.json`'s `version` before installing this way. That
    workflow authenticates to `ghcr.io` with the built-in `GITHUB_TOKEN` (via the job's
    `packages: write` permission), so **no registry secret has to be configured**. Like
@@ -934,7 +934,7 @@ There are two ways to get this build running against a real Home Assistant insta
    `next`, let the images build, then merge into `main` to release. The image name is
    read from `config.json`'s `image` field rather than hard-coded, which is what lets the
    [beta mirror](#beta-channel-the-next-repository) reuse the same workflow file.
-3. These test images live under `ghcr.io/arnonym/ha-plugins/{arch}-ha-sip-kt` — completely separate
+3. These test images live under `ghcr.io/arnonym/ha-plugins/{arch}-ha-sip-ng` — completely separate
    from the production `agellhaus/{arch}-ha-sip` Docker Hub images used by the Python
    add-on, so testing this port can never overwrite what existing users are running.
    The `ha-plugins/` part of the name gives this repository packages of its own: a GHCR
@@ -953,13 +953,13 @@ There are two ways to get this build running against a real Home Assistant insta
 If you'd rather Supervisor build the image itself from this checkout (no registry push
 required, and you always get exactly what's in your working tree):
 
-1. Copy (or symlink) the `ha-sip-kt/` directory into Home Assistant's `/addons/local/`
-   folder (e.g. via the Samba or SSH/Terminal add-on) — as `/addons/local/ha-sip-kt`.
-2. Remove the `"image": "ghcr.io/arnonym/ha-plugins/{arch}-ha-sip-kt",` line from the copy's
+1. Copy (or symlink) the `ha-sip-ng/` directory into Home Assistant's `/addons/local/`
+   folder (e.g. via the Samba or SSH/Terminal add-on) — as `/addons/local/ha-sip-ng`.
+2. Remove the `"image": "ghcr.io/arnonym/ha-plugins/{arch}-ha-sip-ng",` line from the copy's
    `config.json`. As long as `image` is set, Supervisor always pulls from the registry
    instead of building — removing it is what makes Supervisor build locally from the
    `Dockerfile` in that folder instead.
-3. In the Supervisor add-on store, find "ha-sip-kt" under "Local add-ons" and install
+3. In the Supervisor add-on store, find "ha-sip-ng" under "Local add-ons" and install
    it — this triggers an on-device build (multi-stage: pjproject + Java SWIG bindings,
    then the Kotlin app, then the runtime image), which will take a while the first
    time.
@@ -970,30 +970,30 @@ Either way, once installed you configure it exactly like described above in
 ## Beta channel (the `next` repository)
 
 The beta repository [`https://github.com/arnonym/ha-plugins-next`](https://github.com/arnonym/ha-plugins-next)
-carries this app too, as `ha-sip-kt-next` with the images `ghcr.io/arnonym/ha-plugins-next/{arch}-ha-sip-kt-next`,
+carries this app too, as `ha-sip-ng-next` with the images `ghcr.io/arnonym/ha-plugins-next/{arch}-ha-sip-ng-next`,
 so testers can install it **alongside** the regular one — just don't run both against the
 same SIP account/port at once.
 
 **For testers:** add that repository URL in Home Assistant exactly like in
-[Installation](#installation) and install "ha-sip-kt-next".
+[Installation](#installation) and install "ha-sip-ng-next".
 
 **For releasing a beta:** push `next`, then run from the repository root:
 
 ```bash
 mise run update-next-repo                            # keep both apps' versions
-mise run update-next-repo 5.7-beta1 --kt-version 10.0-beta1  # or override them
+mise run update-next-repo 5.7-beta1 --ng-version 10.0-beta1  # or override them
 ```
 
-Besides the Python app, it rewrites `ha-sip-kt/config.json` (name, slug, URL,
+Besides the Python app, it rewrites `ha-sip-ng/config.json` (name, slug, URL,
 description, `image`, optionally `version`) and the repo/slug names in
 `README.md`, then force-pushes the result to the beta repository's `next`
 branch. Anything committed there directly is overwritten on the next run.
 
-The `build-ha-sip-kt.yml` workflow is copied along and runs in the beta repository too.
+The `build-ha-sip-ng.yml` workflow is copied along and runs in the beta repository too.
 It publishes images from `next` in both repositories, taking the image name from
 `config.json`'s `image` — which is why no separate workflow file is needed for the beta.
 Because they push to `ghcr.io` with the built-in `GITHUB_TOKEN`, the beta repository needs
-no secrets of its own; its first build does need the two new `-ha-sip-kt-next` packages
+no secrets of its own; its first build does need the two new `-ha-sip-ng-next` packages
 [switched to public](#option-a--install-via-the-add-on-store-uses-a-pre-built-image),
 though.
 
@@ -1009,11 +1009,11 @@ dependency, host-testable) and `:app` (depends on `:core` plus the PJSIP Java SW
 bindings).
 
 1. Get pjsip's Java SWIG bindings (`pjsua2.jar` + `libpjsua2.so`), either:
-   - `mise run ha-sip-kt:setup:docker` (or `./gradlew :app:extractPjsua2Bindings`) —
-     builds the `pjsip-bindings` stage of `ha-sip-kt/Dockerfile` in a container and copies
+   - `mise run ha-sip-ng:setup:docker` (or `./gradlew :app:extractPjsua2Bindings`) —
+     builds the `pjsip-bindings` stage of `ha-sip-ng/Dockerfile` in a container and copies
      the artifacts out (needs Docker/Podman), or
-   - `mise run ha-sip-kt:setup` (`scripts/build-pjsua2-bindings-native.sh`) — builds
-     pjproject + the Java SWIG module directly on the host into an isolated `deps/kt/`
+   - `mise run ha-sip-ng:setup` (`scripts/build-pjsua2-bindings-native.sh`) — builds
+     pjproject + the Java SWIG module directly on the host into an isolated `deps/ng/`
      prefix (needs `gcc`/`swig`/`libssl-dev`/`libopus-dev` installed locally, no
      Docker/Podman involved).
 2. `mise install` — installs the pinned JDK (Temurin 25, matching the shipped runtime,
@@ -1021,10 +1021,10 @@ bindings).
 3. Copy `.env.example` to `.env` and replace the placeholders with your real
    configuration (`HA_BASE_URL` is something like `http://homeassistant.local:8123/api`;
    the access token is created from `http://homeassistant.local:8123/profile`).
-4. `mise run ha-sip-kt:test` (or `./gradlew :core:test` from `ha-sip-kt/`) — runs the `:core` test
+4. `mise run ha-sip-ng:test` (or `./gradlew :core:test` from `ha-sip-ng/`) — runs the `:core` test
    suite, no Docker/pjsip involvement at all.
-5. `mise run ha-sip-kt:build` (or `./gradlew build` from `ha-sip-kt/`) — full build including `:app`.
-6. `mise run ha-sip-kt:run` — runs the built jar locally with the correct
+5. `mise run ha-sip-ng:build` (or `./gradlew build` from `ha-sip-ng/`) — full build including `:app`.
+6. `mise run ha-sip-ng:run` — runs the built jar locally with the correct
    `LD_LIBRARY_PATH`/`-Djava.library.path` set automatically.
 7. Paste commands as JSON (without line-breaks) into stdin of the running app:
 

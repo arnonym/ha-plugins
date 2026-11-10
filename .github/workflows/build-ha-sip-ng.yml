@@ -1,4 +1,4 @@
-name: Build ha-sip-kt
+name: Build ha-sip-ng
 
 # Same shape as build-ha-sip.yml: tests on every push to main/next that touches
 # the app, images built and pushed only from `next`. That holds here (production
@@ -8,8 +8,8 @@ on:
   push:
     branches: [ main, next ]
     paths:
-      - 'ha-sip-kt/**'
-      - '.github/workflows/build-ha-sip-kt.yml'
+      - 'ha-sip-ng/**'
+      - '.github/workflows/build-ha-sip-ng.yml'
   workflow_dispatch:
 
 concurrency:
@@ -28,7 +28,7 @@ jobs:
           distribution: temurin
           java-version: '25'
       - name: Run :core tests (pure Kotlin, no pjsip/Docker needed)
-        working-directory: ha-sip-kt
+        working-directory: ha-sip-ng
         run: ./gradlew :core:test --no-daemon --console=plain
 
   build:
@@ -53,13 +53,13 @@ jobs:
 
       - name: Read BUILD_FROM base image + app image/version
         id: manifest
-        working-directory: ha-sip-kt
+        working-directory: ha-sip-ng
         run: |
           echo "build_from=$(jq -r '.build_from.${{ matrix.arch }}' build.json)" >> "$GITHUB_OUTPUT"
           echo "version=$(jq -r '.version' config.json)" >> "$GITHUB_OUTPUT"
           echo "name=$(jq -r '.name' config.json)" >> "$GITHUB_OUTPUT"
           # From config.json rather than hard-coded, so the beta mirror pushes to
-          # ghcr.io/arnonym/ha-plugins-next/<arch>-ha-sip-kt-next with this same workflow file.
+          # ghcr.io/arnonym/ha-plugins-next/<arch>-ha-sip-ng-next with this same workflow file.
           echo "image=$(jq -r '.image' config.json | sed 's/{arch}/${{ matrix.arch }}/')" >> "$GITHUB_OUTPUT"
 
       # The built-in GITHUB_TOKEN is enough (job permission `packages: write`), so no
@@ -77,14 +77,14 @@ jobs:
       - name: Build and push ${{ matrix.arch }} image
         uses: docker/build-push-action@v7
         with:
-          context: ha-sip-kt
-          file: ha-sip-kt/Dockerfile
+          context: ha-sip-ng
+          file: ha-sip-ng/Dockerfile
           platforms: ${{ matrix.platform }}
           push: true
           build-args: |
             BUILD_FROM=${{ steps.manifest.outputs.build_from }}
-          cache-from: type=gha,scope=ha-sip-kt-${{ matrix.arch }}
-          cache-to: type=gha,scope=ha-sip-kt-${{ matrix.arch }},mode=max
+          cache-from: type=gha,scope=ha-sip-ng-${{ matrix.arch }}
+          cache-to: type=gha,scope=ha-sip-ng-${{ matrix.arch }},mode=max
           labels: |
             io.hass.name=${{ steps.manifest.outputs.name }}
             io.hass.version=${{ steps.manifest.outputs.version }}

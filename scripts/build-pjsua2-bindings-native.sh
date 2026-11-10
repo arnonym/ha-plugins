@@ -3,8 +3,8 @@
 # the Kotlin/JVM counterpart of the Python app's `mise run ha-sip:setup`.
 #
 # Builds pjproject + its Java SWIG module directly on this machine (into
-# deps/kt/pjproject, isolated from the system via --prefix) and copies the
-# resulting jar/native libs straight into ha-sip-kt/app/{libs,native}, exactly
+# deps/ng/pjproject, isolated from the system via --prefix) and copies the
+# resulting jar/native libs straight into ha-sip-ng/app/{libs,native}, exactly
 # like the Docker-based script does. Once run, `./gradlew build`/`run` work
 # fully offline with no container involved ever again (until you want to
 # rebuild against a different pjproject version).
@@ -15,9 +15,9 @@ set -euo pipefail
 
 PJPROJECT_VERSION="${PJPROJECT_VERSION:-2.17}"
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-ha_sip_dir="$repo_root/ha-sip-kt"
-# deps/kt, not deps: deps/pjproject is the Python app's own checkout (mise run ha-sip:setup).
-deps_dir="$repo_root/deps/kt"
+ha_sip_dir="$repo_root/ha-sip-ng"
+# deps/ng, not deps: deps/pjproject is the Python app's own checkout (mise run ha-sip:setup).
+deps_dir="$repo_root/deps/ng"
 prefix="$deps_dir/install"
 
 command -v git >/dev/null || { echo "error: git not found" >&2; exit 1; }
@@ -60,7 +60,7 @@ echo "==> Building the Java SWIG module..."
     make java
 )
 
-echo "==> Collecting artifacts into ha-sip-kt/app/{libs,native/$out_arch}..."
+echo "==> Collecting artifacts into ha-sip-ng/app/{libs,native/$out_arch}..."
 swig_java_out="$deps_dir/pjproject/pjsip-apps/src/swig/java/output"
 classes_dir="$deps_dir/classes"
 native_dir="$ha_sip_dir/app/native/$out_arch"
@@ -72,14 +72,14 @@ cp -r "$swig_java_out/org" "$classes_dir/"
 find "$classes_dir" -name "*.java" -delete
 "$JAVA_HOME/bin/jar" --create --file "$ha_sip_dir/app/libs/pjsua2.jar" -C "$classes_dir" org
 
-# Same naming-collision caveat as the Docker path (see ha-sip-kt/Dockerfile): the
+# Same naming-collision caveat as the Docker path (see ha-sip-ng/Dockerfile): the
 # JNI wrapper and pjproject's own C++ libpjsua2.so are two different files that
 # are both conventionally named "libpjsua2.so" -- keep them in separate dirs.
 cp "$swig_java_out/libpjsua2.so" "$native_dir/jni/libpjsua2.so"
 cp -P "$prefix"/lib/*.so* "$native_dir/runtime/"
 
 echo "==> Done. Built entirely locally, no Docker/Podman involved."
-echo "    ha-sip-kt/app/libs/pjsua2.jar"
+echo "    ha-sip-ng/app/libs/pjsua2.jar"
 echo "    $native_dir/jni/libpjsua2.so       (point -Djava.library.path here)"
 echo "    $native_dir/runtime/*.so*          (point LD_LIBRARY_PATH here)"
 echo ""

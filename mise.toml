@@ -13,7 +13,7 @@ uv = "latest"
 
 [tasks.test]
 description = "Run the unit tests of both apps"
-depends = ["ha-sip:test", "ha-sip-kt:test"]
+depends = ["ha-sip:test", "ha-sip-ng:test"]
 
 [tasks.mqtt-cli]
 description = "Send ha-sip commands over MQTT; no args starts an interactive REPL"
@@ -27,7 +27,7 @@ exec uv run scripts/hasip_mqtt_cli.py "$@"
 description = "Publish the `next` branch to the beta repository (ha-plugins-next), with both apps renamed for the beta channel"
 usage = '''
 arg "[version]" help="Override ha-sip's version in the beta repository"
-flag "--kt-version <kt_version>" help="Override ha-sip-kt's version in the beta repository"
+flag "--ng-version <ng_version>" help="Override ha-sip-ng's version in the beta repository"
 '''
 run = '''
 #!/usr/bin/env bash
@@ -72,22 +72,22 @@ jq_edit "$CONFIG_JSON" '.url = env.NEXT_REPO_URL'
 jq_edit "$CONFIG_JSON" '.description = "Home-Assistant SIP Gateway (next version)"'
 jq_edit "$CONFIG_JSON" '.image = "agellhaus/{arch}-ha-sip-next"'
 
-KT_CONFIG_JSON="$TMP_DIR/ha-sip-kt/config.json"
-jq_edit "$KT_CONFIG_JSON" '.name = "ha-sip-kt-next"'
-jq_edit "$KT_CONFIG_JSON" '.slug = "ha-sip-kt-next"'
-jq_edit "$KT_CONFIG_JSON" '.url = env.NEXT_REPO_URL'
-jq_edit "$KT_CONFIG_JSON" '.description = "Home-Assistant SIP Gateway (Kotlin/JVM port, next version)"'
-jq_edit "$KT_CONFIG_JSON" '.image = "ghcr.io/arnonym/ha-plugins-next/{arch}-ha-sip-kt-next"'
+NG_CONFIG_JSON="$TMP_DIR/ha-sip-ng/config.json"
+jq_edit "$NG_CONFIG_JSON" '.name = "ha-sip-ng-next"'
+jq_edit "$NG_CONFIG_JSON" '.slug = "ha-sip-ng-next"'
+jq_edit "$NG_CONFIG_JSON" '.url = env.NEXT_REPO_URL'
+jq_edit "$NG_CONFIG_JSON" '.description = "Home-Assistant SIP Gateway, next generation (Kotlin/JVM, next version)"'
+jq_edit "$NG_CONFIG_JSON" '.image = "ghcr.io/arnonym/ha-plugins-next/{arch}-ha-sip-ng-next"'
 
 # Docs: repo URLs, install badge, app slugs and image names. README.md documents the
 # Kotlin app, README-PYTHON.md the Python one -- each gets its own app's rewrite, since
-# the Python app's `c7744bff_ha-sip` is a prefix of the Kotlin app's `c7744bff_ha-sip-kt`.
-# The optional `-next` in the patterns keeps this idempotent, and `ha-sip-kt` followed by
+# the Python app's `c7744bff_ha-sip` is a prefix of the Kotlin app's `c7744bff_ha-sip-ng`.
+# The optional `-next` in the patterns keeps this idempotent, and `ha-sip-ng` followed by
 # `/` is a directory path, not the slug, so it stays.
 sed -i -E \
     -e 's/ha-plugins(-next)?/ha-plugins-next/g' \
-    -e 's/c7744bff_ha-sip-kt/8cd50eef_ha-sip-kt/g' \
-    -e 's#ha-sip-kt(-next)?([^/]|$)#ha-sip-kt-next\2#g' \
+    -e 's/c7744bff_ha-sip-ng/8cd50eef_ha-sip-ng/g' \
+    -e 's#ha-sip-ng(-next)?([^/]|$)#ha-sip-ng-next\2#g' \
     "$TMP_DIR/README.md"
 sed -i -E \
     -e 's/ha-plugins(-next)?/ha-plugins-next/g' \
@@ -101,12 +101,12 @@ if [ -n "${usage_version:-}" ]; then
 else
     echo "Keeping ha-sip version $(jq -r '.version' "$CONFIG_JSON")."
 fi
-if [ -n "${usage_kt_version:-}" ]; then
-    echo "Setting ha-sip-kt version to $usage_kt_version"
-    export OVERWRITE_VERSION="$usage_kt_version"
-    jq_edit "$KT_CONFIG_JSON" '.version = env.OVERWRITE_VERSION'
+if [ -n "${usage_ng_version:-}" ]; then
+    echo "Setting ha-sip-ng version to $usage_ng_version"
+    export OVERWRITE_VERSION="$usage_ng_version"
+    jq_edit "$NG_CONFIG_JSON" '.version = env.OVERWRITE_VERSION'
 else
-    echo "Keeping ha-sip-kt version $(jq -r '.version' "$KT_CONFIG_JSON")."
+    echo "Keeping ha-sip-ng version $(jq -r '.version' "$NG_CONFIG_JSON")."
 fi
 
 cd "$TMP_DIR"
@@ -171,44 +171,44 @@ description = "Build the Python app's container image for this machine's archite
 run = "scripts/build-image.sh ha-sip"
 
 # ---------------------------------------------------------------------------------
-# ha-sip-kt (Kotlin/JVM)
+# ha-sip-ng (Kotlin/JVM)
 # ---------------------------------------------------------------------------------
 
-[tasks."ha-sip-kt:setup"]
+[tasks."ha-sip-ng:setup"]
 description = "Build the PJSIP Java SWIG bindings natively (no Docker/Podman) -- run once, or whenever pjproject's pinned version changes"
 run = "scripts/build-pjsua2-bindings-native.sh"
 
-[tasks."ha-sip-kt:setup:docker"]
+[tasks."ha-sip-ng:setup:docker"]
 description = "Build the PJSIP Java SWIG bindings via podman/docker instead of natively"
 run = "scripts/extract-pjsua2-bindings.sh"
 
-[tasks."ha-sip-kt:test"]
+[tasks."ha-sip-ng:test"]
 description = "Run just the fast, pjsip-free :core tests (no native bindings needed at all)"
 run = "./gradlew :core:test"
-dir = "ha-sip-kt"
+dir = "ha-sip-ng"
 
-[tasks."ha-sip-kt:build"]
+[tasks."ha-sip-ng:build"]
 description = "Compile the Kotlin app and run all its tests"
 run = "./gradlew build"
-dir = "ha-sip-kt"
+dir = "ha-sip-ng"
 
-[tasks."ha-sip-kt:integration-test"]
-description = "Run the two-instance direct-IP SIP suite (needs `mise run ha-sip-kt:setup` + ffmpeg on PATH)"
+[tasks."ha-sip-ng:integration-test"]
+description = "Run the two-instance direct-IP SIP suite (needs `mise run ha-sip-ng:setup` + ffmpeg on PATH)"
 run = "./gradlew :integration-test:test -PintegrationTests"
-dir = "ha-sip-kt"
+dir = "ha-sip-ng"
 
-[tasks."ha-sip-kt:format"]
+[tasks."ha-sip-ng:format"]
 description = "Auto-format Kotlin sources (ktlint)"
 run = "./gradlew ktlintFormat"
-dir = "ha-sip-kt"
+dir = "ha-sip-ng"
 
-[tasks."ha-sip-kt:lint"]
+[tasks."ha-sip-ng:lint"]
 description = "Check Kotlin formatting without modifying files (ktlint)"
 run = "./gradlew ktlintCheck"
-dir = "ha-sip-kt"
+dir = "ha-sip-ng"
 
-[tasks."ha-sip-kt:run"]
-description = "Run the Kotlin app locally against .env (needs `mise run ha-sip-kt:setup` and `ha-sip-kt:build` first)"
+[tasks."ha-sip-ng:run"]
+description = "Run the Kotlin app locally against .env (needs `mise run ha-sip-ng:setup` and `ha-sip-ng:build` first)"
 run = '''
 #!/usr/bin/env bash
 set -euo pipefail
@@ -218,18 +218,18 @@ case "$arch" in
     aarch64|arm64) out_arch=aarch64 ;;
     *) out_arch="$arch" ;;
 esac
-native_dir="ha-sip-kt/app/native/$out_arch"
+native_dir="ha-sip-ng/app/native/$out_arch"
 if [ ! -f "$native_dir/jni/libpjsua2.so" ]; then
-    echo "error: $native_dir/jni/libpjsua2.so not found -- run 'mise run ha-sip-kt:setup' first" >&2
+    echo "error: $native_dir/jni/libpjsua2.so not found -- run 'mise run ha-sip-ng:setup' first" >&2
     exit 1
 fi
 set -a
 [ -f .env ] && source .env
 set +a
 export LD_LIBRARY_PATH="$native_dir/runtime"
-exec java -Djava.library.path="$native_dir/jni" -jar ha-sip-kt/app/build/libs/ha-sip.jar "$@"
+exec java -Djava.library.path="$native_dir/jni" -jar ha-sip-ng/app/build/libs/ha-sip.jar "$@"
 '''
 
-[tasks."ha-sip-kt:image"]
+[tasks."ha-sip-ng:image"]
 description = "Build the Kotlin app's container image for this machine's architecture"
-run = "scripts/build-image.sh ha-sip-kt"
+run = "scripts/build-image.sh ha-sip-ng"

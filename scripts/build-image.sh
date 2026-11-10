@@ -3,10 +3,10 @@
 # way CI does: the base image comes from the app's build.json, the tag from its
 # config.json. Nothing is pushed.
 #
-# Usage: scripts/build-image.sh <ha-sip|ha-sip-kt>
+# Usage: scripts/build-image.sh <ha-sip|ha-sip-ng>
 set -euo pipefail
 
-app="${1:?usage: $0 <app directory, e.g. ha-sip or ha-sip-kt>}"
+app="${1:?usage: $0 <app directory, e.g. ha-sip or ha-sip-ng>}"
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 app_dir="$repo_root/$app"
 [ -f "$app_dir/config.json" ] || { echo "error: $app_dir/config.json not found" >&2; exit 1; }

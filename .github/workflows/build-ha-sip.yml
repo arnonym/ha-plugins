@@ -1,6 +1,6 @@
 name: Build ha-sip
 
-# Same shape as build-ha-sip-kt.yml: tests on every push to main/next that touches
+# Same shape as build-ha-sip-ng.yml: tests on every push to main/next that touches
 # the app, images built and pushed only from `next`. That holds here (production
 # images, released to users by merging next into main) as well as in the beta mirror
 # ha-plugins-next (where `mise run update-next-repo` renames the image to -next).

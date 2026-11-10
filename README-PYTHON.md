@@ -12,7 +12,7 @@
 
 > **Kotlin/JVM version:**
 > This is the documentation of the original Python app `ha-sip`. This repository also
-> contains `ha-sip-kt`, a Kotlin/JVM version with the same configuration, commands,
+> contains `ha-sip-ng`, a Kotlin/JVM version with the same configuration, commands,
 > web-hooks and menu files, which already has additional features. It can be installed
 > side by side with `ha-sip` from the same repository; see [README.md](README.md).
 
@@ -873,7 +873,7 @@ Your support helps others discover the project and keeps me motivated.
 
 Development tasks for both apps are [mise](https://mise.jdx.dev/) tasks, run from the root directory of the
 repo (`mise tasks` lists them all). The ones for this app are prefixed `ha-sip:`, the Kotlin app's
-`ha-sip-kt:` (see [its development section](README.md#development)).
+`ha-sip-ng:` (see [its development section](README.md#development)).
 
 1. Create a virtual environment `venv/` with pjsip and dependencies installed by running `mise run ha-sip:setup`
 2. Copy `.env.example` to `.env` and replace the variable place-holders with your real configuration.
@@ -895,6 +895,6 @@ repo (`mise tasks` lists them all). The ones for this app are prefixed `ha-sip:`
 `main` and `next`, and builds and pushes the images only from `next`. To release, bump the `version` in
 `ha-sip/config.json` on `next`, let the images build, then merge into `main`.
 
-To publish a beta, push `next` and run `mise run update-next-repo [version] [--kt-version <version>]`. It
+To publish a beta, push `next` and run `mise run update-next-repo [version] [--ng-version <version>]`. It
 copies `next` to [ha-plugins-next](https://github.com/arnonym/ha-plugins-next) with both apps renamed for the
-beta channel (`ha-sip-next`, `ha-sip-kt-next`) and force-pushes it there.
+beta channel (`ha-sip-next`, `ha-sip-ng-next`) and force-pushes it there.

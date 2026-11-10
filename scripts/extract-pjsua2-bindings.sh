@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
-# Builds the `pjsip-bindings` stage of ha-sip-kt/Dockerfile (pjproject 2.17 + Java SWIG
+# Builds the `pjsip-bindings` stage of ha-sip-ng/Dockerfile (pjproject 2.17 + Java SWIG
 # module) and extracts the generated org.pjsip.pjsua2 classes (as
-# ha-sip-kt/app/libs/pjsua2.jar) plus:
-#   ha-sip-kt/app/native/<arch>/jni/libpjsua2.so   -- the JNI wrapper only; point
+# ha-sip-ng/app/libs/pjsua2.jar) plus:
+#   ha-sip-ng/app/native/<arch>/jni/libpjsua2.so   -- the JNI wrapper only; point
 #     `-Djava.library.path` at this *directory* (not the .so file itself).
-#   ha-sip-kt/app/native/<arch>/runtime/*.so*      -- every real pjproject runtime
+#   ha-sip-ng/app/native/<arch>/runtime/*.so*      -- every real pjproject runtime
 #     shared lib the JNI wrapper depends on; point `LD_LIBRARY_PATH` at this
 #     directory (this is resolved by the OS's dynamic linker, not the JVM, so it
 #     is a *different* mechanism than `-Djava.library.path`).
-# See the comment above the `pjsip-bindings` stage in ha-sip-kt/Dockerfile for why
+# See the comment above the `pjsip-bindings` stage in ha-sip-ng/Dockerfile for why
 # these two are deliberately kept apart (both are conventionally named
 # "libpjsua2.so", but are two different files).
 #
@@ -16,7 +16,7 @@
 set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-ha_sip_dir="$repo_root/ha-sip-kt"
+ha_sip_dir="$repo_root/ha-sip-ng"
 image_tag="ha-sip-pjsip-bindings:local"
 
 if command -v podman >/dev/null 2>&1; then
@@ -50,7 +50,7 @@ trap '"$container_cli" rm -f "$cid" >/dev/null' EXIT
 "$container_cli" cp "$cid:/out/lib/." "$native_dir/runtime/"
 
 echo "==> Done."
-echo "    ha-sip-kt/app/libs/pjsua2.jar"
+echo "    ha-sip-ng/app/libs/pjsua2.jar"
 echo "    $native_dir/jni/libpjsua2.so       (point -Djava.library.path here)"
 echo "    $native_dir/runtime/*.so*          (point LD_LIBRARY_PATH here)"
 echo ""

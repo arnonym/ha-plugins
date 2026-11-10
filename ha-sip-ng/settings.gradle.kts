@@ -1,4 +1,4 @@
-rootProject.name = "ha-sip-kt"
+rootProject.name = "ha-sip-ng"
 
 // gradle/libs.versions.toml is auto-detected as the "libs" version catalog.
 
